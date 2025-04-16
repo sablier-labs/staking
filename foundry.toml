@@ -1,0 +1,126 @@
+[profile.default]
+  auto_detect_solc = false
+  bytecode_hash = "none"
+  evm_version = "shanghai" # needed for greater coverage of EVM chains
+  fs_permissions = [
+    { access = "read", path = "./out-optimized" },
+    { access = "read", path = "package.json" },
+  ]
+  gas_limit = 9223372036854775807
+  optimizer = true
+  optimizer_runs = 500
+  out = "out"
+  script = "scripts/solidity"
+  sender = "0x1804c8AB1F12E6bbf3894d4083f33e07309d1f38"
+  solc = "0.8.29"
+  src = "src"
+  test = "tests"
+
+[profile.default.fuzz]
+  max_test_rejects = 1_000_000 # Number of times `vm.assume` can fail
+  runs = 50
+
+[profile.default.invariant]
+  call_override = false # Override unsafe external calls to perform reentrancy checks
+  depth = 20            # Number of calls executed in one run
+  fail_on_revert = true
+  runs = 20
+
+# Speed up compilation and tests during development
+[profile.lite]
+  optimizer = false
+
+# Compile only the production code and the test mocks with via IR
+[profile.optimized]
+  out = "out-optimized"
+  test = "tests/mocks"
+  via_ir = true
+
+# See "SMTChecker and Formal Verification" in the Solidity docs
+[profile.smt]
+  ignored_error_codes = [
+    7737, # Disable inline assembly warnings
+  ]
+  out = "out-optimized"
+  script = "src"
+  test = "src"
+  via_ir = true
+
+[profile.smt.model_checker]
+  engine = "chc" # constrained Horn clauses
+  invariants = ["contract", "reentrancy"]
+  show_proved_safe = true
+  show_unproved = true
+  show_unsupported = true
+  targets = [
+    "assert",
+    "constantCondition",
+    "divByZero",
+    "outOfBounds",
+    "overflow",
+    "underflow",
+  ]
+  timeout = 100_000 # in milliseconds, per solving query
+
+# Test the optimized contracts without re-compiling them
+[profile.test-optimized]
+  src = "tests"
+
+[doc]
+  ignore = ["**/*.t.sol"]
+  out = "docs"
+  repository = "https://github.com/sablier-labs/staking"
+
+[etherscan]
+  etherscan = { key = "${ETHERSCAN_API_KEY}" }
+
+[fmt]
+  bracket_spacing = true
+  int_types = "long"
+  line_length = 120
+  multiline_func_header = "all"
+  number_underscore = "thousands"
+  quote_style = "double"
+  tab_width = 4
+  wrap_comments = true
+
+[rpc_endpoints]
+  # mainnets
+  arbitrum = "https://rpc.ankr.com/arbitrum"
+  avalanche = "https://rpc.ankr.com/avalanche"
+  base = "https://mainnet.base.org"
+  berachain = "https://rpc.berachain.com"
+  blast = "https://rpc.blast.io"
+  bnb = "https://rpc.ankr.com/bsc"
+  chiliz = "https://rpc.chiliz.com"
+  core_dao = "https://rpc.coredao.org"
+  form = "https://rpc.form.network/http"
+  gnosis = "https://rpc.ankr.com/gnosis"
+  lightlink = "https://replicator.phoenix.lightlink.io/rpc/v1"
+  linea = "https://rpc.linea.build"
+  mainnet = "${MAINNET_RPC_URL}"
+  meld = "https://rpc-1.meld.com"
+  mode = "https://mainnet.mode.network/"
+  morph = "https://rpc.morphl2.io"
+  optimism = "https://rpc.ankr.com/optimism"
+  polygon = "https://rpc.ankr.com/polygon"
+  scroll = "https://rpc.scroll.io/"
+  sei = "https://evm-rpc.sei-apis.com"
+  superseed = "https://mainnet.superseed.xyz"
+  taiko_mainnet = "https://rpc.mainnet.taiko.xyz"
+  xdc = "https://rpc.xdc.org"
+  # testnets
+  arbitrum_sepolia = "https://arbitrum-sepolia-rpc.publicnode.com"
+  base_sepolia = "https://sepolia.base.org"
+  berachain_artio = "https://bartio.rpc.berachain.com/"
+  blast_sepolia = "https://sepolia.blast.io"
+  linea_sepolia = "https://rpc.sepolia.linea.build"
+  localhost = "http://localhost:8545"
+  mode_sepolia = "https://sepolia.mode.network/"
+  monat_testnet = "https://testnet-rpc.monad.xyz"
+  morph_holesky = "https://rpc-holesky.morphl2.io"
+  optimism_sepolia = "https://sepolia.optimism.io"
+  sei_testnet = "https://evm-rpc.arctic-1.seinetwork.io"
+  sepolia = "${SEPOLIA_RPC_URL}"
+  superseed_sepolia = "https://sepolia.superseed.xyz"
+  taiko_hekla = "https://rpc.hekla.taiko.xyz"

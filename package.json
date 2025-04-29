@@ -12,10 +12,11 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "5.0.2",
-    "@prb/math": "4.1.0"
+    "@prb/math": "4.1.0",
+    "@sablier/evm-utils": "github:sablier-labs/evm-utils#df51bcc"
   },
   "devDependencies": {
-    "forge-std": "github:foundry-rs/forge-std#v1.8.2",
+    "forge-std": "github:foundry-rs/forge-std#v1.9.7",
     "husky": "^9.1.4",
     "lint-staged": "^15.2.8",
     "prettier": "^3.3.2",
@@ -49,16 +50,14 @@
   "peerDependencies": {
     "@prb/math": "4.x.x"
   },
-  "publishConfig": {
-    "access": "public"
-  },
+  "private": true,
   "repository": "github.com/sablier-labs/staking",
   "scripts": {
     "build": "forge build",
     "build:optimized": "FOUNDRY_PROFILE=optimized forge build",
     "build:smt": "FOUNDRY_PROFILE=smt forge build",
+    "check": "bun run lint:sol && bun run prettier:check",
     "clean": "rm -rf artifacts broadcast cache docs out out-optimized out-svg",
-    "lint": "bun run lint:sol && bun run prettier:check",
     "lint:fix": "bun run lint:sol:fix && forge fmt",
     "lint:sol": "forge fmt --check && bun solhint \"{scripts/solidity,src,tests}/**/*.sol\"",
     "lint:sol:fix": "bun solhint \"{scripts/solidity,src,tests}/**/*.sol\" --fix --noPrompt",

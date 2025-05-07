@@ -2,16 +2,33 @@
 pragma solidity >=0.8.22;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { ISablierLockupNFT } from "../interfaces/ISablierLockupNFT.sol";
 
-/// @notice The struct that represents a rewards campaign.
-/// @param admin The address of the admin that created the campaign.
-/// @param stakingToken The address of the ERC20 token that can be staked either directly or through Sablier stream
-/// to earn rewards.
-/// @param startTime The start time of the campaign, denoted in UNIX timestamp.
+// This file defines all structs used in this Sablier Staking contract. You will notice that some structs contain "slot"
+// annotations - they are used to indicate the storage layout of the struct. It is more gas efficient to group small
+// data types together so that they fit in a single 32-byte slot.
+
+/// @notice A data structure to store the total rewards snapshot data for each campaign.
+/// @param rewardsDistributedPerToken The amount of rewards distributed per staking token (includes both direct staking
+/// and through Sablier streams), denoted in reward token's decimals.
+/// @param totalStakedTokens The total amount of staking tokens staked (both direct staking and through Sablier
+/// streams), denoted in staking token's decimals.
+/// @param lastUpdateTime The last time this snapshot was updated, denoted in UNIX timestamp.
+struct GlobalSnapshot {
+    // Slot 0
+    uint128 rewardsDistributedPerToken;
+    uint128 totalStakedTokens;
+    // Slot 1
+    uint40 lastUpdateTime;
+}
+
+/// @notice A data structure to store the campaign parameters.
+/// @param admin The admin of the campaign. This may be different from the campaign creator.
+/// @param rewardToken The address of the ERC20 token to used as staking rewards.
+/// @param stakingToken The address of the ERC20 token that can be staked either directly or through Sablier stream.
+/// @param wasCanceled Boolean indicating if the stream was canceled.
 /// @param endTime The end time of the campaign, denoted in UNIX timestamp.
-/// @param rewardToken The address of the ERC20 token that is used to reward stakers.
-/// @param totalRewards The amount of reward tokens to be distributed during the campaign's duration, denoted in
+/// @param startTime The start time of the campaign, denoted in UNIX timestamp.
+/// @param totalRewards The amount of total rewards to be distributed during the campaign's duration, denoted in reward
 /// token's decimals.
 struct StakingCampaign {
     // Slot 0
@@ -27,15 +44,26 @@ struct StakingCampaign {
     uint128 totalRewards;
 }
 
-struct GlobalRewards {
+/// @notice A data structure to reverse lookup from a Lockup stream ID to the campaign ID and original stream owner.
+/// @param campaignId The ID of the campaign in which the stream was staked.
+/// @param owner The original owner of the stream.
+struct StakedStream {
     // Slot 0
-    uint128 rewardsDistributedPerToken;
-    uint128 totalStakedTokens;
+    uint256 campaignId;
     // Slot 1
-    uint40 lastUpdateTIme;
+    address owner;
 }
 
-struct UserRewards {
+/// @notice A data structure to store a user's rewards and staking data for a given campaign.
+/// @param rewardsDistributedPerToken The amount of rewards distributed per staking token (includes both direct staking
+/// and through Sablier streams), denoted in reward token's decimals.
+/// @param totalStakedTokens The total amount of staking tokens staked (both direct staking and through Sablier
+/// streams), denoted in staking token's decimals.
+/// @param stakedERC20Amount The amount of staking tokens staked directly, denoted in staking token's decimals.
+/// @param stakedStreamsCount The number of Sablier streams that the user has staked. The amount of staking tokens
+/// staked through Sablier stream can be calculated as `totalStakedTokens - stakedERC20Amount`.
+/// @param rewards The amount of reward tokens available to be claimed by the user, denoted in reward token's decimals.
+struct UserSnapshot {
     // Slot 0
     uint128 rewardsDistributedPerToken;
     uint128 totalStakedTokens;
@@ -44,16 +72,4 @@ struct UserRewards {
     uint32 stakedStreamsCount;
     // Slot 2
     uint128 rewards;
-}
-
-struct StakedStream {
-    // Slot 0
-    uint256 campaignId;
-    // Slot 1
-    address owner;
-}
-
-struct SablierLockupNFT {
-    ISablierLockupNFT lockupAddress;
-    uint256 streamId;
 }

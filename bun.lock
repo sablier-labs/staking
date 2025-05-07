@@ -4,9 +4,9 @@
     "": {
       "name": "@sablier/staking",
       "dependencies": {
-        "@openzeppelin/contracts": "5.0.2",
+        "@openzeppelin/contracts": "5.3.0",
         "@prb/math": "4.1.0",
-        "@sablier/evm-utils": "github:sablier-labs/evm-utils#df51bcc",
+        "@sablier/evm-utils": "github:sablier-labs/evm-utils#be86366",
       },
       "devDependencies": {
         "forge-std": "github:foundry-rs/forge-std#v1.9.7",
@@ -27,7 +27,7 @@
 
     "@babel/helper-validator-identifier": ["@babel/helper-validator-identifier@7.25.9", "", {}, "sha512-Ed61U6XJc3CVRfkERJWDz4dJwKe7iLmmJsbOGu9wSloNSFttHV0I8g6UAgb7qnK5ly5bGLPd4oXZlxCdANBOWQ=="],
 
-    "@openzeppelin/contracts": ["@openzeppelin/contracts@5.0.2", "", {}, "sha512-ytPc6eLGcHHnapAZ9S+5qsdomhjo6QBHTDRRBFfTxXIpsicMhVPouPgmUPebZZZGX7vt9USA+Z+0M0dSVtSUEA=="],
+    "@openzeppelin/contracts": ["@openzeppelin/contracts@5.3.0", "", {}, "sha512-zj/KGoW7zxWUE8qOI++rUM18v+VeLTTzKs/DJFkSzHpQFPD/jKKF0TrMxBfGLl3kpdELCNccvB3zmofSzm4nlA=="],
 
     "@pnpm/config.env-replace": ["@pnpm/config.env-replace@1.1.0", "", {}, "sha512-htyl8TWnKL7K/ESFa1oW2UB5lVDxuF5DpM7tBi6Hu2LNL3mWkIzNLG6N4zoCUP1lCKNxWy/3iu8mS8MvToGd6w=="],
 
@@ -37,7 +37,7 @@
 
     "@prb/math": ["@prb/math@4.1.0", "", {}, "sha512-ef5Xrlh3BeX4xT5/Wi810dpEPq2bYPndRxgFIaKSU1F/Op/s8af03kyom+mfU7gEpvfIZ46xu8W0duiHplbBMg=="],
 
-    "@sablier/evm-utils": ["@sablier/evm-utils@github:sablier-labs/evm-utils#df51bcc", {}, "sablier-labs-evm-utils-df51bcc"],
+    "@sablier/evm-utils": ["@sablier/evm-utils@github:sablier-labs/evm-utils#be86366", {}, "sablier-labs-evm-utils-be86366"],
 
     "@sindresorhus/is": ["@sindresorhus/is@5.6.0", "", {}, "sha512-TV7t8GKYaJWsn00tFDqBw8+Uqmr8A0fRU1tvTQhyZzGv0sJCGRQL3JGMI3ucuKo3XIZdUP+Lx7/gh2t3lewy7g=="],
 

@@ -5,7 +5,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 /// @title ISablierLockupNFT
-/// @notice The interface requirement for Lockup NFT to be compatible with the Sablier Staking protocol.
+/// @notice Interface requirement for Lockup NFT contract to be compatible with the Sablier Staking protocol.
 interface ISablierLockupNFT is IERC721 {
     /// @notice Retrieves the amount deposited in the stream, denoted in units of the token's decimals.
     function getDepositedAmount(uint256 streamId) external view returns (uint128 depositedAmount);
@@ -19,4 +19,11 @@ interface ISablierLockupNFT is IERC721 {
 
     /// @notice Retrieves the amount withdrawn from the stream, denoted in units of the token's decimals.
     function getWithdrawnAmount(uint256 streamId) external view returns (uint128 withdrawnAmount);
+
+    /// @notice Retrieves a flag indicating whether the provided address is a contract allowed to hook to Sablier
+    /// when a stream is canceled or when tokens are withdrawn.
+    function isAllowedToHook(address recipient) external view returns (bool result);
+
+    /// @notice Retrieves a flag indicating whether the stream is depleted.
+    function isDepleted(uint256 streamId) external view returns (bool result);
 }

@@ -3,66 +3,121 @@ pragma solidity >=0.8.22;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IERC721Receiver } from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
-import { UD60x18 } from "@prb/math/src/UD60x18.sol";
+import { IRoleAdminable } from "@sablier/evm-utils/src/interfaces/IRoleAdminable.sol";
 import { ISablierLockupRecipient } from "@sablier/lockup/src/interfaces/ISablierLockupRecipient.sol";
 
-import { GlobalRewards, SablierLockupNFT, UserRewards } from "../types/DataTypes.sol";
+import { ISablierLockupNFT } from "./ISablierLockupNFT.sol";
+import { ISablierStakingState } from "./ISablierStakingState.sol";
 
 /// @title ISablierStaking
-/// @notice A singleton contract to launch staking campaigns that can support both ERC20 tokens and Sablier Lockup NFTs.
+/// @notice Singleton contract to launch staking campaigns allowing staking of both ERC20 tokens and Sablier Lockup
+/// NFTs.
 ///
 /// Features:
-///  - Launch staking campaigns by specifying the ERC20 tokens.
-///  - Users can stake their Sablier Lockup NFTs, which stream the allowed ERC20 tokens, to earn rewards based on the
-///    total amount of the ERC20 token in the stream.
-///  - The staking campaign supports multiple versions of Lockup contract as long as they implement the functions
-///    specified in the {ISablierLockupNFT} interface.
-///  - Users can also stake ERC20 tokens directly into the staking campaign.
-///  - Users can stake multiple Lockup NFTs, or combine staking NFTs and ERC20 tokens simultaneously.
-///  - Users can unstake their positions at any time, with the ability to stake and unstake multiple times.
-///  - Each Lockup NFT can only be staked in one campaign at a time.
-///  - Staked Lockup NFTs handle stream cancellations gracefully, but reverts on withdraw.
+///  - Create staking campaigns by specifying the staking token, reward token, reward duration and reward amount.
+///  - Users can stake ERC20 tokens into the campaign to earn rewards.
+///  - Users can stake their Sablier Lockup streams, as long as the underlying token matches the staking token, to earn
+/// rewards based on the total amount of underlying token in the stream.
+///  - Users can stake multiple Lockup streams, or both Lockup streams and ERC20 tokens simultaneously.
+///  - Supports multiple versions of Lockup contracts, requires whitelisting by the protocol admin.
+///  - Users can unstake their positions, with the ability to stake and unstake multiple times.
+///  - Each Lockup stream can only be staked in one campaign at a time.
+///  - Cancelling a staked stream would adjust the stakers total amount staked.
+///  - Withdrawing from a staked stream would revert.
 ///  - Campaign admin can cancel the campaign until the start time.
-interface ISablierStaking is IERC721Receiver, ISablierLockupRecipient {
+interface ISablierStaking is ISablierStakingState, IRoleAdminable, IERC721Receiver, ISablierLockupRecipient {
     /*//////////////////////////////////////////////////////////////////////////
-                                 READ-ONLY FUNCTIONS
+                                READ-ONLY FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    function nextCampaignId() external view returns (uint256);
+    /// @notice Returns the amount of reward ERC20 tokens available to claim by the user.
+    /// @dev Reverts if `campaignId` references a null stream.
+    function claimableRewards(uint256 campaignId, address user) external view returns (uint256);
 
-    function getAdmin(uint256 campaignId) external view returns (address);
-    function getEndTime(uint256 campaignId) external view returns (uint40);
-    function getStakingToken(uint256 campaignId) external view returns (IERC20);
-    function getStartTime(uint256 campaignId) external view returns (uint40);
-    function getRewardToken(uint256 campaignId) external view returns (IERC20);
-    function getTotalRewardsAmount(uint256 campaignId) external view returns (uint256);
+    /// @notice Returns true if the `block.timestamp` is between the campaign's start and end times.
+    function isActive(uint256 campaignId) external view returns (bool);
 
-    function globalSnapshot(uint256 campaignId) external view returns (GlobalRewards memory);
+    /// @notice Returns the amount of reward ERC20 tokens that total staked ERC20 tokens are earning every second.
+    /// @dev Reverts if `campaignId` references a null stream.
+    function rewardRate(uint256 campaignId) external view returns (uint256);
 
-    function userSnapshot(uint256 campaignId, address user) external view returns (UserRewards memory);
+    /// @notice Returns the amount of reward ERC20 token that each staked ERC20 token is earning every second.
+    /// @dev Reverts if `campaignId` references a null stream.
+    function rewardRatePerTokenStaked(uint256 campaignId) external view returns (uint256);
 
+    /// @notice {IERC165-supportsInterface} implementation as required by `ISablierLockupRecipient` interface.
+    /// @dev Returns true if `interfaceId` is `type(ISablierLockupRecipient).interfaceId`.
+    function supportsInterface(bytes4 interfaceId) external pure returns (bool);
+
+    /// @notice Returns the user's stake in the specified campaign.
+    ///
+    /// @dev Reverts if `campaignId` references a null stream.
+    ///
+    /// @param campaignId The campaign ID for the query.
+    /// @param user The address of the user for the query.
+    ///
+    /// @return amountStakedDirectly The total amount of ERC20 tokens staked directly by the user, denoted in staking
+    /// token's decimals.
+    /// @return amountStakedWithStreams The total amount of ERC20 tokens staked through Lockup streams, denoted in
+    /// staking token's decimals.
+    /// @return totalStreams The total number of Lockup streams staked by the user.
     function totalStakedByUser(
         uint256 campaignId,
         address user
     )
         external
         view
-        returns (uint256 totalLockupStreams, uint256 amountInLockupStream, uint256 amountInERC20);
-    function rewardRatePerERC20(uint256 campaignId) external view returns (uint256);
-    function rewardPerSecond(uint256 campaignId) external view returns (uint256);
-
-    function claimableRewards(uint256 campaignId, address user) external view returns (uint256 amount);
-
-    /// @notice {IERC165-supportsInterface} implementation as required by `ISablierLockupRecipient` interface.
-    function supportsInterface(bytes4 interfaceId) external pure returns (bool);
-    function stakingAPY(uint256 campaignId) external view returns (UD60x18);
+        returns (uint256 amountStakedDirectly, uint256 amountStakedWithStreams, uint256 totalStreams);
 
     /*//////////////////////////////////////////////////////////////////////////
                               STATE-CHANGING FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice Creates a new staking campaign.
-    /// @dev Transfers the total reward amount from the caller to the contract.
+    /// @notice Cancels the staking campaign and refunds rewards amount to the campaign admin.
+    /// @dev Emits a {Transfer} and {CancelStakingCampaign} events.
+    ///
+    /// Requirements:
+    ///  - `campaignId` must not reference a null stream.
+    ///  - The campaign's start time must be in the future.
+    ///  - `msg.sender` must be the campaign admin.
+    ///
+    /// @param campaignId The campaign ID to cancel.
+    function cancelStakingCampaign(uint256 campaignId) external;
+
+    /// @notice Claims the rewards earned by `msg.sender` in the specified campaign.
+    /// @dev Emits a {Transfer} and {ClaimRewards} events.
+    ///
+    /// Notes:
+    /// - Updates global rewards and user rewards data.
+    ///
+    /// Requirements:
+    ///  - `campaignId` must not reference a null stream.
+    ///  - The campaign's start time must be in the past.
+    ///  - Claimable rewards must be greater than 0.
+    ///
+    /// @param campaignId The campaign ID to claim rewards from.
+    /// @return amountClaimed The amount of rewards claimed, denoted in reward token's decimals.
+    function claimRewards(uint256 campaignId) external returns (uint256 amountClaimed);
+
+    /// @notice Creates a new staking campaign and transfer the total reward amount from `msg.sender` to this contract.
+    /// @dev Emits a {Transfer} and {CreateStakingCampaign} events.
+    ///
+    /// Requirements:
+    ///  - `admin` must not be the zero address.
+    ///  - `stakingToken` must not be the zero address.
+    ///  - `startTime` must be greater than or equal to the `block.timestamp`.
+    ///  - `endTime` must be greater than `startTime`.
+    ///  - `rewardToken` must not be the zero address.
+    ///  - `rewardsAmount` must be greater than 0.
+    ///  - `msg.sender` must have approved this contract to spend the `rewardsAmount` of reward ERC20 token.
+    ///
+    /// @param admin The admin of the campaign with the ability to cancel it until the start time.
+    /// @param stakingToken The ERC20 token permitted for staking either directly or through Lockup streams.
+    /// @param startTime The start time of the campaign, denoted in UNIX timestamp.
+    /// @param endTime The end time of the campaign, denoted in UNIX timestamp.
+    /// @param rewardToken The ERC20 token that will be distributed as rewards.
+    /// @param rewardsAmount The amount of reward tokens to distribute, denoted in reward token's decimals.
+    /// @return campaignId The ID of the newly created campaign.
     function createStakingCampaign(
         address admin,
         IERC20 stakingToken,
@@ -74,22 +129,95 @@ interface ISablierStaking is IERC721Receiver, ISablierLockupRecipient {
         external
         returns (uint256 campaignId);
 
-    function cancelStakingCampaign(uint256 campaignId) external;
-
-    function claimRewards(uint256 campaignId) external;
-
-    /// @notice Stake the Lockup stream streaming the allowed ERC20 token in the specified campaign.
-    function stakeLockupNFT(uint256 campaignId, SablierLockupNFT calldata lockupNFT) external;
-
-    /// @notice Stake ERC20 token in the specified campaign.
+    /// @notice Stakes ERC20 staking token in the specified campaign.
+    /// @dev Emits a {Transfer} and {StakeERC20token} events.
+    ///
+    /// Notes:
+    ///  - Updates global rewards and user rewards data.
+    ///  - Users can start staking before the start time but the rewards can only be earned after the campaign start
+    /// time.
+    ///
+    /// Requirements:
+    ///  - `campaignId` must not reference a null stream.
+    ///  - Campaign end time must be in the future.
+    ///  - `amount` must be greater than 0.
+    ///  - `msg.sender` must have approved this contract to spend the ERC20 token.
+    ///
+    /// @param campaignId The campaign ID to stake the ERC20 token in.
     function stakeERC20token(uint256 campaignId, uint128 amount) external;
 
-    /// @notice Unstake the Lockup stream from the specified campaign.
-    function unstakeLockupNFT(SablierLockupNFT calldata lockupNFT) external;
+    /// @notice Stakes a Lockup stream in the specified campaign.
+    /// @dev Emits a {Transfer} and {StakeLockupNFT} events.
+    ///
+    /// Notes:
+    ///  - Updates global rewards and user rewards data.
+    ///  - Users can start staking before the start time but the rewards can only be earned after the campaign start
+    /// time.
+    ///
+    /// Requirements:
+    ///  - `campaignId` must not reference a null stream.
+    ///  - `lockup` must be a whitelisted Lockup contract.
+    ///  - Campaign end time must be in the future.
+    ///  - Lockup's underlying token must be the same as the staking token.
+    ///  - Stream must not be depleted.
+    ///  - `msg.sender` must have approved this contract to spend the stream ID.
+    ///
+    /// @param campaignId The campaign ID to stake the Lockup stream in.
+    /// @param lockup The Lockup contract associated with the stream ID.
+    /// @param streamId The ID of the stream to stake.
+    function stakeLockupNFT(uint256 campaignId, ISablierLockupNFT lockup, uint256 streamId) external;
 
-    /// @notice Unstake the ERC20 token from the specified campaign.
+    /// @notice Unstakes the amount specified of the staking token from the specified campaign.
+    /// @dev Emits a {Transfer} and {UnstakeERC20token} events.
+    ///
+    /// Notes:
+    ///  - Updates global rewards and user rewards data.
+    ///  - Unstaking does not claim any rewards.
+    ///
+    /// Requirements:
+    /// - `campaignId` must not reference a null stream.
+    /// - `amount` must be greater than 0 and must not exceed the user's staked ERC20 amount in the campaign.
+    ///
+    /// @param campaignId The campaign ID to unstake the ERC20 token from.
+    /// @param amount The amount of ERC20 tokens to unstake.
     function unstakeERC20token(uint256 campaignId, uint128 amount) external;
 
-    /// @notice Update rewards snapshot for the specified campaign and user.
+    /// @notice Unstakes the Lockup stream from the specified campaign.
+    /// @dev Emits a {Transfer} and {UnstakeLockupNFT} events.
+    ///
+    /// Notes:
+    ///  - Updates global rewards and user rewards data.
+    ///  - Unstaking does not claim any rewards.
+    ///
+    /// Requirements:
+    /// - The stream ID associated with `lockup` must be staked in a campaign.
+    /// - `msg.sender` must be the original owner of the stream stored in {StakedStream} struct.
+    ///
+    /// @param lockup The Lockup contract associated with the stream ID.
+    /// @param streamId The ID of the stream to unstake.
+    function unstakeLockupNFT(ISablierLockupNFT lockup, uint256 streamId) external;
+
+    /// @notice Updates global rewards and user rewards data for the specified campaign and user.
+    /// @dev Emits a {UpdateRewardsSnapshot} event.
+    ///
+    /// Notes:
+    ///  - If user has no stakes, it only updates the global rewards data.
+    ///
+    /// @param campaignId The campaign ID to update rewards data for.
+    /// @param user The address of the user to update rewards data for.
     function updateRewardsSnapshot(uint256 campaignId, address user) external;
+
+    /// @notice Whitelist a list of Lockup contracts enabling their stream IDs to be staked in any campaign.
+    /// @dev Emits {WhitelistLockupAddress} event for each Lockup contract.
+    ///
+    /// Notes:
+    ///  - It does nothing if the array is empty.
+    ///
+    /// Requirements:
+    ///  - Each lockup contract must not already be whitelisted.
+    ///  - Each lockup contract must return `true` when `isAllowedToHook` is called with this contract's address.
+    ///  - `msg.sender` must either be the protocol admin or have the `LOCKUP_WHITELIST_ROLE`.
+    ///
+    /// @param lockups The address of the Lockup contract to whitelist.
+    function whitelistLockupAddress(ISablierLockupNFT[] calldata lockups) external;
 }

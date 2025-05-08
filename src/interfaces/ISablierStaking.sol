@@ -27,6 +27,56 @@ import { ISablierStakingState } from "./ISablierStakingState.sol";
 ///  - Campaign admin can cancel the campaign until the start time.
 interface ISablierStaking is ISablierStakingState, IRoleAdminable, IERC721Receiver, ISablierLockupRecipient {
     /*//////////////////////////////////////////////////////////////////////////
+                                       EVENTS
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @notice Emitted when a campaign is created before the start time.
+    event CancelStakingCampaign(uint256 indexed campaignId, uint40 currentTime, uint40 startTime);
+
+    /// @notice Emitted when rewards are claimed.
+    event ClaimRewards(uint256 indexed campaignId, address indexed user, uint256 amountClaimed);
+
+    /// @notice Emitted when a new staking campaign is created.
+    event CreateStakingCampaign(
+        uint256 indexed campaignId,
+        address indexed admin,
+        IERC20 indexed stakingToken,
+        IERC20 rewardToken,
+        uint40 startTime,
+        uint40 endTime,
+        uint128 totalRewards
+    );
+
+    /// @notice Emitted when a user stakes ERC20 tokens in a campaign.
+    event StakeERC20token(uint256 indexed campaignId, address indexed user, uint256 amountStaked);
+
+    /// @notice Emitted when a user stakes a Lockup stream in a campaign.
+    event StakeLockupNFT(
+        uint256 indexed campaignId,
+        address indexed user,
+        ISablierLockupNFT indexed lockup,
+        uint256 streamId,
+        uint128 underlyingTokenAmount
+    );
+
+    /// @notice Emitted when a user unstakes ERC20 tokens from a campaign.
+    event UnstakeERC20token(uint256 indexed campaignId, address indexed user, uint256 amountUnstaked);
+
+    /// @notice Emitted when a user unstakes a Lockup stream from a campaign.
+    event UnstakeLockupNFT(
+        uint256 indexed campaignId, address indexed user, ISablierLockupNFT indexed lockup, uint256 streamId
+    );
+
+    /// @notice Emitted when the rewards snapshot is updated.
+    event UpdateRewardsSnapshot(
+        uint256 indexed campaignId,
+        address indexed user,
+        uint128 rewards,
+        uint128 rewardsDistributedPerToken,
+        uint128 totalStakedTokens
+    );
+
+    /*//////////////////////////////////////////////////////////////////////////
                                 READ-ONLY FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 

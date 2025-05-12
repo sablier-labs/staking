@@ -3,59 +3,107 @@ pragma solidity >=0.8.22;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+import { ISablierLockupNFT } from "../interfaces/ISablierLockupNFT.sol";
+
 /// @title Errors
 /// @notice Library containing all custom errors the protocol may revert with.
 library Errors {
-    /// @notice Thrown when amount parameter is zero.
-    error SablierStakingCampaign_AmountZero();
+    /*//////////////////////////////////////////////////////////////////////////
+                               SABLIER-STAKING-STATE
+    //////////////////////////////////////////////////////////////////////////*/
 
-    error SablierStakingCampaign_ExceedStakedAmount(
-        uint256 campaignId, uint256 amountToUnstake, uint256 totalStakedAmount
+    /// @notice Thrown when an action is attempted on a canceled campaign.
+    error SablierStakingState_CampaignCanceled();
+
+    /// @notice Thrown when an action is attempted on a non-existent campaign.
+    error SablierStakingState_CampaignDoesNotExist();
+
+    /// @notice Thrown when an action is attempted on an inactive campaign.
+    error SablierStakingState_CampaignNotActive();
+
+    /// @notice Thrown when the stream ID associated with Lockup contract is not staked in any campaign.
+    error SablierStakingState_StreamNotStaked(ISablierLockupNFT lockup, uint256 streamId);
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                  SABLIER-STAKING
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @notice Thrown when trying to create a campaign with the zero address as admin.
+    error SablierStaking_AdminZeroAddress();
+
+    /// @notice Thrown when the unstaking amount exceeds the ERC20 staked amount.
+    error SablierStaking_AmountExceedsStakedAmount(
+        uint256 campaignId, uint256 amountUnstaking, uint256 totalStakedAmount
     );
 
-    /// @notice Thrown when the caller is not the lockup contract.
-    error SablierStakingCampaign_UnauthorizedCaller(address caller, uint256 streamId);
+    /// @notice Thrown when the caller is not the original owner of the stream.
+    error SablierStaking_CallerNotStreamOwner(
+        ISablierLockupNFT lockup, uint256 streamId, address caller, address streamOwner
+    );
 
-    /// @notice Thrown if provided lockup address is not a contract.
-    error SablierStakingCampaign_LockupAddressNotContract(address lockupAddress);
+    /// @notice Thrown when staking a depleted stream.
+    error SablierStaking_DepletedStream(ISablierLockupNFT lockup, uint256 streamId);
 
-    /// @notice Thrown when campaign is created with zero address as admin.
-    error SablierStakingCampaign_ZeroAddress();
+    /// @notice Thrown when trying to cancel a campaign that is already canceled.
+    error SablierStaking_CampaignAlreadyCanceled();
 
-    /// @notice Thrown when campaign is created with zero total reward amount.
-    error SablierStakingCampaign_ZeroRewardAmount();
+    /// @notice Thrown when trying to cancel a campaign that has already started.
+    error SablierStaking_CampaignAlreadyStarted(uint40 startTime, uint40 currentTime);
 
-    /// @notice Thrown when user tries to stake zero amount of tokens.
-    error SablierStakingCampaign_ZeroStakingAmount();
+    /// @notice Thrown when the caller is not the campaign admin.
+    error SablierStaking_CallerNotCampaignAdmin(address caller, address campaignAdmin);
 
-    /// @notice Thrown when campaign start time exceeds end time.
-    error SablierStakingCampaign_StartTimeExceedsEndTime(uint40 startTime, uint40 endTime);
-
-    /// @notice Thrown when campaign start time is in the past.
-    error SablierStakingCampaign_StartTimeInPast(uint40 startTime);
-
-    /// @notice Thrown when campaign does not exist.
-    error SablierStakingCampaign_CampaignDoesNotExist(uint256 campaignId);
-
-    /// @notice Thrown when the lockup token is not authorized for the campaign.
-    error SablierStakingCampaign_LockupTokenNotAllowed(IERC20 lockupUnderlyingToken, IERC20 stakingERC20Token);
+    /// @notice Thrown when the campaign is active.
+    error SablierStaking_CampaignActive(uint40 startTime);
 
     /// @notice Thrown when user is staking in a campaign that has ended.
-    error SablierStakingCampaign_CampaignHasEnded(uint40 endTime);
+    error SablierStaking_CampaignHasEnded(uint40 endTime);
 
-    /// @notice Thrown when user is trying to stake a Lockup stream that is already staked in another campaign.
-    error SablierStakingCampaign_StreamAlreadyStaked(uint256 streamId, uint256 campaignId);
+    /// @notice Thrown when trying to create a campaign with end time not greater than start time.
+    error SablierStaking_EndTimeNotGreaterThanStartTime(uint40 endTime, uint40 startTime);
 
-    /// @notice Thrown when withdraw hook call is made on a stream that is staked in a campaign.
-    error SablierStakingCampaign_WithdrawDisabled(uint256 streamId);
+    /// @notice Thrown when the lockup contract is already whitelisted.
+    error SablierStaking_LockupAlreadyWhitelisted(ISablierLockupNFT lockup);
 
-    /// @notice Thrown when user has zero ERC20 token staked in the campaign.
-    error SablierStakingCampaign_ERC20StakingAmountZero(uint256 campaignId, address caller);
+    /// @notice Thrown when staking a stream when the associated lockup contract is not whitelisted.
+    error SablierStaking_LockupNotWhitelisted(ISablierLockupNFT lockup);
 
-    /// @notice Thrown when the stream ID is not staked in any campaign.
-    error SablierStakingCampaign_StreamNotStaked(address lockupAddress, uint256 streamId, address caller);
+    /// @notice Thrown when the user has no rewards to claim.
+    error SablierStaking_NoRewardsToClaim(uint256 campaignId, address user);
 
-    error SablierStakingCampaign_CallerNotStreamOwner(uint256 streamId, address caller, address streamOwner);
+    /// @notice Thrown when the user has no staked amount.
+    error SablierStaking_NoStakedAmount(uint256 campaignId, address user);
 
-    error SablierStakingCampaign_CampaignHasStarted(uint256 campaignId, uint40 startTime);
+    /// @notice Thrown when trying to create a campaign with reward amount as zero.
+    error SablierStaking_RewardAmountZero();
+
+    /// @notice Thrown when trying to create a campaign with reward token as the zero address.
+    error SablierStaking_RewardTokenZeroAddress();
+
+    /// @notice Thrown when trying to create a campaign with staking token as the zero address.
+    error SablierStaking_StakingTokenZeroAddress();
+
+    /// @notice Thrown when trying to stake a zero amount.
+    error SablierStaking_StakingZeroAmount();
+
+    /// @notice Thrown when trying to create a campaign with start time in the past.
+    error SablierStaking_StartTimeInPast(uint40 startTime);
+
+    /// @notice Thrown when a stream is not staked in any campaign.
+    error SablierStaking_StreamNotStaked(ISablierLockupNFT lockup, uint256 streamId);
+
+    /// @notice Thrown when a function is called by an unauthorized caller.
+    error SablierStaking_UnauthorizedCaller();
+
+    /// @notice Thrown when staking a Lockup stream with a different underlying token.
+    error SablierStaking_UnderlyingTokenDifferent(IERC20 underlyingToken, IERC20 stakingToken);
+
+    /// @notice Thrown when unstaking a zero amount.
+    error SablierStaking_UnstakingZeroAmount();
+
+    /// @notice Thrown when lockup contract has not allowed this contract to hook.
+    error SablierStaking_UnsupportedOnAllowedToHook(ISablierLockupNFT lockup);
+
+    /// @notice Thrown when trying to withdraw from a staked stream.
+    error SablierStaking_WithdrawNotAllowed(ISablierLockupNFT lockup, uint256 streamId);
 }

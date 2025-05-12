@@ -24,26 +24,32 @@ contract SablierStakingState is ISablierStakingState {
 
     /// @notice Stores the global staking details for each campaign.
     /// @dev See the documentation for GlobalSnapshot in {DataTypes}.
-    mapping(uint256 campaignId => GlobalSnapshot snapshot) private _globalSnapshot;
+    mapping(uint256 campaignId => GlobalSnapshot snapshot) internal _globalSnapshot;
 
     /// @notice Indicates whether the Lockup contract is whitelisted to stake into this contract.
-    mapping(ISablierLockupNFT lockup => bool isWhitelisted) private _lockupWhitelist;
+    mapping(ISablierLockupNFT lockup => bool isWhitelisted) internal _lockupWhitelist;
 
     /// @notice Stores campaign ID and the original owner of the staked stream.
     /// @dev See the documentation for StakedStream in {DataTypes}.
-    mapping(ISablierLockupNFT lockup => mapping(uint256 streamId => StakedStream details)) private _stakedStream;
+    mapping(ISablierLockupNFT lockup => mapping(uint256 streamId => StakedStream details)) internal _stakedStream;
 
     /// @notice The campaign parameters mapped by the campaign ID.
     /// @dev See the documentation for StakingCampaign in {DataTypes}.
-    mapping(uint256 campaignId => StakingCampaign campaign) private _stakingCampaign;
+    mapping(uint256 campaignId => StakingCampaign campaign) internal _stakingCampaign;
 
     /// @notice Stores the user's staking details for each campaign.
     /// @dev See the documentation for UserSnapshot in {DataTypes}.
-    mapping(address user => mapping(uint256 campaignId => UserSnapshot)) private _userRewards;
+    mapping(address user => mapping(uint256 campaignId => UserSnapshot snapshot)) internal _userSnapshot;
 
     /*//////////////////////////////////////////////////////////////////////////
                                      MODIFIERS
     //////////////////////////////////////////////////////////////////////////*/
+
+    /// @notice Checks that the campaign is active. It implicitly also checks that the campaign is not canceled.
+    modifier isActive(uint256 campaignId) {
+        _isActive(campaignId);
+        _;
+    }
 
     /// @notice Checks that `streamId` associated with `lockup` contract is staked in any campaign.
     modifier isStaked(ISablierLockupNFT lockup, uint256 streamId) {
@@ -60,6 +66,11 @@ contract SablierStakingState is ISablierStakingState {
     /*//////////////////////////////////////////////////////////////////////////
                           USER-FACING READ-ONLY FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
+
+    /// @inheritdoc ISablierStakingState
+    function claimableRewards(uint256 campaignId, address user) external view notNull(campaignId) returns (uint256) {
+        return _userSnapshot[user][campaignId].rewards;
+    }
 
     /// @inheritdoc ISablierStakingState
     function getAdmin(uint256 campaignId) external view notNull(campaignId) returns (address) {
@@ -125,7 +136,7 @@ contract SablierStakingState is ISablierStakingState {
         notNull(campaignId)
         returns (UserSnapshot memory)
     {
-        return _userRewards[user][campaignId];
+        return _userSnapshot[user][campaignId];
     }
 
     /// @inheritdoc ISablierStakingState
@@ -134,8 +145,34 @@ contract SablierStakingState is ISablierStakingState {
     }
 
     /*//////////////////////////////////////////////////////////////////////////
+                            INTERNAL READ-ONLY FUNCTIONS
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @dev Reverts if the campaign is canceled.
+    function _revertIfCanceled(uint256 campaignId) internal view {
+        if (_stakingCampaign[campaignId].wasCanceled) {
+            revert Errors.SablierStakingState_CampaignCanceled();
+        }
+    }
+
+    /*//////////////////////////////////////////////////////////////////////////
                             PRIVATE READ-ONLY FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
+
+    /// @dev Checks that the campaign is active. It implicitly also checks that the campaign is not canceled.
+    function _isActive(uint256 campaignId) private view {
+        uint40 currentTimestamp = uint40(block.timestamp);
+        StakingCampaign memory campaign = _stakingCampaign[campaignId];
+
+        // Check: the campaign is ongoing by comparing the current timestamp with the campaign's start and end times.
+        bool isCampaignOngoing = campaign.startTime <= currentTimestamp && currentTimestamp <= campaign.endTime;
+        if (!isCampaignOngoing) {
+            revert Errors.SablierStakingState_CampaignNotActive();
+        }
+
+        // For campaign to be active, it must not be canceled.
+        _revertIfCanceled(campaignId);
+    }
 
     /// @dev Checks that `streamId` associated with `lockup` contract is staked in any campaign.
     function _isStaked(ISablierLockupNFT lockup, uint256 streamId) private view {
@@ -147,7 +184,7 @@ contract SablierStakingState is ISablierStakingState {
     /// @dev Checks that campaign exists by verifying its admin.
     function _notNull(uint256 campaignId) private view {
         if (_stakingCampaign[campaignId].admin == address(0)) {
-            revert Errors.SablierStakingState_CampaignDoesNotExist(campaignId);
+            revert Errors.SablierStakingState_CampaignDoesNotExist();
         }
     }
 }

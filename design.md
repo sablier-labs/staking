@@ -4,10 +4,12 @@
 
 ### For staking campaign creators
 
-- Launch staking campaigns by specifying the ERC20 tokens.
-- Campaign admin can cancel the campaign until the start time.
-- The staking campaign supports multiple versions of Lockup contract as long as they implement the functions specified
-  in a custom interface.
+1. Launch staking campaigns by specifying the ERC20 tokens.
+2. Campaign admin can cancel the campaign until the start time.
+3. The staking campaign supports multiple versions of Lockup contract as long as each Lockup adheres to the following
+   requirements:
+   - It implements the interface defined in `ISablierLockupNFT.sol`.
+   - It is whitelisted by the protocol admin.
 
 ### For users who want to stake and earn rewards
 

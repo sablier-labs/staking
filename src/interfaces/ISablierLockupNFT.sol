@@ -23,7 +23,4 @@ interface ISablierLockupNFT is IERC721 {
     /// @notice Retrieves a flag indicating whether the provided address is a contract allowed to hook to Sablier
     /// when a stream is canceled or when tokens are withdrawn.
     function isAllowedToHook(address recipient) external view returns (bool result);
-
-    /// @notice Retrieves a flag indicating whether the stream is depleted.
-    function isDepleted(uint256 streamId) external view returns (bool result);
 }

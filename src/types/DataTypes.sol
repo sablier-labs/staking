@@ -55,21 +55,23 @@ struct StakedStream {
 }
 
 /// @notice A data structure to store a user's rewards and staking data for a given campaign.
-/// @param rewardsDistributedPerToken The amount of rewards distributed per staking token (includes both direct staking
+/// @param rewardsEarnedPerToken The amount of rewards earned per staking token (includes both direct staking
 /// and through Sablier streams), denoted in reward token's decimals.
+/// @param rewards The amount of reward tokens available to be claimed by the user, denoted in reward token's decimals.
 /// @param totalStakedTokens The total amount of staking tokens staked (both direct staking and through Sablier
 /// streams), denoted in staking token's decimals.
 /// @param stakedERC20Amount The amount of staking tokens staked directly, denoted in staking token's decimals.
 /// @param stakedStreamsCount The number of Sablier streams that the user has staked. The amount of staking tokens
 /// staked through Sablier stream can be calculated as `totalStakedTokens - stakedERC20Amount`.
-/// @param rewards The amount of reward tokens available to be claimed by the user, denoted in reward token's decimals.
+/// @param lastUpdateTime The last time this snapshot was updated, denoted in UNIX timestamp.
 struct UserSnapshot {
     // Slot 0
-    uint128 rewardsDistributedPerToken;
-    uint128 totalStakedTokens;
-    // Slot 1
-    uint128 stakedERC20Amount;
-    uint32 stakedStreamsCount;
-    // Slot 2
+    uint128 rewardsEarnedPerToken;
     uint128 rewards;
+    // Slot 1
+    uint128 totalStakedTokens;
+    uint128 stakedERC20Amount;
+    // Slot 2
+    uint32 stakedStreamsCount;
+    uint40 lastUpdateTime;
 }

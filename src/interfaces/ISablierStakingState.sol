@@ -13,6 +13,10 @@ interface ISablierStakingState {
                                 READ-ONLY FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
+    /// @notice Returns the amount of reward ERC20 tokens available to claim by the user.
+    /// @dev Reverts if `campaignId` references a null stream.
+    function claimableRewards(uint256 campaignId, address user) external view returns (uint256);
+
     /// @notice Returns the admin of the given campaign ID.
     /// @dev Reverts if `campaignId` references a null stream.
     function getAdmin(uint256 campaignId) external view returns (address);

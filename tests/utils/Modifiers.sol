@@ -19,6 +19,10 @@ abstract contract Modifiers is Utils {
                                        GIVEN
     //////////////////////////////////////////////////////////////////////////*/
 
+    modifier givenNotCanceled() {
+        _;
+    }
+
     modifier givenWhitelisted() {
         _;
     }
@@ -27,7 +31,20 @@ abstract contract Modifiers is Utils {
                                         WHEN
     //////////////////////////////////////////////////////////////////////////*/
 
-    modifier whenStakerNotZeroAddress() {
+    modifier whenAdminNotZeroAddress() {
+        _;
+    }
+
+    modifier whenCallerCampaignAdmin() {
+        setMsgSender(users.campaignCreator);
+        _;
+    }
+
+    modifier whenEndTimeGreaterThanStartTime() {
+        _;
+    }
+
+    modifier whenNoDelegateCall() {
         _;
     }
 
@@ -36,6 +53,22 @@ abstract contract Modifiers is Utils {
     }
 
     modifier whenNotZeroAddress() {
+        _;
+    }
+
+    modifier whenRewardTokenNotZeroAddress() {
+        _;
+    }
+
+    modifier whenStakerNotZeroAddress() {
+        _;
+    }
+
+    modifier whenStakingTokenNotZeroAddress() {
+        _;
+    }
+
+    modifier whenStartTimeInFuture() {
         _;
     }
 }

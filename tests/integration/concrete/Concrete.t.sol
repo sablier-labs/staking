@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.22;
 
+import { Errors as EvmUtilsErrors } from "@sablier/evm-utils/src/libraries/Errors.sol";
 import { Errors } from "src/libraries/Errors.sol";
 
 import { Integration_Test } from "../Integration.t.sol";
@@ -28,8 +29,10 @@ abstract contract Shared_Integration_Concrete_Test is Integration_Test {
         staking.stakeERC20Token(defaultCampaignId, STAKED_ERC20_AMOUNT);
 
         // Stake the default stream into the default campaign.
-        setMsgSender(users.staker);
         staking.stakeLockupNFT(defaultCampaignId, lockup, ids.defaultStakedStream);
+
+        // Set campaign creator as the default caller for concrete tests.
+        setMsgSender(users.campaignCreator);
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -38,7 +41,7 @@ abstract contract Shared_Integration_Concrete_Test is Integration_Test {
 
     /// @dev Creates a default campaign.
     function createDefaultCampaign() internal returns (uint256 campaignId) {
-        return staking.createStakingCampaign({
+        return staking.createCampaign({
             admin: users.campaignCreator,
             stakingToken: dai,
             startTime: START_TIME,
@@ -51,6 +54,12 @@ abstract contract Shared_Integration_Concrete_Test is Integration_Test {
     /*//////////////////////////////////////////////////////////////////////////
                                 COMMON-REVERT-TESTS
     //////////////////////////////////////////////////////////////////////////*/
+
+    function expectRevert_DelegateCall(bytes memory callData) internal {
+        (bool success, bytes memory returnData) = address(staking).delegatecall(callData);
+        assertFalse(success, "delegatecall success");
+        assertEq(returnData, abi.encodeWithSelector(EvmUtilsErrors.DelegateCall.selector), "delegatecall return data");
+    }
 
     function expectRevert_Null(bytes memory callData) internal {
         (bool success, bytes memory returnData) = address(staking).call(callData);

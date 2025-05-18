@@ -115,7 +115,7 @@ contract SablierStaking is
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc ISablierStaking
-    function cancelStakingCampaign(uint256 campaignId)
+    function cancelCampaign(uint256 campaignId)
         external
         override
         noDelegateCall
@@ -148,7 +148,7 @@ contract SablierStaking is
         campaign.rewardToken.safeTransfer({ to: msg.sender, value: amountRefunded });
 
         // Log the event.
-        emit CancelStakingCampaign(campaignId);
+        emit CancelCampaign(campaignId);
     }
 
     /// @inheritdoc ISablierStaking
@@ -185,7 +185,7 @@ contract SablierStaking is
     }
 
     /// @inheritdoc ISablierStaking
-    function createStakingCampaign(
+    function createCampaign(
         address admin,
         IERC20 stakingToken,
         uint40 startTime,
@@ -252,7 +252,7 @@ contract SablierStaking is
         rewardToken.safeTransferFrom({ from: msg.sender, to: address(this), value: totalRewards });
 
         // Log the event.
-        emit CreateStakingCampaign(campaignId, admin, stakingToken, rewardToken, startTime, endTime, totalRewards);
+        emit CreateCampaign(campaignId, admin, stakingToken, rewardToken, startTime, endTime, totalRewards);
     }
 
     /// @inheritdoc ISablierLockupRecipient

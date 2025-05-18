@@ -36,13 +36,13 @@ interface ISablierStaking is
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Emitted when a campaign is created before the start time.
-    event CancelStakingCampaign(uint256 indexed campaignId);
+    event CancelCampaign(uint256 indexed campaignId);
 
     /// @notice Emitted when rewards are claimed.
     event ClaimRewards(uint256 indexed campaignId, address indexed user, uint256 amountClaimed);
 
     /// @notice Emitted when a new staking campaign is created.
-    event CreateStakingCampaign(
+    event CreateCampaign(
         uint256 indexed campaignId,
         address indexed admin,
         IERC20 indexed stakingToken,
@@ -123,7 +123,7 @@ interface ISablierStaking is
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Cancels the staking campaign and refunds rewards amount to the campaign admin.
-    /// @dev Emits a {Transfer} and {CancelStakingCampaign} events.
+    /// @dev Emits a {Transfer} and {CancelCampaign} events.
     ///
     /// Requirements:
     ///  - Must not be delegate called.
@@ -132,7 +132,7 @@ interface ISablierStaking is
     ///  - The campaign's start time must be in the future.
     ///
     /// @param campaignId The campaign ID to cancel.
-    function cancelStakingCampaign(uint256 campaignId) external returns (uint128 amountRefunded);
+    function cancelCampaign(uint256 campaignId) external returns (uint128 amountRefunded);
 
     /// @notice Claims the rewards earned by `msg.sender` in the specified campaign.
     /// @dev Emits a {Transfer} and {ClaimRewards} events.
@@ -151,7 +151,7 @@ interface ISablierStaking is
     function claimRewards(uint256 campaignId) external returns (uint128 rewards);
 
     /// @notice Creates a new staking campaign and transfer the total reward amount from `msg.sender` to this contract.
-    /// @dev Emits a {Transfer} and {CreateStakingCampaign} events.
+    /// @dev Emits a {Transfer} and {CreateCampaign} events.
     ///
     /// Requirements:
     ///  - Must not be delegate called.
@@ -170,7 +170,7 @@ interface ISablierStaking is
     /// @param rewardToken The ERC20 token that will be distributed as rewards.
     /// @param totalRewards The amount of reward tokens to distribute, denoted in reward token's decimals.
     /// @return campaignId The ID of the newly created campaign.
-    function createStakingCampaign(
+    function createCampaign(
         address admin,
         IERC20 stakingToken,
         uint40 startTime,

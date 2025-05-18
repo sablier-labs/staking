@@ -33,7 +33,7 @@ abstract contract Integration_Test is Base_Test {
         // Set the variables in Modifiers contract.
         setVariables(users);
 
-        // Set campaign creator as the default caller.
+        // Set campaign creator as the default caller for integration tests.
         setMsgSender(users.campaignCreator);
     }
 

@@ -292,7 +292,7 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     function test_WasCanceledGivenCanceled() external whenNotNull {
         // Cancel the campaign.
         setMsgSender(users.campaignCreator);
-        staking.cancelStakingCampaign(defaultCampaignId);
+        staking.cancelCampaign(defaultCampaignId);
 
         // It should return true.
         bool actualWasCanceled = staking.wasCanceled(defaultCampaignId);

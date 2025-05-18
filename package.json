@@ -23,7 +23,7 @@
     "prettier": "^3.3.2",
     "solady": "0.0.208",
     "solarray": "github:evmcheb/solarray#a547630",
-    "solhint": "^5.0.3"
+    "solhint": "^5.1.0"
   },
   "files": [
     "artifacts",

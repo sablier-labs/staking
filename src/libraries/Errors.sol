@@ -13,16 +13,22 @@ library Errors {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Thrown when an action is attempted on a canceled campaign.
-    error SablierStakingState_CampaignCanceled();
+    error SablierStakingState_CampaignCanceled(uint256 campaignId);
 
     /// @notice Thrown when an action is attempted on a non-existent campaign.
-    error SablierStakingState_CampaignDoesNotExist();
+    error SablierStakingState_CampaignDoesNotExist(uint256 campaignId);
 
     /// @notice Thrown when an action is attempted on an inactive campaign.
-    error SablierStakingState_CampaignNotActive();
+    error SablierStakingState_CampaignNotActive(uint256 campaignId);
+
+    /// @notice Thrown when the lockup contract is not whitelisted.
+    error SablierStakingState_LockupNotWhitelisted(ISablierLockupNFT lockup);
 
     /// @notice Thrown when the stream ID associated with Lockup contract is not staked in any campaign.
     error SablierStakingState_StreamNotStaked(ISablierLockupNFT lockup, uint256 streamId);
+
+    /// @notice Thrown when the input argument is the zero address.
+    error SablierStakingState_ZeroAddress();
 
     /*//////////////////////////////////////////////////////////////////////////
                                   SABLIER-STAKING
@@ -62,11 +68,14 @@ library Errors {
     /// @notice Thrown when trying to create a campaign with end time not greater than start time.
     error SablierStaking_EndTimeNotGreaterThanStartTime(uint40 endTime, uint40 startTime);
 
-    /// @notice Thrown when the lockup contract is already whitelisted.
-    error SablierStaking_LockupAlreadyWhitelisted(ISablierLockupNFT lockup);
+    /// @notice Thrown when the lockup contract at the given index is already whitelisted.
+    error SablierStaking_LockupAlreadyWhitelisted(uint256 index, ISablierLockupNFT lockup);
 
     /// @notice Thrown when staking a stream when the associated lockup contract is not whitelisted.
     error SablierStaking_LockupNotWhitelisted(ISablierLockupNFT lockup);
+
+    /// @notice Thrown when the lockup contract at the given index is the zero address.
+    error SablierStaking_LockupZeroAddress(uint256 index);
 
     /// @notice Thrown when the user has no rewards to claim.
     error SablierStaking_NoRewardsToClaim(uint256 campaignId, address user);
@@ -101,8 +110,8 @@ library Errors {
     /// @notice Thrown when unstaking a zero amount.
     error SablierStaking_UnstakingZeroAmount();
 
-    /// @notice Thrown when lockup contract has not allowed this contract to hook.
-    error SablierStaking_UnsupportedOnAllowedToHook(ISablierLockupNFT lockup);
+    /// @notice Thrown when lockup contract at the given index has not allowed this contract to hook.
+    error SablierStaking_UnsupportedOnAllowedToHook(uint256 index, ISablierLockupNFT lockup);
 
     /// @notice Thrown when trying to withdraw from a staked stream.
     error SablierStaking_WithdrawNotAllowed(ISablierLockupNFT lockup, uint256 streamId);

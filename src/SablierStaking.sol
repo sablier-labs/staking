@@ -463,14 +463,19 @@ contract SablierStaking is ISablierStaking, SablierStakingState, RoleAdminable, 
         uint256 length = lockups.length;
 
         for (uint256 i = 0; i < length; ++i) {
+            // Check: the lockup contract is not the zero address.
+            if (address(lockups[i]) == address(0)) {
+                revert Errors.SablierStaking_LockupZeroAddress(i);
+            }
+
             // Check: the lockup contract is not already whitelisted.
             if (_lockupWhitelist[lockups[i]]) {
-                revert Errors.SablierStaking_LockupAlreadyWhitelisted(lockups[i]);
+                revert Errors.SablierStaking_LockupAlreadyWhitelisted(i, lockups[i]);
             }
 
             // Check: the lockup contract returns `true` when `isAllowedToHook` is called.
             if (!lockups[i].isAllowedToHook(address(this))) {
-                revert Errors.SablierStaking_UnsupportedOnAllowedToHook(lockups[i]);
+                revert Errors.SablierStaking_UnsupportedOnAllowedToHook(i, lockups[i]);
             }
 
             // Effect: whitelist the lockup contract.
@@ -583,7 +588,7 @@ contract SablierStaking is ISablierStaking, SablierStakingState, RoleAdminable, 
         StakingCampaign memory campaign = _stakingCampaign[campaignId];
 
         // Return if the campaign has not started.
-        if (uint40(block.timestamp) <= campaign.startTime) {
+        if (uint40(block.timestamp) < campaign.startTime) {
             return;
         }
 
@@ -599,18 +604,18 @@ contract SablierStaking is ISablierStaking, SablierStakingState, RoleAdminable, 
 
         uint128 totalRewardsDistributedPerToken = globalSnapshot.rewardsDistributedPerToken;
 
-        // Update the global snapshot if the rewards distributed per ERC20 token since the last snapshot is
-        // greater than 0.
+        // Update the global snapshot if the rewards distributed per ERC20 token since the last snapshot is greater than
+        // 0.
         if (rewardsDistributedPerTokenSinceLastSnapshot > 0) {
             // Update the cumulative rewards distributed per ERC20 token since the beginning of the campaign.
             totalRewardsDistributedPerToken += rewardsDistributedPerTokenSinceLastSnapshot;
 
             // Effect: update the rewards distributed per ERC20 token.
             _globalSnapshot[campaignId].rewardsDistributedPerToken = totalRewardsDistributedPerToken;
-
-            // Effect: update the last time update.
-            _globalSnapshot[campaignId].lastUpdateTime = uint40(block.timestamp);
         }
+
+        // Effect: update the last time update.
+        _globalSnapshot[campaignId].lastUpdateTime = uint40(block.timestamp);
 
         UserSnapshot memory userSnapshot = _userSnapshot[user][campaignId];
 

@@ -13,13 +13,13 @@ interface ISablierStakingState {
                                 READ-ONLY FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice Returns the amount of reward ERC20 tokens available to claim by the user.
-    /// @dev Reverts if `campaignId` references a null stream.
-    function claimableRewards(uint256 campaignId, address user) external view returns (uint256);
-
     /// @notice Returns the admin of the given campaign ID.
     /// @dev Reverts if `campaignId` references a null stream.
     function getAdmin(uint256 campaignId) external view returns (address);
+
+    /// @notice Returns the amount of reward ERC20 tokens available to claim by the user.
+    /// @dev Reverts if `campaignId` references a null stream or `user` is the zero address.
+    function getClaimableRewards(uint256 campaignId, address user) external view returns (uint256);
 
     /// @notice Returns the end time of the given campaign ID, denoted in UNIX timestamp.
     /// @dev Reverts if `campaignId` references a null stream.
@@ -48,6 +48,7 @@ interface ISablierStakingState {
     function globalSnapshot(uint256 campaignId) external view returns (GlobalSnapshot memory snapshot);
 
     /// @notice Returns true if the lockup contract is whitelisted to stake.
+    /// @dev Reverts if `lockup` is the zero address.
     function isLockupWhitelisted(ISablierLockupNFT lockup) external view returns (bool);
 
     /// @notice Returns the role authorized to whitelist the lockup contracts for staking into the campaign.
@@ -57,7 +58,8 @@ interface ISablierStakingState {
     function nextCampaignId() external view returns (uint256);
 
     /// @notice Retrieves the details of a stream staked.
-    /// @dev Reverts if the stream is not staked in any campaign.
+    /// @dev Reverts if the lockup contract either is the zero address or is not whitelisted or the stream is not staked
+    /// in any campaign.
     /// @param lockup The lockup contract for the query.
     /// @param streamId The stream ID for the query.
     /// @return campaignId The campaign ID of the campaign in which the stream is staked.
@@ -71,7 +73,7 @@ interface ISablierStakingState {
         returns (uint256 campaignId, address owner);
 
     /// @notice Retrieves the snapshot data of a user for the given campaign ID.
-    /// @dev Reverts if `campaignId` references a null stream.
+    /// @dev Reverts if `campaignId` references a null stream or `user` is the zero address.
     /// @param campaignId The campaign ID for the query.
     /// @param user The user address for the query.
     /// @return snapshot See the documentation for UserSnapshot in {DataTypes}.

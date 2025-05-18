@@ -299,8 +299,10 @@ interface ISablierStaking is ISablierStakingState, IRoleAdminable, IERC721Receiv
     ///
     /// Notes:
     ///  - It does nothing if the array is empty.
+    ///  - The entire execution reverts if any of the requirements are not met for any of the Lockup contracts.
     ///
     /// Requirements:
+    ///  - Each lockup contract must not be the zero address.
     ///  - Each lockup contract must not already be whitelisted.
     ///  - Each lockup contract must return `true` when `isAllowedToHook` is called with this contract's address.
     ///  - `msg.sender` must either be the protocol admin or have the `LOCKUP_WHITELIST_ROLE`.

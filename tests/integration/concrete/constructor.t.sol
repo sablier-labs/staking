@@ -15,15 +15,18 @@ contract Constructor_Integration_Concrete_Test is Shared_Integration_Concrete_Te
         // Construct the contract.
         SablierStaking constructedProtocol = new SablierStaking(users.admin);
 
-        // {SablierStaking.nextCampaignId}
-        uint256 actualCampaignId = constructedProtocol.nextCampaignId();
-        uint256 expectedCampaignId = 1;
-        assertEq(actualCampaignId, expectedCampaignId, "nextCampaignId");
-
         // {Adminable.constructor}
         address actualAdmin = constructedProtocol.admin();
         address expectedAdmin = users.admin;
         assertEq(actualAdmin, expectedAdmin, "admin");
+
+        // {SablierStaking.LOCKUP_WHITELIST_ROLE}
+        assertEq(constructedProtocol.LOCKUP_WHITELIST_ROLE(), keccak256("LOCKUP_WHITELIST_ROLE"), "whitelist role");
+
+        // {SablierStaking.nextCampaignId}
+        uint256 actualCampaignId = constructedProtocol.nextCampaignId();
+        uint256 expectedCampaignId = 1;
+        assertEq(actualCampaignId, expectedCampaignId, "nextCampaignId");
 
         // {SablierStaking.supportsInterface}
         assertTrue(

@@ -1,0 +1,120 @@
+Getters_Integration_Concrete_Test::getAdmin
+├── when null
+│  └── it should revert
+└── when not null
+   └── it should return the admin
+
+Getters_Integration_Concrete_Test::getClaimableRewards
+├── when null
+│  └── it should revert
+└── when not null
+   ├── when staker zero address
+   │  └── it should revert
+   └── when staker not zero address
+      ├── when rewards zero
+      │  └── it should return zero
+      └── when rewards not zero
+         └── it should return non-zero
+
+Getters_Integration_Concrete_Test::getEndTime
+├── when null
+│  └── it should revert
+└── when not null
+   └── it should return the end time
+
+Getters_Integration_Concrete_Test::getRewardToken
+├── when null
+│  └── it should revert
+└── when not null
+   └── it should return the reward token
+
+Getters_Integration_Concrete_Test::getStakingToken
+├── when null
+│  └── it should revert
+└── when not null
+   └── it should return the staking token
+
+Getters_Integration_Concrete_Test::getStartTime
+├── when null
+│  └── it should revert
+└── when not null
+   └── it should return the start time
+
+Getters_Integration_Concrete_Test::getTotalRewards
+├── when null
+│  └── it should revert
+└── when not null
+   └── it should return the total rewards
+
+Getters_Integration_Concrete_Test::globalSnapshot
+├── when null
+│  └── it should revert
+└── when not null
+   ├── when start time in future
+   │  ├── it should return zero rewards distributed per token
+   │  ├── it should return correct total staked tokens
+   │  └── it should return zero last update time
+   ├── when start time in present
+   │  ├── it should return zero rewards distributed per token
+   │  ├── it should return correct total staked tokens
+   │  └── it should return correct last update time
+   └── when start time in past
+      ├── it should return correct global snapshot struct
+      ├── it should return correct total staked tokens
+      └── it should return correct last update time
+
+Getters_Integration_Concrete_Test::isLockupWhitelisted
+├── when zero address
+│  └── it should revert
+└── when not zero address
+   ├── given not whitelisted
+   │  └── it should return false
+   └── given whitelisted
+      └── it should return true
+
+Getters_Integration_Concrete_Test::stakedStream
+├── when zero address
+│  └── it should revert
+└── when not zero address
+   ├── given not whitelisted
+   │  └── it should revert
+   └── given whitelisted
+      ├── when stream not staked
+      │  └── it should revert
+      └── when stream staked
+         └── it should return campaign id and owner
+
+Getters_Integration_Concrete_Test::userSnapshot
+├── when null
+│  └── it should revert
+└── when not null
+   ├── when zero address
+   │  └── it should revert
+   └── when not zero address
+      ├── when start time in future
+      │  ├── it should return zero for rewardsEarnedPerToken and rewards
+      │  ├── it should return zero last update time
+      │  ├── it should return correct staked ERC20 amount
+      │  ├── it should return correct staked streams count
+      │  └── it should return correct total staked tokens
+      ├── when start time in present
+      │  ├── it should return zero for rewardsEarnedPerToken and rewards
+      │  ├── it should return correct last update time
+      │  ├── it should return correct staked ERC20 amount
+      │  ├── it should return correct staked streams count
+      │  └── it should return correct total staked tokens
+      └── when start time in past
+         ├── it should return correct rewardsEarnedPerToken and rewards
+         ├── it should return correct last update time
+         ├── it should return correct staked ERC20 amount
+         ├── it should return correct staked streams count
+         └── it should return correct total staked tokens
+
+Getters_Integration_Concrete_Test::wasCanceled
+├── when null
+│  └── it should revert
+└── when not null
+   ├── given not canceled
+   │  └── it should return false
+   └── given canceled
+      └── it should return true

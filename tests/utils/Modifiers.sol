@@ -14,4 +14,28 @@ abstract contract Modifiers is Utils {
     function setVariables(Users memory _users) public {
         users = _users;
     }
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                       GIVEN
+    //////////////////////////////////////////////////////////////////////////*/
+
+    modifier givenWhitelisted() {
+        _;
+    }
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                        WHEN
+    //////////////////////////////////////////////////////////////////////////*/
+
+    modifier whenStakerNotZeroAddress() {
+        _;
+    }
+
+    modifier whenNotNull() {
+        _;
+    }
+
+    modifier whenNotZeroAddress() {
+        _;
+    }
 }

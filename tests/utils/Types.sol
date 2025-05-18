@@ -2,10 +2,12 @@
 pragma solidity >=0.8.22;
 
 struct StreamIds {
-    // Default cancelable stream.
-    uint256 defaultStream;
+    // Default cancelable stream that will be staked into the default campaign.
+    uint256 defaultStakedStream;
+    // A stream that will not be staked into the default campaign.
+    uint256 defaultUnstakedStream;
     // A stream with a different token.
-    uint256 defaultStreamWithDifferentToken;
+    uint256 differentTokenStream;
     // A stream that is not allowed to hook with the staking contract.
     uint256 notAllowedToHookStream;
     // A non-cancelable stream.

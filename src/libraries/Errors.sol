@@ -66,7 +66,7 @@ library Errors {
     error SablierStaking_CampaignHasEnded(uint40 endTime);
 
     /// @notice Thrown when trying to create a campaign with end time not greater than start time.
-    error SablierStaking_EndTimeNotGreaterThanStartTime(uint40 endTime, uint40 startTime);
+    error SablierStaking_EndTimeNotGreaterThanStartTime(uint40 startTime, uint40 endTime);
 
     /// @notice Thrown when the lockup contract at the given index is already whitelisted.
     error SablierStaking_LockupAlreadyWhitelisted(uint256 index, ISablierLockupNFT lockup);

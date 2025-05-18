@@ -25,7 +25,12 @@ import { ISablierStakingState } from "./ISablierStakingState.sol";
 ///  - Cancelling a staked stream would adjust the stakers total amount staked.
 ///  - Withdrawing from a staked stream would revert.
 ///  - Campaign admin can cancel the campaign until the start time.
-interface ISablierStaking is ISablierStakingState, IRoleAdminable, IERC721Receiver, ISablierLockupRecipient {
+interface ISablierStaking is
+    IERC721Receiver, // 0 inherited components
+    IRoleAdminable, // 1 inherited component
+    ISablierLockupRecipient, // 1 inherited component
+    ISablierStakingState // 0 inherited components
+{
     /*//////////////////////////////////////////////////////////////////////////
                                        EVENTS
     //////////////////////////////////////////////////////////////////////////*/
@@ -121,6 +126,7 @@ interface ISablierStaking is ISablierStakingState, IRoleAdminable, IERC721Receiv
     /// @dev Emits a {Transfer} and {CancelStakingCampaign} events.
     ///
     /// Requirements:
+    ///  - Must not be delegate called.
     ///  - `campaignId` must not reference a null stream or a canceled campaign.
     ///  - `msg.sender` must be the campaign admin.
     ///  - The campaign's start time must be in the future.
@@ -132,10 +138,11 @@ interface ISablierStaking is ISablierStakingState, IRoleAdminable, IERC721Receiv
     /// @dev Emits a {Transfer} and {ClaimRewards} events.
     ///
     /// Notes:
-    /// - Updates global rewards and user rewards data.
-    /// - Sets the last time update for user.
+    ///  - Updates global rewards and user rewards data.
+    ///  - Sets the last time update for user.
     ///
     /// Requirements:
+    ///  - Must not be delegate called.
     ///  - `campaignId` must not reference a null stream or a canceled campaign.
     ///  - Claimable rewards must be greater than 0.
     ///
@@ -147,6 +154,7 @@ interface ISablierStaking is ISablierStakingState, IRoleAdminable, IERC721Receiv
     /// @dev Emits a {Transfer} and {CreateStakingCampaign} events.
     ///
     /// Requirements:
+    ///  - Must not be delegate called.
     ///  - `admin` must not be the zero address.
     ///  - `startTime` must be greater than or equal to the `block.timestamp`.
     ///  - `endTime` must be greater than `startTime`.
@@ -173,54 +181,15 @@ interface ISablierStaking is ISablierStakingState, IRoleAdminable, IERC721Receiv
         external
         returns (uint256 campaignId);
 
-    /// @notice Handles the hook call from the Lockup contract when a staked stream is canceled.
-    /// @dev This function permits cancelling a staked stream and adjusts the total staked tokens in the campaign
-    /// accordingly.
-    ///
-    /// Notes:
-    /// - Updates global rewards and user rewards data.
-    ///
-    /// Requirements:
-    /// - `msg.sender` must be a whitelisted Lockup contract.
-    ///  - `streamId` must be staked in a campaign.
-    ///
-    /// @param streamId The ID of the stream on which cancel is called.
-    /// @param sender The address that initiated the cancellation.
-    /// @param senderAmount The amount of tokens refunded to the sender.
-    /// @param recipientAmount The amount of the tokens belonging to the recipient.
-    /// @return The required selector.
-    function onSablierLockupCancel(
-        uint256 streamId,
-        address sender,
-        uint128 senderAmount,
-        uint128 recipientAmount
-    )
-        external
-        returns (bytes4);
-
-    /// @notice Handles the hook call from the Lockup contract when withdraw is called on a staked stream.
-    /// @dev This function reverts and does not permit withdrawing from a staked stream.
-    ///
-    /// @param streamId The ID of the stream on which withdraw is called.
-    /// @param caller The address that initiated the withdrawal.
-    /// @param recipient The recipient of the stream which is this contract.
-    /// @param amount The amount of tokens to withdraw.
-    /// @return The required selector.
-    function onSablierLockupWithdraw(
-        uint256 streamId,
-        address caller,
-        address recipient,
-        uint128 amount
-    )
-        external
-        view
-        returns (bytes4);
-
     /// @notice Snapshot global rewards and user rewards data for the specified campaign and user.
     /// @dev Emits a {SnapshotRewards} event.
     ///
     /// Notes:
     ///  - If user has no stakes, it only snapshots the global rewards data.
+    ///
+    /// Requirements:
+    ///  - Must not be delegate called.
+    ///  - `campaignId` must not reference a null stream or a canceled campaign.
     ///
     /// @param campaignId The campaign ID to snapshot rewards data for.
     /// @param user The address of the user to snapshot rewards data for.
@@ -235,6 +204,7 @@ interface ISablierStaking is ISablierStakingState, IRoleAdminable, IERC721Receiv
     /// time.
     ///
     /// Requirements:
+    ///  - Must not be delegate called.
     ///  - `campaignId` must not reference a null stream or a canceled campaign.
     ///  - Campaign end time must be in the future.
     ///  - `amount` must be greater than 0.
@@ -252,6 +222,7 @@ interface ISablierStaking is ISablierStakingState, IRoleAdminable, IERC721Receiv
     /// time.
     ///
     /// Requirements:
+    ///  - Must not be delegate called.
     ///  - `campaignId` must not reference a null stream or a canceled campaign.
     ///  - `lockup` must be a whitelisted Lockup contract.
     ///  - Campaign end time must be in the future.
@@ -272,8 +243,9 @@ interface ISablierStaking is ISablierStakingState, IRoleAdminable, IERC721Receiv
     ///  - Unstaking does not claim any rewards.
     ///
     /// Requirements:
-    /// - `campaignId` must not reference a null stream.
-    /// - `amount` must be greater than 0 and must not exceed the user's staked ERC20 amount in the campaign.
+    ///  - Must not be delegate called.
+    ///  - `campaignId` must not reference a null stream.
+    ///  - `amount` must be greater than 0 and must not exceed the user's staked ERC20 amount in the campaign.
     ///
     /// @param campaignId The campaign ID to unstake the ERC20 token from.
     /// @param amount The amount of ERC20 tokens to unstake.
@@ -287,8 +259,9 @@ interface ISablierStaking is ISablierStakingState, IRoleAdminable, IERC721Receiv
     ///  - Unstaking does not claim any rewards.
     ///
     /// Requirements:
-    /// - The stream ID associated with `lockup` must be staked in a campaign.
-    /// - `msg.sender` must be the original owner of the stream stored in {StakedStream} struct.
+    ///  - Must not be delegate called.
+    ///  - The stream ID associated with `lockup` must be staked in a campaign.
+    ///  - `msg.sender` must be the original owner of the stream stored in {StakedStream} struct.
     ///
     /// @param lockup The Lockup contract associated with the stream ID.
     /// @param streamId The ID of the stream to unstake.
@@ -302,6 +275,7 @@ interface ISablierStaking is ISablierStakingState, IRoleAdminable, IERC721Receiv
     ///  - The entire execution reverts if any of the requirements are not met for any of the Lockup contracts.
     ///
     /// Requirements:
+    ///  - Must not be delegate called.
     ///  - Each lockup contract must not be the zero address.
     ///  - Each lockup contract must not already be whitelisted.
     ///  - Each lockup contract must return `true` when `isAllowedToHook` is called with this contract's address.

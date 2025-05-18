@@ -5,6 +5,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { ERC721Holder } from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import { NoDelegateCall } from "@sablier/evm-utils/src/NoDelegateCall.sol";
 import { RoleAdminable } from "@sablier/evm-utils/src/RoleAdminable.sol";
 import { ISablierLockupRecipient } from "@sablier/lockup/src/interfaces/ISablierLockupRecipient.sol";
 
@@ -16,7 +17,13 @@ import { GlobalSnapshot, StakedStream, StakingCampaign, UserSnapshot } from "./t
 
 /// @title SablierStaking
 /// @notice See the documentation in {ISablierStaking}.
-contract SablierStaking is ISablierStaking, SablierStakingState, RoleAdminable, ERC721Holder {
+contract SablierStaking is
+    ERC721Holder, // 1 inherited component
+    ISablierStaking, // 6 inherited components
+    NoDelegateCall, // 0 inherited components
+    RoleAdminable, // 3 inherited components
+    SablierStakingState // 1 inherited component
+{
     using SafeERC20 for IERC20;
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -31,6 +38,27 @@ contract SablierStaking is ISablierStaking, SablierStakingState, RoleAdminable, 
     /*//////////////////////////////////////////////////////////////////////////
                           USER-FACING READ-ONLY FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
+
+    /// @inheritdoc ISablierLockupRecipient
+    /// @notice Handles the hook call from the Lockup contract when withdraw is called on a staked stream.
+    /// @dev This function reverts and does not permit withdrawing from a staked stream.
+    ///
+    /// @param streamId The ID of the stream on which withdraw is called.
+    /// @return The required selector.
+    function onSablierLockupWithdraw(
+        uint256 streamId,
+        address, /* caller */
+        address, /* recipient */
+        uint128 /* amount */
+    )
+        external
+        view
+        override
+        returns (bytes4)
+    {
+        // Revert regardless of the parameters.
+        revert Errors.SablierStaking_WithdrawNotAllowed(ISablierLockupNFT(msg.sender), streamId);
+    }
 
     /// @inheritdoc ISablierStaking
     function rewardRate(uint256 campaignId)
@@ -90,6 +118,7 @@ contract SablierStaking is ISablierStaking, SablierStakingState, RoleAdminable, 
     function cancelStakingCampaign(uint256 campaignId)
         external
         override
+        noDelegateCall
         notNull(campaignId)
         returns (uint128 amountRefunded)
     {
@@ -123,7 +152,13 @@ contract SablierStaking is ISablierStaking, SablierStakingState, RoleAdminable, 
     }
 
     /// @inheritdoc ISablierStaking
-    function claimRewards(uint256 campaignId) external notNull(campaignId) returns (uint128 rewards) {
+    function claimRewards(uint256 campaignId)
+        external
+        override
+        noDelegateCall
+        notNull(campaignId)
+        returns (uint128 rewards)
+    {
         // Effect: snapshot rewards data to the latest values.
         _snapshotRewards(campaignId, msg.sender);
 
@@ -160,6 +195,7 @@ contract SablierStaking is ISablierStaking, SablierStakingState, RoleAdminable, 
     )
         external
         override
+        noDelegateCall
         returns (uint256 campaignId)
     {
         // Check: admin is not the zero address.
@@ -174,7 +210,7 @@ contract SablierStaking is ISablierStaking, SablierStakingState, RoleAdminable, 
 
         // Check: the end time is greater than the start time.
         if (endTime <= startTime) {
-            revert Errors.SablierStaking_EndTimeNotGreaterThanStartTime(endTime, startTime);
+            revert Errors.SablierStaking_EndTimeNotGreaterThanStartTime(startTime, endTime);
         }
 
         // Check: staking token is not the zero address.
@@ -219,7 +255,22 @@ contract SablierStaking is ISablierStaking, SablierStakingState, RoleAdminable, 
         emit CreateStakingCampaign(campaignId, admin, stakingToken, rewardToken, startTime, endTime, totalRewards);
     }
 
-    /// @inheritdoc ISablierStaking
+    /// @inheritdoc ISablierLockupRecipient
+    /// @notice Handles the hook call from the Lockup contract when a staked stream is canceled.
+    /// @dev This function permits cancelling a staked stream and adjusts the total staked tokens in the campaign
+    /// accordingly.
+    ///
+    /// Notes:
+    ///  - Updates global rewards and user rewards data.
+    ///
+    /// Requirements:
+    ///  - Must not be delegate called.
+    ///  - `msg.sender` must be a whitelisted Lockup contract.
+    ///  - `streamId` must be staked in a campaign.
+    ///
+    /// @param streamId The ID of the stream on which cancel is called.
+    /// @param senderAmount The amount of tokens refunded to the sender.
+    /// @return The required selector.
     function onSablierLockupCancel(
         uint256 streamId,
         address, /* sender */
@@ -228,6 +279,7 @@ contract SablierStaking is ISablierStaking, SablierStakingState, RoleAdminable, 
     )
         external
         override
+        noDelegateCall
         returns (bytes4)
     {
         // Check: `msg.sender` is a whitelisted Lockup contract.
@@ -255,29 +307,13 @@ contract SablierStaking is ISablierStaking, SablierStakingState, RoleAdminable, 
     }
 
     /// @inheritdoc ISablierStaking
-    function onSablierLockupWithdraw(
-        uint256 streamId,
-        address, /* caller */
-        address, /* recipient */
-        uint128 /* amount */
-    )
-        external
-        view
-        override
-        returns (bytes4)
-    {
-        // Revert regardless of the parameters.
-        revert Errors.SablierStaking_WithdrawNotAllowed(ISablierLockupNFT(msg.sender), streamId);
-    }
-
-    /// @inheritdoc ISablierStaking
-    function snapshotRewards(uint256 campaignId, address user) external {
+    function snapshotRewards(uint256 campaignId, address user) external override noDelegateCall {
         // Effect: snapshot rewards data to the latest values for `user`.
         _snapshotRewards(campaignId, user);
     }
 
     /// @inheritdoc ISablierStaking
-    function stakeERC20Token(uint256 campaignId, uint128 amount) external override notNull(campaignId) {
+    function stakeERC20Token(uint256 campaignId, uint128 amount) external override noDelegateCall notNull(campaignId) {
         // Check: the campaign is not canceled.
         _revertIfCanceled(campaignId);
 
@@ -324,6 +360,7 @@ contract SablierStaking is ISablierStaking, SablierStakingState, RoleAdminable, 
     )
         external
         override
+        noDelegateCall
         notNull(campaignId)
     {
         // Check: the campaign is not canceled.
@@ -382,7 +419,15 @@ contract SablierStaking is ISablierStaking, SablierStakingState, RoleAdminable, 
     }
 
     /// @inheritdoc ISablierStaking
-    function unstakeERC20Token(uint256 campaignId, uint128 amount) external override notNull(campaignId) {
+    function unstakeERC20Token(
+        uint256 campaignId,
+        uint128 amount
+    )
+        external
+        override
+        noDelegateCall
+        notNull(campaignId)
+    {
         // Check: the amount is not zero.
         if (amount == 0) {
             revert Errors.SablierStaking_UnstakingZeroAmount();
@@ -416,7 +461,7 @@ contract SablierStaking is ISablierStaking, SablierStakingState, RoleAdminable, 
     }
 
     /// @inheritdoc ISablierStaking
-    function unstakeLockupNFT(ISablierLockupNFT lockup, uint256 streamId) external override {
+    function unstakeLockupNFT(ISablierLockupNFT lockup, uint256 streamId) external override noDelegateCall {
         StakedStream memory stakedStream = _stakedStream[lockup][streamId];
         uint256 campaignId = stakedStream.campaignId;
 
@@ -459,7 +504,12 @@ contract SablierStaking is ISablierStaking, SablierStakingState, RoleAdminable, 
     }
 
     /// @inheritdoc ISablierStaking
-    function whitelistLockups(ISablierLockupNFT[] calldata lockups) external override onlyRole(LOCKUP_WHITELIST_ROLE) {
+    function whitelistLockups(ISablierLockupNFT[] calldata lockups)
+        external
+        override
+        noDelegateCall
+        onlyRole(LOCKUP_WHITELIST_ROLE)
+    {
         uint256 length = lockups.length;
 
         for (uint256 i = 0; i < length; ++i) {

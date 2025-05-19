@@ -644,19 +644,15 @@ contract SablierStaking is
 
         GlobalSnapshot memory globalSnapshot = _globalSnapshot[campaignId];
 
-        // Return if the last time update is not less than the campaign end time.
-        if (globalSnapshot.lastUpdateTime >= campaign.endTime) {
-            return;
-        }
-
         // Retrieve the rewards distributed per ERC20 token since the last snapshot.
         uint128 rewardsDistributedPerTokenSinceLastSnapshot = _rewardsDistributedPerTokenSinceLastSnapshot(campaignId);
 
         uint128 totalRewardsDistributedPerToken = globalSnapshot.rewardsDistributedPerToken;
 
-        // Update the global snapshot if the rewards distributed per ERC20 token since the last snapshot is greater than
-        // 0.
-        if (rewardsDistributedPerTokenSinceLastSnapshot > 0) {
+        // Update the global snapshot if:
+        //  - The rewards distributed per ERC20 token since the last snapshot is greater than 0.
+        //  - The last time update is less than the campaign end time.
+        if (rewardsDistributedPerTokenSinceLastSnapshot > 0 && globalSnapshot.lastUpdateTime < campaign.endTime) {
             // Update the cumulative rewards distributed per ERC20 token since the beginning of the campaign.
             totalRewardsDistributedPerToken += rewardsDistributedPerTokenSinceLastSnapshot;
 
@@ -669,8 +665,12 @@ contract SablierStaking is
 
         UserSnapshot memory userSnapshot = _userSnapshot[user][campaignId];
 
-        // If the user has tokens staked, update the user snapshot.
-        if (userSnapshot.totalStakedTokens > 0) {
+        uint128 updatedUserRewards;
+
+        // Update the user snapshot if:
+        //  - The user has tokens staked.
+        //  - The last time update is less than the campaign end time.
+        if (userSnapshot.totalStakedTokens > 0 && userSnapshot.lastUpdateTime < campaign.endTime) {
             // Compute the rewards earned per ERC20 token by the user since the previous snapshot.
             uint128 rewardsEarnedPerTokenSinceLastSnapshot =
                 totalRewardsDistributedPerToken - userSnapshot.rewardsEarnedPerToken;
@@ -680,7 +680,8 @@ contract SablierStaking is
                 rewardsEarnedPerTokenSinceLastSnapshot * userSnapshot.totalStakedTokens;
 
             // Effect: update the rewards earned by the user.
-            _userSnapshot[user][campaignId].rewards = userSnapshot.rewards + rewardsEarnedSinceLastSnapshot;
+            updatedUserRewards = userSnapshot.rewards + rewardsEarnedSinceLastSnapshot;
+            _userSnapshot[user][campaignId].rewards = updatedUserRewards;
 
             // Effect: update the rewards earned per ERC20 token by the user.
             _userSnapshot[user][campaignId].rewardsEarnedPerToken = totalRewardsDistributedPerToken;
@@ -688,5 +689,15 @@ contract SablierStaking is
             // Effect: update the last time update.
             _userSnapshot[user][campaignId].lastUpdateTime = uint40(block.timestamp);
         }
+
+        // Log the event.
+        emit SnapshotRewards({
+            campaignId: campaignId,
+            lastUpdateTime: uint40(block.timestamp),
+            rewardsDistributedPerToken: totalRewardsDistributedPerToken,
+            user: user,
+            userRewards: updatedUserRewards,
+            userStakedTokens: userSnapshot.totalStakedTokens
+        });
     }
 }

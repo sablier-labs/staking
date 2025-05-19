@@ -58,10 +58,11 @@ interface ISablierStaking is
     /// @notice Emitted when the rewards snapshot is taken.
     event SnapshotRewards(
         uint256 indexed campaignId,
-        address indexed user,
-        uint128 rewards,
+        uint40 lastUpdateTime,
         uint128 rewardsDistributedPerToken,
-        uint128 totalStakedTokens
+        address indexed user,
+        uint128 userRewards,
+        uint128 userStakedTokens
     );
 
     /// @notice Emitted when a user stakes ERC20 tokens in a campaign.
@@ -135,7 +136,7 @@ interface ISablierStaking is
     function cancelCampaign(uint256 campaignId) external returns (uint128 amountRefunded);
 
     /// @notice Claims the rewards earned by `msg.sender` in the specified campaign.
-    /// @dev Emits a {Transfer} and {ClaimRewards} events.
+    /// @dev Emits a {SnapshotRewards}, {Transfer} and {ClaimRewards} events.
     ///
     /// Notes:
     ///  - Updates global rewards and user rewards data.
@@ -185,7 +186,12 @@ interface ISablierStaking is
     /// @dev Emits a {SnapshotRewards} event.
     ///
     /// Notes:
-    ///  - If user has no stakes, it only snapshots the global rewards data.
+    ///  - Updates global snapshot data if:
+    ///    - The rewards distributed per ERC20 token since the last snapshot is greater than 0.
+    ///    - The last time update is less than the campaign end time.
+    ///  - Updates the user snapshot data if:
+    ///    - The user has tokens staked.
+    ///    - The last time update is less than the campaign end time.
     ///
     /// Requirements:
     ///  - Must not be delegate called.
@@ -196,7 +202,7 @@ interface ISablierStaking is
     function snapshotRewards(uint256 campaignId, address user) external;
 
     /// @notice Stakes ERC20 staking token in the specified campaign.
-    /// @dev Emits a {Transfer} and {StakeERC20Token} events.
+    /// @dev Emits a {SnapshotRewards}, {Transfer} and {StakeERC20Token} events.
     ///
     /// Notes:
     ///  - Updates global rewards and user rewards data.
@@ -214,7 +220,7 @@ interface ISablierStaking is
     function stakeERC20Token(uint256 campaignId, uint128 amount) external;
 
     /// @notice Stakes a Lockup stream in the specified campaign.
-    /// @dev Emits a {Transfer} and {StakeLockupNFT} events.
+    /// @dev Emits a {SnapshotRewards}, {Transfer} and {StakeLockupNFT} events.
     ///
     /// Notes:
     ///  - Updates global rewards and user rewards data.
@@ -236,7 +242,7 @@ interface ISablierStaking is
     function stakeLockupNFT(uint256 campaignId, ISablierLockupNFT lockup, uint256 streamId) external;
 
     /// @notice Unstakes the amount specified of the staking token from the specified campaign.
-    /// @dev Emits a {Transfer} and {UnstakeERC20Token} events.
+    /// @dev Emits a {SnapshotRewards}, {Transfer} and {UnstakeERC20Token} events.
     ///
     /// Notes:
     ///  - Updates global rewards and user rewards data.
@@ -252,7 +258,7 @@ interface ISablierStaking is
     function unstakeERC20Token(uint256 campaignId, uint128 amount) external;
 
     /// @notice Unstakes the Lockup stream from the specified campaign.
-    /// @dev Emits a {Transfer} and {UnstakeLockupNFT} events.
+    /// @dev Emits a {SnapshotRewards}, {Transfer} and {UnstakeLockupNFT} events.
     ///
     /// Notes:
     ///  - Updates global rewards and user rewards data.

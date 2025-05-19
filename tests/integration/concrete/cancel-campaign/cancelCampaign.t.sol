@@ -14,7 +14,7 @@ contract CancelCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
     }
 
     function test_RevertWhen_Null() external whenNoDelegateCall {
-        bytes memory callData = abi.encodeCall(staking.cancelCampaign, (nullStreamId));
+        bytes memory callData = abi.encodeCall(staking.cancelCampaign, (nullCampaignId));
         expectRevert_Null(callData);
     }
 
@@ -46,11 +46,11 @@ contract CancelCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
         givenNotCanceled
         whenCallerCampaignAdmin
     {
-        vm.warp(START_TIME + 1);
+        warpStateTo(WARP_40_PERCENT);
 
         // It should revert.
         vm.expectRevert(
-            abi.encodeWithSelector(Errors.SablierStaking_CampaignAlreadyStarted.selector, START_TIME, START_TIME + 1)
+            abi.encodeWithSelector(Errors.SablierStaking_CampaignAlreadyStarted.selector, START_TIME, WARP_40_PERCENT)
         );
         staking.cancelCampaign(defaultCampaignId);
     }
@@ -62,7 +62,7 @@ contract CancelCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
         givenNotCanceled
         whenCallerCampaignAdmin
     {
-        vm.warp(START_TIME);
+        warpStateTo(START_TIME);
 
         vm.expectRevert(
             abi.encodeWithSelector(Errors.SablierStaking_CampaignAlreadyStarted.selector, START_TIME, START_TIME)
@@ -77,11 +77,11 @@ contract CancelCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
         givenNotCanceled
         whenCallerCampaignAdmin
     {
-        vm.warp(START_TIME - 1);
+        warpStateTo(START_TIME - 1);
 
         // It should emit {Transfer} and {CancelCampaign} events.
         vm.expectEmit({ emitter: address(rewardToken) });
-        emit IERC20.Transfer(address(staking), users.campaignCreator, TOTAL_REWARDS_AMOUNT);
+        emit IERC20.Transfer(address(staking), users.campaignCreator, REWARD_AMOUNT);
         vm.expectEmit({ emitter: address(staking) });
         emit ISablierStaking.CancelCampaign(defaultCampaignId);
 
@@ -92,6 +92,6 @@ contract CancelCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
         assertEq(staking.wasCanceled(defaultCampaignId), true, "wasCanceled");
 
         // It should return the amount refunded.
-        assertEq(expectedAmountRefunded, TOTAL_REWARDS_AMOUNT, "return value");
+        assertEq(expectedAmountRefunded, REWARD_AMOUNT, "return value");
     }
 }

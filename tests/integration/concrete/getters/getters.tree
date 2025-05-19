@@ -59,9 +59,14 @@ Getters_Integration_Concrete_Test::globalSnapshot
    │  ├── it should return correct total staked tokens
    │  └── it should return correct last update time
    └── when start time in past
-      ├── it should return correct global snapshot struct
-      ├── it should return correct total staked tokens
-      └── it should return correct last update time
+      ├── when end time in future
+      │  ├── it should return correct global snapshot struct
+      │  ├── it should return correct total staked tokens
+      │  └── it should return correct last update time
+      └── when end time not in future
+         ├── it should return correct global snapshot struct
+         ├── it should return correct total staked tokens
+         └── it should return correct last update time
 
 Getters_Integration_Concrete_Test::isLockupWhitelisted
 ├── when zero address
@@ -104,11 +109,18 @@ Getters_Integration_Concrete_Test::userSnapshot
       │  ├── it should return correct staked streams count
       │  └── it should return correct total staked tokens
       └── when start time in past
-         ├── it should return correct rewardsEarnedPerToken and rewards
-         ├── it should return correct last update time
-         ├── it should return correct staked ERC20 amount
-         ├── it should return correct staked streams count
-         └── it should return correct total staked tokens
+         ├── when end time in future
+         │  ├── it should return correct rewardsEarnedPerToken and rewards
+         │  ├── it should return correct last update time
+         │  ├── it should return correct staked ERC20 amount
+         │  ├── it should return correct staked streams count
+         │  └── it should return correct total staked tokens
+         └── when end time not in future
+            ├── it should return correct rewardsEarnedPerToken and rewards
+            ├── it should return correct last update time
+            ├── it should return correct staked ERC20 amount
+            ├── it should return correct staked streams count
+            └── it should return correct total staked tokens
 
 Getters_Integration_Concrete_Test::wasCanceled
 ├── when null

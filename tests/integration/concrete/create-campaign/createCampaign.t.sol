@@ -10,8 +10,7 @@ import { Shared_Integration_Concrete_Test } from "../Concrete.t.sol";
 contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     function test_RevertWhen_DelegateCall() external {
         bytes memory callData = abi.encodeCall(
-            staking.createCampaign,
-            (users.campaignCreator, dai, START_TIME, END_TIME, rewardToken, TOTAL_REWARDS_AMOUNT)
+            staking.createCampaign, (users.campaignCreator, dai, START_TIME, END_TIME, rewardToken, REWARD_AMOUNT)
         );
         expectRevert_DelegateCall(callData);
     }
@@ -24,7 +23,7 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
             startTime: START_TIME,
             endTime: END_TIME,
             rewardToken: rewardToken,
-            totalRewards: TOTAL_REWARDS_AMOUNT
+            totalRewards: REWARD_AMOUNT
         });
     }
 
@@ -36,29 +35,31 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
             startTime: FEB_1_2025 - 1,
             endTime: END_TIME,
             rewardToken: rewardToken,
-            totalRewards: TOTAL_REWARDS_AMOUNT
+            totalRewards: REWARD_AMOUNT
         });
     }
 
     function test_WhenStartTimeInPresent() external whenNoDelegateCall whenAdminNotZeroAddress {
+        uint40 currentTime = getBlockTimestamp();
+
         uint256 expectedCampaignId = staking.nextCampaignId();
 
         // It should emit {Transfer} and {CreateCampaign} events.
         vm.expectEmit({ emitter: address(rewardToken) });
-        emit IERC20.Transfer(users.campaignCreator, address(staking), TOTAL_REWARDS_AMOUNT);
+        emit IERC20.Transfer(users.campaignCreator, address(staking), REWARD_AMOUNT);
         vm.expectEmit({ emitter: address(staking) });
         emit ISablierStaking.CreateCampaign(
-            expectedCampaignId, users.campaignCreator, dai, rewardToken, FEB_1_2025, END_TIME, TOTAL_REWARDS_AMOUNT
+            expectedCampaignId, users.campaignCreator, dai, rewardToken, currentTime, END_TIME, REWARD_AMOUNT
         );
 
         // It should create the campaign.
         uint256 actualCampaignId = staking.createCampaign({
             admin: users.campaignCreator,
             stakingToken: dai,
-            startTime: FEB_1_2025,
+            startTime: currentTime,
             endTime: END_TIME,
             rewardToken: rewardToken,
-            totalRewards: TOTAL_REWARDS_AMOUNT
+            totalRewards: REWARD_AMOUNT
         });
 
         // It should create the campaign.
@@ -85,7 +86,7 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
             startTime: START_TIME,
             endTime: START_TIME - 1,
             rewardToken: rewardToken,
-            totalRewards: TOTAL_REWARDS_AMOUNT
+            totalRewards: REWARD_AMOUNT
         });
     }
 
@@ -106,7 +107,7 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
             startTime: START_TIME,
             endTime: START_TIME,
             rewardToken: rewardToken,
-            totalRewards: TOTAL_REWARDS_AMOUNT
+            totalRewards: REWARD_AMOUNT
         });
     }
 
@@ -124,7 +125,7 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
             startTime: START_TIME,
             endTime: END_TIME,
             rewardToken: rewardToken,
-            totalRewards: TOTAL_REWARDS_AMOUNT
+            totalRewards: REWARD_AMOUNT
         });
     }
 
@@ -143,7 +144,7 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
             startTime: START_TIME,
             endTime: END_TIME,
             rewardToken: IERC20(address(0)),
-            totalRewards: TOTAL_REWARDS_AMOUNT
+            totalRewards: REWARD_AMOUNT
         });
     }
 
@@ -180,10 +181,10 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
 
         // It should emit {Transfer} and {CreateCampaign} events.
         vm.expectEmit({ emitter: address(rewardToken) });
-        emit IERC20.Transfer(users.campaignCreator, address(staking), TOTAL_REWARDS_AMOUNT);
+        emit IERC20.Transfer(users.campaignCreator, address(staking), REWARD_AMOUNT);
         vm.expectEmit({ emitter: address(staking) });
         emit ISablierStaking.CreateCampaign(
-            expectedCampaignId, users.campaignCreator, dai, rewardToken, START_TIME, END_TIME, TOTAL_REWARDS_AMOUNT
+            expectedCampaignId, users.campaignCreator, dai, rewardToken, START_TIME, END_TIME, REWARD_AMOUNT
         );
 
         // It should create the campaign.
@@ -193,7 +194,7 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
             startTime: START_TIME,
             endTime: END_TIME,
             rewardToken: rewardToken,
-            totalRewards: TOTAL_REWARDS_AMOUNT
+            totalRewards: REWARD_AMOUNT
         });
 
         // It should create the campaign.

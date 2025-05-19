@@ -1,32 +1,36 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity >=0.8.22;
 
+/// @notice A struct to manage the stream IDs.
+/// @param defaultStream A stream that will is not staked into the default campaign.
+/// @param defaultStakedStream A cancelable stream that will be staked into the default campaign.
+/// @param defaultStakedStreamNonCancelable A non-cancelable stream that will be staked into the default campaign.
+/// @param differentTokenStream A stream with a different token.
+/// @param notAllowedToHookStream A stream that is not allowed to hook with the staking contract.
+/// @param nullStream A stream ID that does not exist.
 struct StreamIds {
-    // Default cancelable stream that will be staked into the default campaign.
+    uint256 defaultStream;
     uint256 defaultStakedStream;
-    // A stream that will not be staked into the default campaign.
-    uint256 defaultUnstakedStream;
-    // A stream with a different token.
+    uint256 defaultStakedStreamNonCancelable;
     uint256 differentTokenStream;
-    // A stream that is not allowed to hook with the staking contract.
     uint256 notAllowedToHookStream;
-    // A non-cancelable stream.
-    uint256 notCancelableStream;
-    // A stream ID that does not exist.
     uint256 nullStream;
 }
 
+/// @notice A struct to manage the test users.
+/// @param accountant The default user authorized for fee related actions.
+/// @param admin The default protocol admin.
+/// @param campaignCreator The default campaign creator.
+/// @param eve The malicious user.
+/// @param recipient The default stream recipient who will stake streams as well as direct tokens.
+/// @param sender The default stream sender.
+/// @param staker The default staker who will stake direct tokens.
 struct Users {
-    // Default uer authorized for fee related actions.
     address payable accountant;
-    // Default protocol admin.
     address payable admin;
-    // Default campaign creator.
     address payable campaignCreator;
-    // Malicious user.
     address payable eve;
-    // Default stream sender.
+    address payable recipient;
     address payable sender;
-    // Default staker.
     address payable staker;
 }

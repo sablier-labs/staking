@@ -1,18 +1,15 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.22;
 
-import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import { ZERO } from "@prb/math/src/UD60x18.sol";
-import { SablierLockup } from "@sablier/lockup/src/SablierLockup.sol";
-import { Lockup, LockupLinear, Broker } from "@sablier/lockup/src/types/DataTypes.sol";
-import { SafeCastLib } from "solady/src/utils/SafeCastLib.sol";
-import { ISablierLockupNFT } from "src/interfaces/ISablierLockupNFT.sol";
-
 import { Base_Test } from "../Base.t.sol";
 
 /// @notice Common logic needed by all integration tests, both concrete and fuzz tests.
 abstract contract Integration_Test is Base_Test {
-    using SafeCastLib for uint256;
+    /*//////////////////////////////////////////////////////////////////////////
+                                     VARIABLES
+    //////////////////////////////////////////////////////////////////////////*/
+
+    uint256 internal defaultCampaignId;
 
     /*//////////////////////////////////////////////////////////////////////////
                                        SET-UP
@@ -21,86 +18,95 @@ abstract contract Integration_Test is Base_Test {
     function setUp() public virtual override {
         Base_Test.setUp();
 
-        // Create and configure Lockup streams for testing.
-        createAndConfigureStreams();
-
-        // Whitelist the Lockup contract for staking.
-        setMsgSender(users.admin);
-        ISablierLockupNFT[] memory lockups = new ISablierLockupNFT[](1);
-        lockups[0] = lockup;
-        staking.whitelistLockups(lockups);
-
-        // Set the variables in Modifiers contract.
-        setVariables(users);
-
-        // Set campaign creator as the default caller for integration tests.
+        // Create the default campaign.
         setMsgSender(users.campaignCreator);
+        defaultCampaignId = createDefaultCampaign();
+
+        // Simulate the staking behavior of the users at different times and create EVM snapshots.
+        simulateAndSnapshotStakingBehavior();
+
+        // Set campaign creator as the default caller for concrete tests.
+        setMsgSender(users.campaignCreator);
+
+        // Warp back to pre-start time as default.
+        warpStateTo(START_TIME - 1);
     }
 
     /*//////////////////////////////////////////////////////////////////////////
-                                   LOCKUP-HELPERS
+                                      HELPERS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @dev Creates the following Lockup streams:
-    /// - A DAI stream that is cancelable.
-    /// - A DAI stream that is not cancelable.
-    /// - A USDC stream that is cancelable.
-    function createAndConfigureStreams() internal {
-        SablierLockup lockupContract = SablierLockup(address(lockup));
-
-        // Allow the Lockup contract to hook with the staking contract.
-        lockupContract.allowToHook(address(staking));
-
-        // Change caller to the sender.
-        setMsgSender(users.sender);
-
-        (
-            Lockup.CreateWithDurations memory params,
-            LockupLinear.UnlockAmounts memory unlockAmounts,
-            LockupLinear.Durations memory durations
-        ) = defaultCreateWithDurationsLLParams(dai);
-
-        // A DAI stream that is cancelable and will be staked into the default campaign.
-        ids.defaultStakedStream = lockupContract.createWithDurationsLL(params, unlockAmounts, durations);
-
-        // A DAI stream that is cancelable and will not be staked into the default campaign.
-        ids.defaultUnstakedStream = lockupContract.createWithDurationsLL(params, unlockAmounts, durations);
-
-        // A USDC stream that is cancelable.
-        (params, unlockAmounts, durations) = defaultCreateWithDurationsLLParams(usdc);
-        ids.differentTokenStream = lockupContract.createWithDurationsLL(params, unlockAmounts, durations);
-
-        // A DAI stream that is not cancelable.
-        (params, unlockAmounts, durations) = defaultCreateWithDurationsLLParams(dai);
-        params.cancelable = false;
-        ids.notCancelableStream = lockupContract.createWithDurationsLL(params, unlockAmounts, durations);
-
-        // Approve the staking contract to spend the Lockup NFTs.
-        setMsgSender(users.staker);
-        lockupContract.setApprovalForAll({ operator: address(staking), approved: true });
+    /// @notice Creates a default campaign.
+    function createDefaultCampaign() internal returns (uint256 campaignId) {
+        return staking.createCampaign({
+            admin: users.campaignCreator,
+            stakingToken: dai,
+            startTime: START_TIME,
+            endTime: END_TIME,
+            rewardToken: rewardToken,
+            totalRewards: REWARD_AMOUNT
+        });
     }
 
-    /// @dev Returns the defaults parameters of the `createWithDurationsLL` function.
-    function defaultCreateWithDurationsLLParams(ERC20 token)
-        internal
-        view
-        returns (Lockup.CreateWithDurations memory, LockupLinear.UnlockAmounts memory, LockupLinear.Durations memory)
-    {
-        uint128 totalAmount = (TOTAL_STREAM_AMOUNT * 10 ** token.decimals()).toUint128();
+    /// @dev This function simulates the staking behavior of the users at different times and creates EVM snapshots to
+    /// be used for testing.
+    function simulateAndSnapshotStakingBehavior() internal {
+        // First snapshot before the campaign starts: Staker stakes direct tokens at the time of campaign creation.
+        setMsgSender(users.staker);
+        staking.stakeERC20Token(defaultCampaignId, DEFAULT_AMOUNT);
+        vm.warp(START_TIME - 1);
+        snapshotState(); // snapshot ID = 0
 
-        return (
-            Lockup.CreateWithDurations({
-                sender: users.sender,
-                recipient: users.staker,
-                totalAmount: totalAmount,
-                token: token,
-                cancelable: true,
-                transferable: true,
-                shape: "linear",
-                broker: Broker({ account: address(0), fee: ZERO })
-            }),
-            LockupLinear.UnlockAmounts({ start: 0, cliff: 0 }),
-            LockupLinear.Durations({ cliff: 0, total: STREAM_DURATION })
-        );
+        // Second snapshot when the campaign starts: Recipient stakes a stream.
+        vm.warp(START_TIME);
+        setMsgSender(users.recipient);
+        staking.stakeLockupNFT(defaultCampaignId, lockup, ids.defaultStakedStream);
+        snapshotState(); // snapshot ID = 1
+
+        // When 20% through the campaign: Recipient stakes a stream and direct tokens. No snapshot is created.
+        vm.warp(WARP_20_PERCENT);
+        staking.stakeERC20Token(defaultCampaignId, DEFAULT_AMOUNT);
+        staking.stakeLockupNFT(defaultCampaignId, lockup, ids.defaultStakedStreamNonCancelable);
+
+        // Third snapshot when 40% through the campaign: Staker stakes direct tokens.
+        vm.warp(WARP_40_PERCENT);
+        setMsgSender(users.staker);
+        staking.stakeERC20Token(defaultCampaignId, DEFAULT_AMOUNT);
+        snapshotState(); // snapshot ID = 2
+
+        // Fourth snapshot when 100% through the campaign.
+        vm.warp(END_TIME);
+        snapshotState(); // snapshot ID = 3
+    }
+
+    /// @notice Creates an EVM snapshot at the current block timestamp.
+    function snapshotState() internal {
+        // Snapshot rewards data.
+        staking.snapshotRewards(defaultCampaignId, users.recipient);
+        staking.snapshotRewards(defaultCampaignId, users.staker);
+
+        // Snapshot EVM state.
+        vm.snapshotState();
+    }
+
+    /// @dev Warps the EVM states to the given timestamp. It also changes the `block.timestamp`.
+    /// @dev Reverts if the snapshot at the given timestamp does not exist.
+    function warpStateTo(uint40 timestamp) internal {
+        bool status;
+        if (timestamp == START_TIME - 1) {
+            status = vm.revertToState(0);
+            require(status, "Failed to revert to snapshot 0");
+        } else if (timestamp == START_TIME) {
+            status = vm.revertToState(1);
+            require(status, "Failed to revert to snapshot 1");
+        } else if (timestamp == WARP_40_PERCENT) {
+            status = vm.revertToState(2);
+            require(status, "Failed to revert to snapshot 2");
+        } else if (timestamp == END_TIME) {
+            status = vm.revertToState(3);
+            require(status, "Failed to revert to snapshot 3");
+        } else {
+            revert("Snapshot not found");
+        }
     }
 }

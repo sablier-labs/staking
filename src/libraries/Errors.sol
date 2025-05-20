@@ -19,7 +19,7 @@ library Errors {
     error SablierStakingState_CampaignDoesNotExist(uint256 campaignId);
 
     /// @notice Thrown when an action is attempted on an inactive campaign.
-    error SablierStakingState_CampaignNotActive(uint256 campaignId);
+    error SablierStakingState_CampaignNotActive(uint256 campaignId, uint40 startTime, uint40 endTime);
 
     /// @notice Thrown when the lockup contract is not whitelisted.
     error SablierStakingState_LockupNotWhitelisted(ISablierLockupNFT lockup);

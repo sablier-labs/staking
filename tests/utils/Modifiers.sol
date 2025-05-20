@@ -75,4 +75,8 @@ abstract contract Modifiers is Utils {
     modifier whenStartTimeInPast() {
         _;
     }
+
+    modifier whenStartTimeNotInFuture() {
+        _;
+    }
 }

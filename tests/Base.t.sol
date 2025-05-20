@@ -3,7 +3,6 @@ pragma solidity >=0.8.22;
 
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { ZERO } from "@prb/math/src/UD60x18.sol";
-import { Errors as EvmUtilsErrors } from "@sablier/evm-utils/src/libraries/Errors.sol";
 import { ERC20Mock } from "@sablier/evm-utils/src/mocks/erc20/ERC20Mock.sol";
 import { BaseTest as EvmUtilsBase } from "@sablier/evm-utils/src/tests/BaseTest.sol";
 import { LockupNFTDescriptor } from "@sablier/lockup/src/LockupNFTDescriptor.sol";
@@ -13,7 +12,6 @@ import { SafeCastLib } from "solady/src/utils/SafeCastLib.sol";
 
 import { ISablierLockupNFT } from "src/interfaces/ISablierLockupNFT.sol";
 import { ISablierStaking } from "src/interfaces/ISablierStaking.sol";
-import { Errors } from "src/libraries/Errors.sol";
 import { SablierStaking } from "src/SablierStaking.sol";
 import { Assertions } from "./utils/Assertions.sol";
 import { Modifiers } from "./utils/Modifiers.sol";
@@ -26,9 +24,8 @@ abstract contract Base_Test is Assertions, Modifiers {
                                      VARIABLES
     //////////////////////////////////////////////////////////////////////////*/
 
-    StreamIds internal ids;
-    uint256 internal nullCampaignId = 420;
     ERC20Mock internal rewardToken;
+    StreamIds internal streamIds;
     Users internal users;
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -91,26 +88,6 @@ abstract contract Base_Test is Assertions, Modifiers {
     }
 
     /*//////////////////////////////////////////////////////////////////////////
-                                COMMON-REVERT-TESTS
-    //////////////////////////////////////////////////////////////////////////*/
-
-    function expectRevert_DelegateCall(bytes memory callData) internal {
-        (bool success, bytes memory returnData) = address(staking).delegatecall(callData);
-        assertFalse(success, "delegatecall success");
-        assertEq(returnData, abi.encodeWithSelector(EvmUtilsErrors.DelegateCall.selector), "delegatecall return data");
-    }
-
-    function expectRevert_Null(bytes memory callData) internal {
-        (bool success, bytes memory returnData) = address(staking).call(callData);
-        assertFalse(success, "null call success");
-        assertEq(
-            returnData,
-            abi.encodeWithSelector(Errors.SablierStakingState_CampaignDoesNotExist.selector, nullCampaignId),
-            "null call return data"
-        );
-    }
-
-    /*//////////////////////////////////////////////////////////////////////////
                                       HELPERS
     //////////////////////////////////////////////////////////////////////////*/
 
@@ -154,19 +131,20 @@ abstract contract Base_Test is Assertions, Modifiers {
         ) = defaultCreateWithDurationsLLParams(dai);
 
         // A DAI stream that is cancelable and will not be staked into the default campaign.
-        ids.defaultStream = lockupContract.createWithDurationsLL(params, unlockAmounts, durations);
+        streamIds.defaultStream = lockupContract.createWithDurationsLL(params, unlockAmounts, durations);
 
         // A DAI stream that is cancelable and will be staked into the default campaign.
-        ids.defaultStakedStream = lockupContract.createWithDurationsLL(params, unlockAmounts, durations);
+        streamIds.defaultStakedStream = lockupContract.createWithDurationsLL(params, unlockAmounts, durations);
 
         // A DAI stream that is not cancelable and will be staked into the default campaign.
         (params, unlockAmounts, durations) = defaultCreateWithDurationsLLParams(dai);
         params.cancelable = false;
-        ids.defaultStakedStreamNonCancelable = lockupContract.createWithDurationsLL(params, unlockAmounts, durations);
+        streamIds.defaultStakedStreamNonCancelable =
+            lockupContract.createWithDurationsLL(params, unlockAmounts, durations);
 
         // A USDC stream that is cancelable.
         (params, unlockAmounts, durations) = defaultCreateWithDurationsLLParams(usdc);
-        ids.differentTokenStream = lockupContract.createWithDurationsLL(params, unlockAmounts, durations);
+        streamIds.differentTokenStream = lockupContract.createWithDurationsLL(params, unlockAmounts, durations);
 
         // Approve the staking contract to spend the Lockup NFTs.
         setMsgSender(users.recipient);

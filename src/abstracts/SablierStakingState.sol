@@ -192,17 +192,17 @@ contract SablierStakingState is ISablierStakingState {
 
     /// @dev Checks that the campaign is active. It implicitly also checks that the campaign is not canceled.
     function _isActive(uint256 campaignId) private view {
+        // For campaign to be active, it must not be canceled.
+        _revertIfCanceled(campaignId);
+
         uint40 currentTimestamp = uint40(block.timestamp);
         StakingCampaign memory campaign = _stakingCampaign[campaignId];
 
         // Check: the campaign is ongoing by comparing the current timestamp with the campaign's start and end times.
         bool isCampaignOngoing = campaign.startTime <= currentTimestamp && currentTimestamp <= campaign.endTime;
         if (!isCampaignOngoing) {
-            revert Errors.SablierStakingState_CampaignNotActive(campaignId);
+            revert Errors.SablierStakingState_CampaignNotActive(campaignId, campaign.startTime, campaign.endTime);
         }
-
-        // For campaign to be active, it must not be canceled.
-        _revertIfCanceled(campaignId);
     }
 
     /// @dev Checks that campaign exists by verifying its admin.

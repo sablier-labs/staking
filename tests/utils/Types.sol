@@ -1,20 +1,26 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity >=0.8.22;
 
+/// @notice A struct to manage the campaign IDs.
+/// @param canceledCampaign A campaign that has been canceled.
+/// @param defaultCampaign The default campaign.
+/// @param nullCampaign A campaign ID that does not exist.
+struct CampaignIds {
+    uint256 canceledCampaign;
+    uint256 defaultCampaign;
+    uint256 nullCampaign;
+}
+
 /// @notice A struct to manage the stream IDs.
-/// @param defaultStream A stream that will is not staked into the default campaign.
 /// @param defaultStakedStream A cancelable stream that will be staked into the default campaign.
 /// @param defaultStakedStreamNonCancelable A non-cancelable stream that will be staked into the default campaign.
+/// @param defaultStream A stream that will is not staked into the default campaign.
 /// @param differentTokenStream A stream with a different token.
-/// @param notAllowedToHookStream A stream that is not allowed to hook with the staking contract.
-/// @param nullStream A stream ID that does not exist.
 struct StreamIds {
-    uint256 defaultStream;
     uint256 defaultStakedStream;
     uint256 defaultStakedStreamNonCancelable;
+    uint256 defaultStream;
     uint256 differentTokenStream;
-    uint256 notAllowedToHookStream;
-    uint256 nullStream;
 }
 
 /// @notice A struct to manage the test users.

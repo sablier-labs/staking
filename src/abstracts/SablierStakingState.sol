@@ -11,7 +11,7 @@ import { GlobalSnapshot, StakedStream, StakingCampaign, UserSnapshot } from "../
 /// @title SablierStakingState
 /// @notice Contract with state variables (storage and constants) for the {SablierStaking} contract, respective getters
 /// and helpful modifiers.
-contract SablierStakingState is ISablierStakingState {
+abstract contract SablierStakingState is ISablierStakingState {
     /*//////////////////////////////////////////////////////////////////////////
                                   STATE VARIABLES
     //////////////////////////////////////////////////////////////////////////*/

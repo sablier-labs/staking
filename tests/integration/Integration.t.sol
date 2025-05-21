@@ -42,7 +42,7 @@ abstract contract Integration_Test is Base_Test {
     function expectRevert_DelegateCall(bytes memory callData) internal {
         (bool success, bytes memory returnData) = address(staking).delegatecall(callData);
         assertFalse(success, "delegatecall success");
-        assertEq(returnData, abi.encodeWithSelector(EvmUtilsErrors.DelegateCall.selector), "delegatecall return data");
+        assertEq(returnData, abi.encodeWithSelector(EvmUtilsErrors.DelegateCall.selector), "delegatecall error");
     }
 
     function expectRevert_Null(bytes memory callData) internal {
@@ -51,7 +51,7 @@ abstract contract Integration_Test is Base_Test {
         assertEq(
             returnData,
             abi.encodeWithSelector(Errors.SablierStakingState_CampaignDoesNotExist.selector, campaignIds.nullCampaign),
-            "null call return data"
+            "null campaign error"
         );
     }
 

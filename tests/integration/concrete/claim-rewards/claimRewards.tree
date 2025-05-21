@@ -1,0 +1,23 @@
+ClaimRewards_Integration_Concrete_Test
+├── when delegate call
+│  └── it should revert
+└── when not delegate call
+   ├── when null
+   │  └── it should revert
+   └── when not null
+      ├── given canceled
+      │  └── it should revert
+      └── given not canceled
+         ├── when start time in future
+         │  └── it should revert
+         ├── when start time in present
+         │  └── it should revert
+         └── when start time in past
+            ├── when claimable rewards zero
+            │  └── it should revert
+            └── when claimable rewards not zero
+               ├── it should emit {SnapshotRewards}, {Transfer} and {ClaimRewards} events
+               ├── it should set rewards to zero
+               ├── it should set last time update to current timestamp
+               ├── it should transfer the rewards to the caller
+               └── it should return the rewards

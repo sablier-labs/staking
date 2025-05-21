@@ -19,7 +19,9 @@ contract CancelCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
     }
 
     function test_RevertGiven_Canceled() external whenNoDelegateCall whenNotNull {
-        vm.expectRevert(Errors.SablierStaking_CampaignAlreadyCanceled.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(Errors.SablierStaking_CampaignAlreadyCanceled.selector, campaignIds.canceledCampaign)
+        );
         staking.cancelCampaign(campaignIds.canceledCampaign);
     }
 
@@ -45,9 +47,7 @@ contract CancelCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
         warpStateTo(WARP_40_PERCENT);
 
         // It should revert.
-        vm.expectRevert(
-            abi.encodeWithSelector(Errors.SablierStaking_CampaignAlreadyStarted.selector, START_TIME, WARP_40_PERCENT)
-        );
+        vm.expectRevert(abi.encodeWithSelector(Errors.SablierStaking_CampaignAlreadyStarted.selector, START_TIME));
         staking.cancelCampaign(campaignIds.defaultCampaign);
     }
 
@@ -60,9 +60,7 @@ contract CancelCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
     {
         warpStateTo(START_TIME);
 
-        vm.expectRevert(
-            abi.encodeWithSelector(Errors.SablierStaking_CampaignAlreadyStarted.selector, START_TIME, START_TIME)
-        );
+        vm.expectRevert(abi.encodeWithSelector(Errors.SablierStaking_CampaignAlreadyStarted.selector, START_TIME));
         staking.cancelCampaign(campaignIds.defaultCampaign);
     }
 

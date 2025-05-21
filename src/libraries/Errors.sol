@@ -42,28 +42,28 @@ library Errors {
         uint256 campaignId, uint256 amountUnstaking, uint256 totalStakedAmount
     );
 
+    /// @notice Thrown when the caller is not the campaign admin.
+    error SablierStaking_CallerNotCampaignAdmin(address caller, address campaignAdmin);
+
     /// @notice Thrown when the caller is not the original owner of the stream.
     error SablierStaking_CallerNotStreamOwner(
         ISablierLockupNFT lockup, uint256 streamId, address caller, address streamOwner
     );
 
-    /// @notice Thrown when staking a depleted stream.
-    error SablierStaking_DepletedStream(ISablierLockupNFT lockup, uint256 streamId);
-
     /// @notice Thrown when trying to cancel a campaign that is already canceled.
-    error SablierStaking_CampaignAlreadyCanceled();
+    error SablierStaking_CampaignAlreadyCanceled(uint256 campaignId);
 
     /// @notice Thrown when trying to cancel a campaign that has already started.
-    error SablierStaking_CampaignAlreadyStarted(uint40 startTime, uint40 currentTime);
-
-    /// @notice Thrown when the caller is not the campaign admin.
-    error SablierStaking_CallerNotCampaignAdmin(address caller, address campaignAdmin);
-
-    /// @notice Thrown when the campaign is active.
-    error SablierStaking_CampaignActive(uint40 startTime);
+    error SablierStaking_CampaignAlreadyStarted(uint40 startTime);
 
     /// @notice Thrown when user is staking in a campaign that has ended.
     error SablierStaking_CampaignHasEnded(uint40 endTime);
+
+    /// @notice Thrown when campaign has not started yet.
+    error SablierStaking_CampaignNotStarted(uint40 startTime);
+
+    /// @notice Thrown when staking a depleted stream.
+    error SablierStaking_DepletedStream(ISablierLockupNFT lockup, uint256 streamId);
 
     /// @notice Thrown when trying to create a campaign with end time not greater than start time.
     error SablierStaking_EndTimeNotGreaterThanStartTime(uint40 startTime, uint40 endTime);
@@ -78,7 +78,7 @@ library Errors {
     error SablierStaking_LockupZeroAddress(uint256 index);
 
     /// @notice Thrown when the user has no rewards to claim.
-    error SablierStaking_NoRewardsToClaim(uint256 campaignId, address user);
+    error SablierStaking_ZeroClaimableRewards(uint256 campaignId, address user);
 
     /// @notice Thrown when the user has no staked amount.
     error SablierStaking_NoStakedAmount(uint256 campaignId, address user);

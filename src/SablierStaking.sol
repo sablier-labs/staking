@@ -119,7 +119,7 @@ contract SablierStaking is
 
         // Check: the campaign is not canceled already.
         if (campaign.wasCanceled) {
-            revert Errors.SablierStaking_CampaignAlreadyCanceled();
+            revert Errors.SablierStaking_CampaignAlreadyCanceled(campaignId);
         }
 
         // Check: `msg.sender` is the campaign admin.
@@ -129,7 +129,7 @@ contract SablierStaking is
 
         // Check: the campaign start time is in the future.
         if (campaign.startTime <= uint40(block.timestamp)) {
-            revert Errors.SablierStaking_CampaignAlreadyStarted(campaign.startTime, uint40(block.timestamp));
+            revert Errors.SablierStaking_CampaignAlreadyStarted(campaign.startTime);
         }
 
         // Effect: set the campaign as canceled.
@@ -151,6 +151,17 @@ contract SablierStaking is
         notNull(campaignId)
         returns (uint128 rewards)
     {
+        // Check: the campaign is not canceled.
+        _revertIfCanceled(campaignId);
+
+        uint40 currentTimestamp = uint40(block.timestamp);
+        uint40 startTime = _stakingCampaign[campaignId].startTime;
+
+        // Check: the current timestamp is greater than or equal to the campaign start time.
+        if (currentTimestamp < startTime) {
+            revert Errors.SablierStaking_CampaignNotStarted(startTime);
+        }
+
         // Effect: snapshot rewards data to the latest values.
         _snapshotRewards(campaignId, msg.sender);
 
@@ -159,7 +170,7 @@ contract SablierStaking is
 
         // Check: `msg.sender` has rewards to claim.
         if (rewards == 0) {
-            revert Errors.SablierStaking_NoRewardsToClaim(campaignId, msg.sender);
+            revert Errors.SablierStaking_ZeroClaimableRewards(campaignId, msg.sender);
         }
 
         // Effect: set the rewards to 0.

@@ -125,6 +125,7 @@ interface ISablierStaking is
     /// Requirements:
     ///  - Must not be delegate called.
     ///  - `campaignId` must not reference a null stream or a canceled campaign.
+    ///  - The block timestamp must be greater than or equal to the campaign start time.
     ///  - Claimable rewards must be greater than 0.
     ///
     /// @param campaignId The campaign ID to claim rewards from.

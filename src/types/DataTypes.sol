@@ -9,7 +9,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /// @notice A data structure to store the total rewards snapshot data for each campaign.
 /// @param rewardsDistributedPerToken The amount of rewards distributed per staking token (includes both direct staking
-/// and through Sablier streams), denoted in reward token's decimals.
+/// and through Sablier streams).
 /// @param totalStakedTokens The total amount of staking tokens staked (both direct staking and through Sablier
 /// streams), denoted in staking token's decimals.
 /// @param lastUpdateTime The last time this snapshot was updated, denoted in UNIX timestamp.
@@ -55,23 +55,22 @@ struct StakedStream {
 }
 
 /// @notice A data structure to store a user's rewards and staking data for a given campaign.
-/// @param rewardsEarnedPerToken The amount of rewards earned per staking token (includes both direct staking
-/// and through Sablier streams), denoted in reward token's decimals.
 /// @param rewards The amount of reward tokens available to be claimed by the user, denoted in reward token's decimals.
+/// @param rewardsEarnedPerToken The amount of rewards earned per staking token (includes both direct staking and
+/// through Sablier streams).
 /// @param totalStakedTokens The total amount of staking tokens staked (both direct staking and through Sablier
 /// streams), denoted in staking token's decimals.
-/// @param stakedERC20Amount The amount of staking tokens staked directly, denoted in staking token's decimals.
-/// @param stakedStreamsCount The number of Sablier streams that the user has staked. The amount of staking tokens
-/// staked through Sablier stream can be calculated as `totalStakedTokens - stakedERC20Amount`.
+/// @param directStakedTokens The amount of staking tokens staked directly, denoted in staking token's decimals.
+/// @param streamsCount The number of Sablier streams staked by the user.
 /// @param lastUpdateTime The last time this snapshot was updated, denoted in UNIX timestamp.
 struct UserSnapshot {
     // Slot 0
-    uint128 rewardsEarnedPerToken;
     uint128 rewards;
+    uint128 rewardsEarnedPerToken;
     // Slot 1
+    uint128 directStakedTokens;
     uint128 totalStakedTokens;
-    uint128 stakedERC20Amount;
     // Slot 2
-    uint32 stakedStreamsCount;
+    uint32 streamsCount;
     uint40 lastUpdateTime;
 }

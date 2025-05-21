@@ -111,6 +111,17 @@ abstract contract Base_Test is Assertions, Modifiers {
                                    LOCKUP-HELPERS
     //////////////////////////////////////////////////////////////////////////*/
 
+    /// @dev Returns the amount available in the default staked stream.
+    function amountInDefaultStakedStream() private view returns (uint128 amount) {
+        return amountInStream(streamIds.defaultStakedStream);
+    }
+
+    /// @dev Returns the amount available in the given stream.
+    function amountInStream(uint256 streamId) private view returns (uint128 amount) {
+        return lockup.getDepositedAmount(streamId) - lockup.getWithdrawnAmount(streamId)
+            - lockup.getRefundedAmount(streamId);
+    }
+
     /// @dev Creates the following Lockup streams:
     /// - A DAI stream that is cancelable.
     /// - A DAI stream that is not cancelable.

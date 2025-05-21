@@ -3,7 +3,6 @@ pragma solidity >=0.8.22;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import { GlobalSnapshot, UserSnapshot } from "../types/DataTypes.sol";
 import { ISablierLockupNFT } from "./ISablierLockupNFT.sol";
 
 /// @title ISablierStakingState
@@ -44,8 +43,14 @@ interface ISablierStakingState {
     /// @notice Retrieves the global snapshot data for the given campaign ID.
     /// @dev Reverts if `campaignId` references a null stream.
     /// @param campaignId The campaign ID for the query.
-    /// @return snapshot See the documentation for GlobalSnapshot in {DataTypes}.
-    function globalSnapshot(uint256 campaignId) external view returns (GlobalSnapshot memory snapshot);
+    /// @return lastUpdateTime The last time this snapshot was updated, denoted in UNIX timestamp.
+    /// @return rewardsDistributedPerToken The amount of rewards distributed per staking token.
+    /// @return totalStakedAmount The total amount of tokens staked (both direct staking and through Sablier streams),
+    /// denoted in staking token's decimals.
+    function globalSnapshot(uint256 campaignId)
+        external
+        view
+        returns (uint40 lastUpdateTime, uint128 rewardsDistributedPerToken, uint128 totalStakedAmount);
 
     /// @notice Returns true if the lockup contract is whitelisted to stake.
     /// @dev Reverts if `lockup` is the zero address.
@@ -76,8 +81,32 @@ interface ISablierStakingState {
     /// @dev Reverts if `campaignId` references a null stream or `user` is the zero address.
     /// @param campaignId The campaign ID for the query.
     /// @param user The user address for the query.
-    /// @return snapshot See the documentation for UserSnapshot in {DataTypes}.
-    function userSnapshot(uint256 campaignId, address user) external view returns (UserSnapshot memory snapshot);
+    /// @return lastUpdateTime The last time this snapshot was updated, denoted in UNIX timestamp.
+    /// @return rewards The amount of reward tokens available to be claimed by the user, denoted in reward token's
+    /// decimals.
+    /// @return rewardsEarnedPerToken The amount of rewards earned per staking token.
+    /// @return streamsCount The number of Sablier streams that the user has staked.
+    /// @return directAmountStaked The total amount of ERC20 tokens staked directly by the user, denoted in staking
+    /// token's decimals.
+    /// @return streamAmountStaked The total amount of ERC20 tokens staked through Sablier streams, denoted in staking
+    /// token's decimals.
+    /// @return totalStakedAmount The combined amount of ERC20 tokens staked by the user (includes both direct staking
+    /// and through Sablier streams), denoted in staking token's decimals.
+    function userSnapshot(
+        uint256 campaignId,
+        address user
+    )
+        external
+        view
+        returns (
+            uint40 lastUpdateTime,
+            uint128 rewards,
+            uint128 rewardsEarnedPerToken,
+            uint128 streamsCount,
+            uint128 directAmountStaked,
+            uint128 streamAmountStaked,
+            uint128 totalStakedAmount
+        );
 
     /// @notice Returns true if the given campaign ID was canceled.
     /// @dev Reverts if `campaignId` references a null stream.

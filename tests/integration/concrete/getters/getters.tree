@@ -51,22 +51,14 @@ Getters_Integration_Concrete_Test::globalSnapshot
 │  └── it should revert
 └── when not null
    ├── when start time in future
-   │  ├── it should return zero rewards distributed per token
-   │  ├── it should return correct total staked tokens
-   │  └── it should return zero last update time
+   │  └── it should return correct return values
    ├── when start time in present
-   │  ├── it should return zero rewards distributed per token
-   │  ├── it should return correct total staked tokens
-   │  └── it should return correct last update time
+   │  └── it should return correct return values
    └── when start time in past
       ├── when end time in future
-      │  ├── it should return correct global snapshot struct
-      │  ├── it should return correct total staked tokens
-      │  └── it should return correct last update time
+      │  └── it should return correct return values
       └── when end time not in future
-         ├── it should return correct global snapshot struct
-         ├── it should return correct total staked tokens
-         └── it should return correct last update time
+         └── it should return correct return values
 
 Getters_Integration_Concrete_Test::isLockupWhitelisted
 ├── when zero address
@@ -97,30 +89,14 @@ Getters_Integration_Concrete_Test::userSnapshot
    │  └── it should revert
    └── when not zero address
       ├── when start time in future
-      │  ├── it should return zero for rewardsEarnedPerToken and rewards
-      │  ├── it should return zero last update time
-      │  ├── it should return correct staked ERC20 amount
-      │  ├── it should return correct staked streams count
-      │  └── it should return correct total staked tokens
+      │  └── it should return correct return values
       ├── when start time in present
-      │  ├── it should return zero for rewardsEarnedPerToken and rewards
-      │  ├── it should return correct last update time
-      │  ├── it should return correct staked ERC20 amount
-      │  ├── it should return correct staked streams count
-      │  └── it should return correct total staked tokens
+      │  └── it should return correct return values
       └── when start time in past
          ├── when end time in future
-         │  ├── it should return correct rewardsEarnedPerToken and rewards
-         │  ├── it should return correct last update time
-         │  ├── it should return correct staked ERC20 amount
-         │  ├── it should return correct staked streams count
-         │  └── it should return correct total staked tokens
+         │  └── it should return correct return values
          └── when end time not in future
-            ├── it should return correct rewardsEarnedPerToken and rewards
-            ├── it should return correct last update time
-            ├── it should return correct staked ERC20 amount
-            ├── it should return correct staked streams count
-            └── it should return correct total staked tokens
+            └── it should return correct return values
 
 Getters_Integration_Concrete_Test::wasCanceled
 ├── when null

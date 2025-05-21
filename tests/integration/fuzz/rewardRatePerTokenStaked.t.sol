@@ -54,7 +54,7 @@ contract RewardRatePerTokenStaked_Integration_Fuzz_Test is Shared_Integration_Fu
 
         // It should return the correct reward rate per token staked.
         uint128 actualRewardRatePerTokenStaked = staking.rewardRatePerTokenStaked(campaignIds.defaultCampaign);
-        uint128 expectedRewardRatePerTokenStaked = REWARD_RATE / TOTAL_AMOUNT_STAKED;
+        uint128 expectedRewardRatePerTokenStaked = REWARD_RATE / TOTAL_STAKED;
         assertEq(actualRewardRatePerTokenStaked, expectedRewardRatePerTokenStaked, "reward rate per token staked");
     }
 }

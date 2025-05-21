@@ -62,7 +62,7 @@ contract RewardRatePerTokenStaked_Integration_Concrete_Test is Shared_Integratio
 
         // It should return correct reward rate per token staked.
         uint128 actualRewardRatePerTokenStaked = staking.rewardRatePerTokenStaked(campaignIds.defaultCampaign);
-        uint128 expectedRewardRatePerTokenStaked = REWARD_RATE / TOTAL_AMOUNT_STAKED;
+        uint128 expectedRewardRatePerTokenStaked = REWARD_RATE / TOTAL_STAKED;
         assertEq(actualRewardRatePerTokenStaked, expectedRewardRatePerTokenStaked, "reward rate per token staked");
     }
 }

@@ -99,26 +99,6 @@ interface ISablierStaking is
     /// @dev Reverts if `campaignId` references a null stream or is inactive (including canceled).
     function rewardRatePerTokenStaked(uint256 campaignId) external view returns (uint128);
 
-    /// @notice Returns the user's stake in the specified campaign.
-    ///
-    /// @dev Reverts if `campaignId` references a null stream.
-    ///
-    /// @param campaignId The campaign ID for the query.
-    /// @param user The address of the user for the query.
-    ///
-    /// @return amountStakedDirectly The total amount of ERC20 tokens staked directly by the user, denoted in staking
-    /// token's decimals.
-    /// @return amountStakedWithStreams The total amount of ERC20 tokens staked through Lockup streams, denoted in
-    /// staking token's decimals.
-    /// @return totalStreams The total number of Lockup streams staked by the user.
-    function totalStakedByUser(
-        uint256 campaignId,
-        address user
-    )
-        external
-        view
-        returns (uint128 amountStakedDirectly, uint128 amountStakedWithStreams, uint128 totalStreams);
-
     /*//////////////////////////////////////////////////////////////////////////
                               STATE-CHANGING FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/

@@ -102,24 +102,6 @@ contract SablierStaking is
         return interfaceId == type(ISablierLockupRecipient).interfaceId;
     }
 
-    /// @inheritdoc ISablierStaking
-    function totalStakedByUser(
-        uint256 campaignId,
-        address user
-    )
-        external
-        view
-        override
-        notNull(campaignId)
-        returns (uint128 amountStakedDirectly, uint128 amountStakedWithStreams, uint128 totalStreams)
-    {
-        UserSnapshot memory userSnapshot = _userSnapshot[user][campaignId];
-
-        amountStakedDirectly = userSnapshot.stakedERC20Amount;
-        amountStakedWithStreams = userSnapshot.totalStakedTokens - amountStakedDirectly;
-        totalStreams = userSnapshot.stakedStreamsCount;
-    }
-
     /*//////////////////////////////////////////////////////////////////////////
                         USER-FACING STATE-CHANGING FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
@@ -352,8 +334,8 @@ contract SablierStaking is
         // Effect: update total staked tokens by `msg.sender`.
         _userSnapshot[msg.sender][campaignId].totalStakedTokens = userSnapshot.totalStakedTokens + amount;
 
-        // Effect: update total staked ERC20 tokens by `msg.sender`.
-        _userSnapshot[msg.sender][campaignId].stakedERC20Amount = userSnapshot.stakedERC20Amount + amount;
+        // Effect: update direct tokens staked by `msg.sender`.
+        _userSnapshot[msg.sender][campaignId].directStakedTokens = userSnapshot.directStakedTokens + amount;
 
         // Interaction: transfer the tokens from the `msg.sender` to this contract.
         campaign.stakingToken.safeTransferFrom({ from: msg.sender, to: address(this), value: amount });
@@ -416,7 +398,7 @@ contract SablierStaking is
         _userSnapshot[msg.sender][campaignId].totalStakedTokens = userSnapshot.totalStakedTokens + amountInStream;
 
         // Effect: update the number of streams staked by `msg.sender`.
-        _userSnapshot[msg.sender][campaignId].stakedStreamsCount = userSnapshot.stakedStreamsCount + 1;
+        _userSnapshot[msg.sender][campaignId].streamsCount = userSnapshot.streamsCount + 1;
 
         // Effect: update the `StakedStream` mapping.
         _stakedStream[lockup][streamId] = StakedStream({ campaignId: campaignId, owner: msg.sender });
@@ -446,9 +428,9 @@ contract SablierStaking is
         // Retrieve the user snapshot from storage into memory.
         UserSnapshot memory userSnapshot = _userSnapshot[msg.sender][campaignId];
 
-        // Check: `amount` is not greater than the staked ERC20 amount.
-        if (amount > userSnapshot.stakedERC20Amount) {
-            revert Errors.SablierStaking_AmountExceedsStakedAmount(campaignId, amount, userSnapshot.stakedERC20Amount);
+        // Check: `amount` is not greater than the direct staked tokens.
+        if (amount > userSnapshot.directStakedTokens) {
+            revert Errors.SablierStaking_AmountExceedsStakedAmount(campaignId, amount, userSnapshot.directStakedTokens);
         }
 
         // Effect: update rewards.
@@ -460,8 +442,8 @@ contract SablierStaking is
         // Effect: reduce total staked tokens by `msg.sender`.
         _userSnapshot[msg.sender][campaignId].totalStakedTokens = userSnapshot.totalStakedTokens - amount;
 
-        // Effect: reduce total staked ERC20 tokens by `msg.sender`.
-        _userSnapshot[msg.sender][campaignId].stakedERC20Amount = userSnapshot.stakedERC20Amount - amount;
+        // Effect: reduce direct staked tokens by `msg.sender`.
+        _userSnapshot[msg.sender][campaignId].directStakedTokens = userSnapshot.directStakedTokens - amount;
 
         // Interaction: transfer the tokens to `msg.sender`.
         _stakingCampaign[campaignId].stakingToken.safeTransfer({ to: msg.sender, value: amount });
@@ -501,7 +483,7 @@ contract SablierStaking is
         _userSnapshot[msg.sender][campaignId].totalStakedTokens = userSnapshot.totalStakedTokens - amountInStream;
 
         // Effect: reduce the number of streams staked by `msg.sender`.
-        _userSnapshot[msg.sender][campaignId].stakedStreamsCount = userSnapshot.stakedStreamsCount - 1;
+        _userSnapshot[msg.sender][campaignId].streamsCount = userSnapshot.streamsCount - 1;
 
         // Effect: delete the `StakedStream` mapping.
         delete _stakedStream[lockup][streamId];
@@ -550,7 +532,7 @@ contract SablierStaking is
                             PRIVATE READ-ONLY FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice Fetches the amount available in the stream.
+    /// @notice Returns the amount available in the stream.
     /// @dev The following function determines the amounts of tokens in a stream irrespective of its cancelable status
     /// using the following formula: stream amount = (amount deposited - amount withdrawn - amount refunded).
     function _amountInStream(ISablierLockupNFT lockup, uint256 streamId) private view returns (uint128 amount) {

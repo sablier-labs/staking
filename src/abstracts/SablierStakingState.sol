@@ -110,8 +110,17 @@ abstract contract SablierStakingState is ISablierStakingState {
     }
 
     /// @inheritdoc ISablierStakingState
-    function globalSnapshot(uint256 campaignId) external view notNull(campaignId) returns (GlobalSnapshot memory) {
-        return _globalSnapshot[campaignId];
+    function globalSnapshot(uint256 campaignId)
+        external
+        view
+        notNull(campaignId)
+        returns (uint40 lastUpdateTime, uint128 rewardsDistributedPerToken, uint128 totalStakedAmount)
+    {
+        GlobalSnapshot memory snapshot = _globalSnapshot[campaignId];
+
+        lastUpdateTime = snapshot.lastUpdateTime;
+        rewardsDistributedPerToken = snapshot.rewardsDistributedPerToken;
+        totalStakedAmount = snapshot.totalStakedTokens;
     }
 
     /// @inheritdoc ISablierStakingState
@@ -160,14 +169,30 @@ abstract contract SablierStakingState is ISablierStakingState {
         external
         view
         notNull(campaignId)
-        returns (UserSnapshot memory)
+        returns (
+            uint40 lastUpdateTime,
+            uint128 rewards,
+            uint128 rewardsEarnedPerToken,
+            uint128 streamsCount,
+            uint128 directAmountStaked,
+            uint128 streamAmountStaked,
+            uint128 totalStakedAmount
+        )
     {
         // Check: the user is not the zero address.
         if (user == address(0)) {
             revert Errors.SablierStakingState_ZeroAddress();
         }
 
-        return _userSnapshot[user][campaignId];
+        UserSnapshot memory snapshot = _userSnapshot[user][campaignId];
+
+        lastUpdateTime = snapshot.lastUpdateTime;
+        rewards = snapshot.rewards;
+        rewardsEarnedPerToken = snapshot.rewardsEarnedPerToken;
+        streamsCount = snapshot.streamsCount;
+        directAmountStaked = snapshot.directStakedTokens;
+        streamAmountStaked = snapshot.totalStakedTokens - snapshot.directStakedTokens;
+        totalStakedAmount = snapshot.totalStakedTokens;
     }
 
     /// @inheritdoc ISablierStakingState

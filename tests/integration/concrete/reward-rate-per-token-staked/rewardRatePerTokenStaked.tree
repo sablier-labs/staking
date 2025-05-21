@@ -1,4 +1,4 @@
-RewardRate_Integration_Concrete_Test
+RewardRatePerTokenStaked_Integration_Concrete_Test
 ├── when null
 │  └── it should revert
 └── when not null
@@ -14,4 +14,4 @@ RewardRate_Integration_Concrete_Test
             ├── given total staked zero
             │  └── it should return zero
             └── given total staked not zero
-               └── it should return correct reward rate
+               └── it should return correct reward rate per token staked

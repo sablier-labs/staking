@@ -4,10 +4,12 @@ pragma solidity >=0.8.22;
 /// @notice A struct to manage the campaign IDs.
 /// @param canceledCampaign A campaign that has been canceled.
 /// @param defaultCampaign The default campaign.
+/// @param freshCampaign A campaign that has been created but not staked into.
 /// @param nullCampaign A campaign ID that does not exist.
 struct CampaignIds {
     uint256 canceledCampaign;
     uint256 defaultCampaign;
+    uint256 freshCampaign;
     uint256 nullCampaign;
 }
 

@@ -82,6 +82,9 @@ abstract contract Integration_Test is Base_Test {
         campaignIds.canceledCampaign = createDefaultCampaign();
         staking.cancelCampaign(campaignIds.canceledCampaign);
 
+        // Fresh campaign.
+        campaignIds.freshCampaign = createDefaultCampaign();
+
         // Null campaign.
         campaignIds.nullCampaign = 420;
     }

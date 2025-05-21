@@ -69,6 +69,11 @@ contract SablierStaking is
         isActive(campaignId)
         returns (uint128)
     {
+        // If the total staked tokens is zero, return 0.
+        if (_globalSnapshot[campaignId].totalStakedTokens == 0) {
+            return 0;
+        }
+
         return _rewardRate(campaignId);
     }
 
@@ -81,6 +86,11 @@ contract SablierStaking is
         isActive(campaignId)
         returns (uint128)
     {
+        // If the total staked tokens is zero, return 0.
+        if (_globalSnapshot[campaignId].totalStakedTokens == 0) {
+            return 0;
+        }
+
         uint128 rewardPerSecond = _rewardRate(campaignId);
 
         // Calculate the reward distributed per second.
@@ -549,13 +559,7 @@ contract SablierStaking is
     }
 
     /// @notice Calculates the reward distributed per second without checking if the campaign is active.
-    /// @dev Returns 0 if the total staked tokens is 0.
     function _rewardRate(uint256 campaignId) private view returns (uint128) {
-        // If the total staked tokens is zero, return 0.
-        if (_globalSnapshot[campaignId].totalStakedTokens == 0) {
-            return 0;
-        }
-
         StakingCampaign memory campaign = _stakingCampaign[campaignId];
 
         // Calculate the reward duration.

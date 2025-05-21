@@ -23,6 +23,10 @@ abstract contract Modifiers is Utils {
         _;
     }
 
+    modifier givenTotalStakedNotZero() {
+        _;
+    }
+
     modifier givenWhitelisted() {
         _;
     }
@@ -41,6 +45,10 @@ abstract contract Modifiers is Utils {
     }
 
     modifier whenEndTimeGreaterThanStartTime() {
+        _;
+    }
+
+    modifier whenEndTimeNotInPast() {
         _;
     }
 
@@ -77,6 +85,14 @@ abstract contract Modifiers is Utils {
     }
 
     modifier whenStartTimeNotInFuture() {
+        _;
+    }
+
+    modifier whenStartTimeNotInPast() {
+        _;
+    }
+
+    modifier whenTotalRewardsNotZero() {
         _;
     }
 }

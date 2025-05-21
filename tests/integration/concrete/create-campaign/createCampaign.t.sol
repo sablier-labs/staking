@@ -202,5 +202,14 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
 
         // It should bump the next campaign ID.
         assertEq(staking.nextCampaignId(), expectedCampaignId + 1, "nextCampaignId");
+
+        // It should set the correct campaign state.
+        assertEq(staking.getAdmin(actualCampaignId), users.campaignCreator, "admin");
+        assertEq(staking.getStakingToken(actualCampaignId), dai, "stakingToken");
+        assertEq(staking.getStartTime(actualCampaignId), START_TIME, "startTime");
+        assertEq(staking.getEndTime(actualCampaignId), END_TIME, "endTime");
+        assertEq(staking.getRewardToken(actualCampaignId), rewardToken, "rewardToken");
+        assertEq(staking.getTotalRewards(actualCampaignId), REWARD_AMOUNT, "totalRewards");
+        assertEq(staking.wasCanceled(actualCampaignId), false, "wasCanceled");
     }
 }

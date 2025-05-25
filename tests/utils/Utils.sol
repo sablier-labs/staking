@@ -24,6 +24,11 @@ abstract contract Utils is Constants, EvmUtilsBase {
         return uint256(value) * UNIT;
     }
 
+    /// @dev Returns the minimum duration, in seconds, it takes to earn one reward token with `amount` staked.
+    function minDurationToEarnOneToken(uint128 amount, uint128 totalStakedAmount) internal pure returns (uint40) {
+        return uint40(totalStakedAmount / (uint256(amount) * REWARD_RATE)) + 1 seconds;
+    }
+
     /// @dev Returns a random uint40 between `min` and `max`.
     function randomUint40(uint40 min, uint40 max) internal returns (uint40) {
         return uint40(vm.randomUint({ min: min, max: max }));

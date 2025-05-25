@@ -20,7 +20,7 @@ contract CancelCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
 
     function test_RevertGiven_Canceled() external whenNoDelegateCall whenNotNull {
         vm.expectRevert(
-            abi.encodeWithSelector(Errors.SablierStaking_CampaignAlreadyCanceled.selector, campaignIds.canceledCampaign)
+            abi.encodeWithSelector(Errors.SablierStakingState_CampaignCanceled.selector, campaignIds.canceledCampaign)
         );
         staking.cancelCampaign(campaignIds.canceledCampaign);
     }

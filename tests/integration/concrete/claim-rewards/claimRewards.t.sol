@@ -86,7 +86,7 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
         emit ISablierStaking.SnapshotRewards(
             campaignIds.defaultCampaign,
             WARP_40_PERCENT,
-            REWARDS_DISTRIBUTED_PER_TOKEN,
+            getScaledValue(REWARDS_DISTRIBUTED_PER_TOKEN),
             users.recipient,
             REWARDS_EARNED_BY_RECIPIENT,
             AMOUNT_STAKED_BY_RECIPIENT
@@ -99,11 +99,11 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
         // Claim the rewards.
         uint128 actualRewards = staking.claimRewards(campaignIds.defaultCampaign);
 
-        (uint40 lastUpdateTime, uint128 rewards, uint128 rewardsEarnedPerToken,,,,) =
+        (uint40 lastUpdateTime, uint256 rewardsEarnedPerTokenScaled,) =
             staking.userSnapshot(campaignIds.defaultCampaign, users.recipient);
 
         // It should set rewards to zero.
-        assertEq(rewards, 0, "rewards");
+        assertEq(staking.getClaimableRewards(campaignIds.defaultCampaign, users.recipient), 0, "rewards");
 
         // It should set last time update to current timestamp.
         assertEq(lastUpdateTime, WARP_40_PERCENT, "lastUpdateTime");
@@ -124,6 +124,8 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
         assertEq(actualRewards, REWARDS_EARNED_BY_RECIPIENT, "return value");
 
         // It should update the user snapshot correctly.
-        assertEq(rewardsEarnedPerToken, REWARDS_DISTRIBUTED_PER_TOKEN, "rewardsEarnedPerToken");
+        assertEq(
+            rewardsEarnedPerTokenScaled, getScaledValue(REWARDS_DISTRIBUTED_PER_TOKEN), "rewardsEarnedPerTokenScaled"
+        );
     }
 }

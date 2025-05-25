@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity >=0.8.22;
 
-import { Users } from "./Types.sol";
-import { Utils } from "./Utils.sol";
+import { BaseTest as EvmUtilsBase } from "@sablier/evm-utils/src/tests/BaseTest.sol";
 
-abstract contract Modifiers is Utils {
+import { Users } from "./Types.sol";
+
+abstract contract Modifiers is EvmUtilsBase {
     /*//////////////////////////////////////////////////////////////////////////
                                      VARIABLES
     //////////////////////////////////////////////////////////////////////////*/
@@ -44,6 +45,14 @@ abstract contract Modifiers is Utils {
         _;
     }
 
+    modifier whenCallerHasStakedTokens() {
+        _;
+    }
+
+    modifier whenClaimableRewardsNotZero() {
+        _;
+    }
+
     modifier whenEndTimeGreaterThanStartTime() {
         _;
     }
@@ -68,10 +77,6 @@ abstract contract Modifiers is Utils {
         _;
     }
 
-    modifier whenStakerNotZeroAddress() {
-        _;
-    }
-
     modifier whenStakingTokenNotZeroAddress() {
         _;
     }
@@ -93,6 +98,10 @@ abstract contract Modifiers is Utils {
     }
 
     modifier whenTotalRewardsNotZero() {
+        _;
+    }
+
+    modifier whenUserNotZeroAddress() {
         _;
     }
 }

@@ -16,8 +16,9 @@ import { SablierStaking } from "src/SablierStaking.sol";
 import { Assertions } from "./utils/Assertions.sol";
 import { Modifiers } from "./utils/Modifiers.sol";
 import { StreamIds, Users } from "./utils/Types.sol";
+import { Utils } from "./utils/Utils.sol";
 
-abstract contract Base_Test is Assertions, Modifiers {
+abstract contract Base_Test is Assertions, Modifiers, Utils {
     using SafeCastLib for uint256;
 
     /*//////////////////////////////////////////////////////////////////////////

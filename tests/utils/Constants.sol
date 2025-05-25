@@ -19,6 +19,7 @@ abstract contract Constants {
     uint128 internal constant DEFAULT_AMOUNT = 10_000e18;
     uint40 internal constant ONE_MONTH = 30 days; // "30/360" convention
     uint40 internal constant ONE_MONTH_SINCE_CREATE = FEB_1_2025 + ONE_MONTH;
+    uint256 internal constant UNIT = 1e18;
 
     // Pre campaign start
     uint128 internal constant AMOUNT_STAKED_BY_RECIPIENT_PRE_START = 0;

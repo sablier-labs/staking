@@ -12,6 +12,23 @@ abstract contract Utils is Constants, EvmUtilsBase {
         return SablierStaking(deployCode("out-optimized/SablierStaking.sol/SablierStaking.json", abi.encode(admin)));
     }
 
+    /// @dev Descales the value by dividing it by 1e18.
+    function getDescaledValue(uint256 value) internal pure returns (uint128) {
+        require(value <= MAX_UINT128 * UNIT, "exceeds MAX_UINT128");
+
+        return uint128(value / UNIT);
+    }
+
+    /// @dev Scales the value by multiplying it by 1e18.
+    function getScaledValue(uint128 value) internal pure returns (uint256) {
+        return uint256(value) * UNIT;
+    }
+
+    /// @dev Returns a random uint40 between `min` and `max`.
+    function randomUint40(uint40 min, uint40 max) internal returns (uint40) {
+        return uint40(vm.randomUint({ min: min, max: max }));
+    }
+
     /// @notice Creates an EVM snapshot at the current block timestamp.
     function snapshotState() internal {
         vm.snapshotState();

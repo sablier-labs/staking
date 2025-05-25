@@ -1,0 +1,21 @@
+CancelCampaign_Integration_Concrete_Test
+├── when delegate call
+│  └── it should revert
+└── when no delegate call
+   ├── when null
+   │  └── it should revert
+   └── when not null
+      ├── given canceled
+      │  └── it should revert
+      └── given not canceled
+         ├── when caller not campaign admin
+         │  └── it should revert
+         └── when caller campaign admin
+            ├── when start time in past
+            │  └── it should revert
+            ├── when start time in present
+            │  └── it should revert
+            └── when start time in future
+               ├── it should cancel the campaign
+               ├── it should emit {Transfer} and {CancelCampaign} events
+               └── it should return the amount refunded

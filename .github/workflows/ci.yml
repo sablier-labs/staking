@@ -1,0 +1,47 @@
+name: "CI"
+
+concurrency:
+  cancel-in-progress: true
+  group: ${{github.workflow}}-${{github.ref}}
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - "main"
+      - "staging"
+
+jobs:
+  lint:
+    uses: "sablier-labs/gha-utils/.github/workflows/evm-lint.yml@main"
+
+  build:
+    uses: "sablier-labs/gha-utils/.github/workflows/forge-build.yml@main"
+
+  test-bulloak:
+    needs: ["lint", "build"]
+    if: needs.build.outputs.cache-status != 'primary'
+    uses: "sablier-labs/gha-utils/.github/workflows/bulloak-check.yml@main"
+    with:
+      skip-modifiers: true
+      tree-path: "tests/integration"
+
+  test-integration:
+    needs: ["lint", "build"]
+    if: needs.build.outputs.cache-status != 'primary'
+    uses: "sablier-labs/gha-utils/.github/workflows/forge-test.yml@main"
+    with:
+      foundry-fuzz-runs: 10000
+      foundry-profile: "test-optimized"
+      match-path: "tests/integration/**/*.sol"
+      name: "Integration tests"
+
+  coverage:
+    needs: ["lint", "build"]
+    if: needs.build.outputs.cache-status != 'primary'
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    uses: "sablier-labs/gha-utils/.github/workflows/forge-coverage.yml@main"
+    with:
+      match-path: "tests/{integration}/**/*.sol"

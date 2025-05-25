@@ -3,7 +3,7 @@ pragma solidity >=0.8.22;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import { GlobalSnapshot, UserSnapshot } from "../types/DataTypes.sol";
+import { Amounts } from "../types/DataTypes.sol";
 import { ISablierLockupNFT } from "./ISablierLockupNFT.sol";
 
 /// @title ISablierStakingState
@@ -13,41 +13,47 @@ interface ISablierStakingState {
                                 READ-ONLY FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice Returns the amount of reward ERC20 tokens available to claim by the user.
-    /// @dev Reverts if `campaignId` references a null stream.
-    function claimableRewards(uint256 campaignId, address user) external view returns (uint256);
+    /// @notice Returns the amounts staked by a user for the given campaign ID.
+    /// @dev Reverts if `campaignId` references a null campaign or `user` is the zero address.
+    function amountStakedByUser(uint256 campaignId, address user) external view returns (Amounts memory);
 
     /// @notice Returns the admin of the given campaign ID.
-    /// @dev Reverts if `campaignId` references a null stream.
+    /// @dev Reverts if `campaignId` references a null campaign.
     function getAdmin(uint256 campaignId) external view returns (address);
 
     /// @notice Returns the end time of the given campaign ID, denoted in UNIX timestamp.
-    /// @dev Reverts if `campaignId` references a null stream.
+    /// @dev Reverts if `campaignId` references a null campaign.
     function getEndTime(uint256 campaignId) external view returns (uint40);
 
     /// @notice Returns the reward token of the given campaign ID, denoted in token's decimals.
-    /// @dev Reverts if `campaignId` references a null stream.
+    /// @dev Reverts if `campaignId` references a null campaign.
     function getRewardToken(uint256 campaignId) external view returns (IERC20);
 
     /// @notice Returns the staking token of the given campaign ID.
-    /// @dev Reverts if `campaignId` references a null stream.
+    /// @dev Reverts if `campaignId` references a null campaign.
     function getStakingToken(uint256 campaignId) external view returns (IERC20);
 
     /// @notice Returns the start time of the given campaign ID, denoted in UNIX timestamp.
-    /// @dev Reverts if `campaignId` references a null stream.
+    /// @dev Reverts if `campaignId` references a null campaign.
     function getStartTime(uint256 campaignId) external view returns (uint40);
 
     /// @notice Returns the total rewards of the given campaign ID, denoted in token's decimals.
-    /// @dev Reverts if `campaignId` references a null stream.
-    function getTotalRewards(uint256 campaignId) external view returns (uint256);
+    /// @dev Reverts if `campaignId` references a null campaign.
+    function getTotalRewards(uint256 campaignId) external view returns (uint128);
 
-    /// @notice Retrieves the global snapshot data for the given campaign ID.
-    /// @dev Reverts if `campaignId` references a null stream.
+    /// @notice Retrieves the global rewards snapshot for the given campaign ID.
+    /// @dev Reverts if `campaignId` references a null campaign.
     /// @param campaignId The campaign ID for the query.
-    /// @return snapshot See the documentation for GlobalSnapshot in {DataTypes}.
-    function globalSnapshot(uint256 campaignId) external view returns (GlobalSnapshot memory snapshot);
+    /// @return lastUpdateTime The last time this snapshot was updated, denoted in UNIX timestamp.
+    /// @return rewardsDistributedPerTokenScaled The amount of rewards distributed per staking token, scaled by 1e18 to
+    /// minimize precision loss.
+    function globalSnapshot(uint256 campaignId)
+        external
+        view
+        returns (uint40 lastUpdateTime, uint256 rewardsDistributedPerTokenScaled);
 
     /// @notice Returns true if the lockup contract is whitelisted to stake.
+    /// @dev Reverts if `lockup` is the zero address.
     function isLockupWhitelisted(ISablierLockupNFT lockup) external view returns (bool);
 
     /// @notice Returns the role authorized to whitelist the lockup contracts for staking into the campaign.
@@ -57,7 +63,8 @@ interface ISablierStakingState {
     function nextCampaignId() external view returns (uint256);
 
     /// @notice Retrieves the details of a stream staked.
-    /// @dev Reverts if the stream is not staked in any campaign.
+    /// @dev Reverts if the lockup contract either is the zero address or is not whitelisted or the stream is not staked
+    /// in any campaign.
     /// @param lockup The lockup contract for the query.
     /// @param streamId The stream ID for the query.
     /// @return campaignId The campaign ID of the campaign in which the stream is staked.
@@ -70,14 +77,28 @@ interface ISablierStakingState {
         view
         returns (uint256 campaignId, address owner);
 
-    /// @notice Retrieves the snapshot data of a user for the given campaign ID.
-    /// @dev Reverts if `campaignId` references a null stream.
+    /// @notice Returns the total amount of tokens staked (both direct staking and through Sablier streams), denoted in
+    /// staking token's decimals.
+    /// @dev Reverts if `campaignId` references a null campaign.
+    function totalStakedTokens(uint256 campaignId) external view returns (uint128);
+
+    /// @notice Retrieves the rewards snapshot of a user for the given campaign ID.
+    /// @dev Reverts if `campaignId` references a null campaign or `user` is the zero address.
     /// @param campaignId The campaign ID for the query.
     /// @param user The user address for the query.
-    /// @return snapshot See the documentation for UserSnapshot in {DataTypes}.
-    function userSnapshot(uint256 campaignId, address user) external view returns (UserSnapshot memory snapshot);
+    /// @return lastUpdateTime The last time this snapshot was updated, denoted in UNIX timestamp.
+    /// @return rewardsEarnedPerTokenScaled The amount of rewards earned per staking token, scaled by 1e18 to minimize
+    /// precision loss.
+    /// @return rewards The amount of rewards earned by the user until last snapshot, denoted in token's decimals.
+    function userSnapshot(
+        uint256 campaignId,
+        address user
+    )
+        external
+        view
+        returns (uint40 lastUpdateTime, uint256 rewardsEarnedPerTokenScaled, uint128 rewards);
 
     /// @notice Returns true if the given campaign ID was canceled.
-    /// @dev Reverts if `campaignId` references a null stream.
+    /// @dev Reverts if `campaignId` references a null campaign.
     function wasCanceled(uint256 campaignId) external view returns (bool);
 }

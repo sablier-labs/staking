@@ -6,12 +6,12 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ISablierLockupNFT } from "../interfaces/ISablierLockupNFT.sol";
 import { ISablierStakingState } from "../interfaces/ISablierStakingState.sol";
 import { Errors } from "../libraries/Errors.sol";
-import { GlobalSnapshot, StakedStream, StakingCampaign, UserSnapshot } from "../types/DataTypes.sol";
+import { Amounts, GlobalSnapshot, StakedStream, StakingCampaign, UserSnapshot } from "../types/DataTypes.sol";
 
 /// @title SablierStakingState
 /// @notice Contract with state variables (storage and constants) for the {SablierStaking} contract, respective getters
 /// and helpful modifiers.
-contract SablierStakingState is ISablierStakingState {
+abstract contract SablierStakingState is ISablierStakingState {
     /*//////////////////////////////////////////////////////////////////////////
                                   STATE VARIABLES
     //////////////////////////////////////////////////////////////////////////*/
@@ -45,21 +45,23 @@ contract SablierStakingState is ISablierStakingState {
                                      MODIFIERS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice Checks that the campaign is active. It implicitly also checks that the campaign is not canceled.
+    /// @notice Checks that the campaign is active by checking that it is not canceled and that the current time is
+    /// between the campaign's start and end times.
     modifier isActive(uint256 campaignId) {
-        _isActive(campaignId);
+        _revertIfCanceled(campaignId);
+        _revertIfCampaignNotOngoing(campaignId);
         _;
     }
 
-    /// @notice Checks that `streamId` associated with `lockup` contract is staked in any campaign.
-    modifier isStaked(ISablierLockupNFT lockup, uint256 streamId) {
-        _isStaked(lockup, streamId);
+    /// @notice Checks that the campaign is not canceled.
+    modifier notCanceled(uint256 campaignId) {
+        _revertIfCanceled(campaignId);
         _;
     }
 
     /// @notice Checks that `campaignId` does not reference a null campaign.
     modifier notNull(uint256 campaignId) {
-        _notNull(campaignId);
+        _revertIfNull(campaignId);
         _;
     }
 
@@ -68,8 +70,28 @@ contract SablierStakingState is ISablierStakingState {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc ISablierStakingState
-    function claimableRewards(uint256 campaignId, address user) external view notNull(campaignId) returns (uint256) {
-        return _userSnapshot[user][campaignId].rewards;
+    function amountStakedByUser(
+        uint256 campaignId,
+        address user
+    )
+        external
+        view
+        notNull(campaignId)
+        returns (Amounts memory)
+    {
+        // Check: the user is not the zero address.
+        if (user == address(0)) {
+            revert Errors.SablierStakingState_ZeroAddress();
+        }
+
+        UserSnapshot memory snapshot = _userSnapshot[user][campaignId];
+
+        return Amounts({
+            streamsCount: snapshot.streamsCount,
+            directAmountStaked: snapshot.directStakedTokens,
+            streamAmountStaked: snapshot.totalStakedTokens - snapshot.directStakedTokens,
+            totalStakedAmount: snapshot.totalStakedTokens
+        });
     }
 
     /// @inheritdoc ISablierStakingState
@@ -98,17 +120,30 @@ contract SablierStakingState is ISablierStakingState {
     }
 
     /// @inheritdoc ISablierStakingState
-    function getTotalRewards(uint256 campaignId) external view notNull(campaignId) returns (uint256) {
+    function getTotalRewards(uint256 campaignId) external view notNull(campaignId) returns (uint128) {
         return _stakingCampaign[campaignId].totalRewards;
     }
 
     /// @inheritdoc ISablierStakingState
-    function globalSnapshot(uint256 campaignId) external view notNull(campaignId) returns (GlobalSnapshot memory) {
-        return _globalSnapshot[campaignId];
+    function globalSnapshot(uint256 campaignId)
+        external
+        view
+        notNull(campaignId)
+        returns (uint40 lastUpdateTime, uint256 rewardsDistributedPerTokenScaled)
+    {
+        GlobalSnapshot memory snapshot = _globalSnapshot[campaignId];
+
+        lastUpdateTime = snapshot.lastUpdateTime;
+        rewardsDistributedPerTokenScaled = snapshot.rewardsDistributedPerTokenScaled;
     }
 
     /// @inheritdoc ISablierStakingState
     function isLockupWhitelisted(ISablierLockupNFT lockup) external view returns (bool) {
+        // Check: the lockup is not the zero address.
+        if (address(lockup) == address(0)) {
+            revert Errors.SablierStakingState_ZeroAddress();
+        }
+
         return _lockupWhitelist[lockup];
     }
 
@@ -119,11 +154,30 @@ contract SablierStakingState is ISablierStakingState {
     )
         external
         view
-        isStaked(lockup, streamId)
         returns (uint256 campaignId, address owner)
     {
+        // Check: the lockup is not the zero address.
+        if (address(lockup) == address(0)) {
+            revert Errors.SablierStakingState_ZeroAddress();
+        }
+
+        // Check: the lockup is whitelisted.
+        if (!_lockupWhitelist[lockup]) {
+            revert Errors.SablierStakingState_LockupNotWhitelisted(lockup);
+        }
+
+        // Check: the stream ID is staked in any campaign.
+        if (_stakedStream[lockup][streamId].campaignId == 0) {
+            revert Errors.SablierStakingState_StreamNotStaked(lockup, streamId);
+        }
+
         campaignId = _stakedStream[lockup][streamId].campaignId;
         owner = _stakedStream[lockup][streamId].owner;
+    }
+
+    /// @inheritdoc ISablierStakingState
+    function totalStakedTokens(uint256 campaignId) external view notNull(campaignId) returns (uint128) {
+        return _globalSnapshot[campaignId].totalStakedTokens;
     }
 
     /// @inheritdoc ISablierStakingState
@@ -134,9 +188,18 @@ contract SablierStakingState is ISablierStakingState {
         external
         view
         notNull(campaignId)
-        returns (UserSnapshot memory)
+        returns (uint40 lastUpdateTime, uint256 rewardsEarnedPerTokenScaled, uint128 rewards)
     {
-        return _userSnapshot[user][campaignId];
+        // Check: the user is not the zero address.
+        if (user == address(0)) {
+            revert Errors.SablierStakingState_ZeroAddress();
+        }
+
+        UserSnapshot memory snapshot = _userSnapshot[user][campaignId];
+
+        lastUpdateTime = snapshot.lastUpdateTime;
+        rewardsEarnedPerTokenScaled = snapshot.rewardsEarnedPerTokenScaled;
+        rewards = snapshot.rewards;
     }
 
     /// @inheritdoc ISablierStakingState
@@ -145,46 +208,32 @@ contract SablierStakingState is ISablierStakingState {
     }
 
     /*//////////////////////////////////////////////////////////////////////////
-                            INTERNAL READ-ONLY FUNCTIONS
-    //////////////////////////////////////////////////////////////////////////*/
-
-    /// @dev Reverts if the campaign is canceled.
-    function _revertIfCanceled(uint256 campaignId) internal view {
-        if (_stakingCampaign[campaignId].wasCanceled) {
-            revert Errors.SablierStakingState_CampaignCanceled();
-        }
-    }
-
-    /*//////////////////////////////////////////////////////////////////////////
                             PRIVATE READ-ONLY FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @dev Checks that the campaign is active. It implicitly also checks that the campaign is not canceled.
-    function _isActive(uint256 campaignId) private view {
+    /// @dev Reverts if the campaign is not ongoing.
+    function _revertIfCampaignNotOngoing(uint256 campaignId) private view {
         uint40 currentTimestamp = uint40(block.timestamp);
         StakingCampaign memory campaign = _stakingCampaign[campaignId];
 
         // Check: the campaign is ongoing by comparing the current timestamp with the campaign's start and end times.
         bool isCampaignOngoing = campaign.startTime <= currentTimestamp && currentTimestamp <= campaign.endTime;
         if (!isCampaignOngoing) {
-            revert Errors.SablierStakingState_CampaignNotActive();
-        }
-
-        // For campaign to be active, it must not be canceled.
-        _revertIfCanceled(campaignId);
-    }
-
-    /// @dev Checks that `streamId` associated with `lockup` contract is staked in any campaign.
-    function _isStaked(ISablierLockupNFT lockup, uint256 streamId) private view {
-        if (_stakedStream[lockup][streamId].campaignId == 0) {
-            revert Errors.SablierStakingState_StreamNotStaked(lockup, streamId);
+            revert Errors.SablierStakingState_CampaignNotActive(campaignId, campaign.startTime, campaign.endTime);
         }
     }
 
-    /// @dev Checks that campaign exists by verifying its admin.
-    function _notNull(uint256 campaignId) private view {
+    /// @dev Reverts if the campaign is canceled.
+    function _revertIfCanceled(uint256 campaignId) private view {
+        if (_stakingCampaign[campaignId].wasCanceled) {
+            revert Errors.SablierStakingState_CampaignCanceled(campaignId);
+        }
+    }
+
+    /// @dev Reverts if the campaign does not exist.
+    function _revertIfNull(uint256 campaignId) private view {
         if (_stakingCampaign[campaignId].admin == address(0)) {
-            revert Errors.SablierStakingState_CampaignDoesNotExist();
+            revert Errors.SablierStakingState_CampaignDoesNotExist(campaignId);
         }
     }
 }

@@ -6,7 +6,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ISablierLockupNFT } from "../interfaces/ISablierLockupNFT.sol";
 import { ISablierStakingState } from "../interfaces/ISablierStakingState.sol";
 import { Errors } from "../libraries/Errors.sol";
-import { GlobalSnapshot, StakedStream, StakingCampaign, UserSnapshot } from "../types/DataTypes.sol";
+import { Amounts, GlobalSnapshot, StakedStream, StakingCampaign, UserSnapshot } from "../types/DataTypes.sol";
 
 /// @title SablierStakingState
 /// @notice Contract with state variables (storage and constants) for the {SablierStaking} contract, respective getters
@@ -45,15 +45,23 @@ abstract contract SablierStakingState is ISablierStakingState {
                                      MODIFIERS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice Checks that the campaign is active. It implicitly also checks that the campaign is not canceled.
+    /// @notice Checks that the campaign is active by checking that it is not canceled and that the current time is
+    /// between the campaign's start and end times.
     modifier isActive(uint256 campaignId) {
-        _isActive(campaignId);
+        _revertIfCanceled(campaignId);
+        _revertIfCampaignNotOngoing(campaignId);
+        _;
+    }
+
+    /// @notice Checks that the campaign is not canceled.
+    modifier notCanceled(uint256 campaignId) {
+        _revertIfCanceled(campaignId);
         _;
     }
 
     /// @notice Checks that `campaignId` does not reference a null campaign.
     modifier notNull(uint256 campaignId) {
-        _notNull(campaignId);
+        _revertIfNull(campaignId);
         _;
     }
 
@@ -62,26 +70,33 @@ abstract contract SablierStakingState is ISablierStakingState {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc ISablierStakingState
-    function getAdmin(uint256 campaignId) external view notNull(campaignId) returns (address) {
-        return _stakingCampaign[campaignId].admin;
-    }
-
-    /// @inheritdoc ISablierStakingState
-    function getClaimableRewards(
+    function amountStakedByUser(
         uint256 campaignId,
         address user
     )
         external
         view
         notNull(campaignId)
-        returns (uint256)
+        returns (Amounts memory)
     {
-        // Check: the user address is not the zero address.
+        // Check: the user is not the zero address.
         if (user == address(0)) {
             revert Errors.SablierStakingState_ZeroAddress();
         }
 
-        return _userSnapshot[user][campaignId].rewards;
+        UserSnapshot memory snapshot = _userSnapshot[user][campaignId];
+
+        return Amounts({
+            streamsCount: snapshot.streamsCount,
+            directAmountStaked: snapshot.directStakedTokens,
+            streamAmountStaked: snapshot.totalStakedTokens - snapshot.directStakedTokens,
+            totalStakedAmount: snapshot.totalStakedTokens
+        });
+    }
+
+    /// @inheritdoc ISablierStakingState
+    function getAdmin(uint256 campaignId) external view notNull(campaignId) returns (address) {
+        return _stakingCampaign[campaignId].admin;
     }
 
     /// @inheritdoc ISablierStakingState
@@ -105,7 +120,7 @@ abstract contract SablierStakingState is ISablierStakingState {
     }
 
     /// @inheritdoc ISablierStakingState
-    function getTotalRewards(uint256 campaignId) external view notNull(campaignId) returns (uint256) {
+    function getTotalRewards(uint256 campaignId) external view notNull(campaignId) returns (uint128) {
         return _stakingCampaign[campaignId].totalRewards;
     }
 
@@ -114,13 +129,12 @@ abstract contract SablierStakingState is ISablierStakingState {
         external
         view
         notNull(campaignId)
-        returns (uint40 lastUpdateTime, uint128 rewardsDistributedPerToken, uint128 totalStakedAmount)
+        returns (uint40 lastUpdateTime, uint256 rewardsDistributedPerTokenScaled)
     {
         GlobalSnapshot memory snapshot = _globalSnapshot[campaignId];
 
         lastUpdateTime = snapshot.lastUpdateTime;
-        rewardsDistributedPerToken = snapshot.rewardsDistributedPerToken;
-        totalStakedAmount = snapshot.totalStakedTokens;
+        rewardsDistributedPerTokenScaled = snapshot.rewardsDistributedPerTokenScaled;
     }
 
     /// @inheritdoc ISablierStakingState
@@ -162,6 +176,11 @@ abstract contract SablierStakingState is ISablierStakingState {
     }
 
     /// @inheritdoc ISablierStakingState
+    function totalStakedTokens(uint256 campaignId) external view notNull(campaignId) returns (uint128) {
+        return _globalSnapshot[campaignId].totalStakedTokens;
+    }
+
+    /// @inheritdoc ISablierStakingState
     function userSnapshot(
         uint256 campaignId,
         address user
@@ -169,15 +188,7 @@ abstract contract SablierStakingState is ISablierStakingState {
         external
         view
         notNull(campaignId)
-        returns (
-            uint40 lastUpdateTime,
-            uint128 rewards,
-            uint128 rewardsEarnedPerToken,
-            uint128 streamsCount,
-            uint128 directAmountStaked,
-            uint128 streamAmountStaked,
-            uint128 totalStakedAmount
-        )
+        returns (uint40 lastUpdateTime, uint256 rewardsEarnedPerTokenScaled, uint128 rewards)
     {
         // Check: the user is not the zero address.
         if (user == address(0)) {
@@ -187,12 +198,8 @@ abstract contract SablierStakingState is ISablierStakingState {
         UserSnapshot memory snapshot = _userSnapshot[user][campaignId];
 
         lastUpdateTime = snapshot.lastUpdateTime;
+        rewardsEarnedPerTokenScaled = snapshot.rewardsEarnedPerTokenScaled;
         rewards = snapshot.rewards;
-        rewardsEarnedPerToken = snapshot.rewardsEarnedPerToken;
-        streamsCount = snapshot.streamsCount;
-        directAmountStaked = snapshot.directStakedTokens;
-        streamAmountStaked = snapshot.totalStakedTokens - snapshot.directStakedTokens;
-        totalStakedAmount = snapshot.totalStakedTokens;
     }
 
     /// @inheritdoc ISablierStakingState
@@ -201,25 +208,11 @@ abstract contract SablierStakingState is ISablierStakingState {
     }
 
     /*//////////////////////////////////////////////////////////////////////////
-                            INTERNAL READ-ONLY FUNCTIONS
-    //////////////////////////////////////////////////////////////////////////*/
-
-    /// @dev Reverts if the campaign is canceled.
-    function _revertIfCanceled(uint256 campaignId) internal view {
-        if (_stakingCampaign[campaignId].wasCanceled) {
-            revert Errors.SablierStakingState_CampaignCanceled(campaignId);
-        }
-    }
-
-    /*//////////////////////////////////////////////////////////////////////////
                             PRIVATE READ-ONLY FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @dev Checks that the campaign is active. It implicitly also checks that the campaign is not canceled.
-    function _isActive(uint256 campaignId) private view {
-        // For campaign to be active, it must not be canceled.
-        _revertIfCanceled(campaignId);
-
+    /// @dev Reverts if the campaign is not ongoing.
+    function _revertIfCampaignNotOngoing(uint256 campaignId) private view {
         uint40 currentTimestamp = uint40(block.timestamp);
         StakingCampaign memory campaign = _stakingCampaign[campaignId];
 
@@ -230,8 +223,15 @@ abstract contract SablierStakingState is ISablierStakingState {
         }
     }
 
-    /// @dev Checks that campaign exists by verifying its admin.
-    function _notNull(uint256 campaignId) private view {
+    /// @dev Reverts if the campaign is canceled.
+    function _revertIfCanceled(uint256 campaignId) private view {
+        if (_stakingCampaign[campaignId].wasCanceled) {
+            revert Errors.SablierStakingState_CampaignCanceled(campaignId);
+        }
+    }
+
+    /// @dev Reverts if the campaign does not exist.
+    function _revertIfNull(uint256 campaignId) private view {
         if (_stakingCampaign[campaignId].admin == address(0)) {
             revert Errors.SablierStakingState_CampaignDoesNotExist(campaignId);
         }

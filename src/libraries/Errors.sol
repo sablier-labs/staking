@@ -50,9 +50,6 @@ library Errors {
         ISablierLockupNFT lockup, uint256 streamId, address caller, address streamOwner
     );
 
-    /// @notice Thrown when trying to cancel a campaign that is already canceled.
-    error SablierStaking_CampaignAlreadyCanceled(uint256 campaignId);
-
     /// @notice Thrown when trying to cancel a campaign that has already started.
     error SablierStaking_CampaignAlreadyStarted(uint40 startTime);
 
@@ -115,4 +112,7 @@ library Errors {
 
     /// @notice Thrown when trying to withdraw from a staked stream.
     error SablierStaking_WithdrawNotAllowed(ISablierLockupNFT lockup, uint256 streamId);
+
+    /// @notice Thrown when the input argument is the zero address.
+    error SablierStaking_ZeroAddress();
 }

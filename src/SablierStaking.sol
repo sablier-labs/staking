@@ -5,6 +5,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { ERC721Holder } from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { NoDelegateCall } from "@sablier/evm-utils/src/NoDelegateCall.sol";
 import { RoleAdminable } from "@sablier/evm-utils/src/RoleAdminable.sol";
 import { ISablierLockupRecipient } from "@sablier/lockup/src/interfaces/ISablierLockupRecipient.sol";
@@ -24,6 +25,7 @@ contract SablierStaking is
     RoleAdminable, // 3 inherited components
     SablierStakingState // 1 inherited component
 {
+    using SafeCast for uint256;
     using SafeERC20 for IERC20;
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -38,6 +40,27 @@ contract SablierStaking is
     /*//////////////////////////////////////////////////////////////////////////
                           USER-FACING READ-ONLY FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
+
+    /// @inheritdoc ISablierStaking
+    function getClaimableRewards(
+        uint256 campaignId,
+        address user
+    )
+        external
+        view
+        notNull(campaignId)
+        notCanceled(campaignId)
+        returns (uint128)
+    {
+        // Check: the user address is not the zero address.
+        if (user == address(0)) {
+            revert Errors.SablierStaking_ZeroAddress();
+        }
+
+        uint128 rewardsEarnedSinceLastSnapshot = _userRewardsSinceLastSnapshot(campaignId, user);
+
+        return _userSnapshot[user][campaignId].rewards + rewardsEarnedSinceLastSnapshot;
+    }
 
     /// @inheritdoc ISablierLockupRecipient
     /// @notice Handles the hook call from the Lockup contract when withdraw is called on a staked stream.
@@ -86,15 +109,51 @@ contract SablierStaking is
         isActive(campaignId)
         returns (uint128)
     {
+        uint128 totalStakedTokens = _globalSnapshot[campaignId].totalStakedTokens;
+
         // If the total staked tokens is zero, return 0.
-        if (_globalSnapshot[campaignId].totalStakedTokens == 0) {
+        if (totalStakedTokens == 0) {
             return 0;
         }
 
         uint128 rewardPerSecond = _rewardRate(campaignId);
 
         // Calculate the reward distributed per second.
-        return rewardPerSecond / _globalSnapshot[campaignId].totalStakedTokens;
+        return rewardPerSecond / totalStakedTokens;
+    }
+
+    /// @inheritdoc ISablierStaking
+    function rewardsDistributedSinceLastSnapshot(uint256 campaignId)
+        external
+        view
+        override
+        notNull(campaignId)
+        notCanceled(campaignId)
+        returns (uint128)
+    {
+        // Check: the campaign start time is not in the future.
+        if (_stakingCampaign[campaignId].startTime > uint40(block.timestamp)) {
+            revert Errors.SablierStaking_CampaignNotStarted(_stakingCampaign[campaignId].startTime);
+        }
+
+        return _rewardsDistributedSinceLastSnapshot(campaignId);
+    }
+
+    /// @inheritdoc ISablierStaking
+    function rewardsDistributedPerTokenSinceLastSnapshot(uint256 campaignId)
+        external
+        view
+        override
+        notNull(campaignId)
+        notCanceled(campaignId)
+        returns (uint128)
+    {
+        // Check: the campaign start time is not in the future.
+        if (_stakingCampaign[campaignId].startTime > uint40(block.timestamp)) {
+            revert Errors.SablierStaking_CampaignNotStarted(_stakingCampaign[campaignId].startTime);
+        }
+
+        return _rewardsDistributedSinceLastSnapshot(campaignId) / _globalSnapshot[campaignId].totalStakedTokens;
     }
 
     /// @inheritdoc IERC165
@@ -112,15 +171,11 @@ contract SablierStaking is
         override
         noDelegateCall
         notNull(campaignId)
+        notCanceled(campaignId)
         returns (uint128 amountRefunded)
     {
         // Load the campaign from storage into memory.
         StakingCampaign memory campaign = _stakingCampaign[campaignId];
-
-        // Check: the campaign is not canceled already.
-        if (campaign.wasCanceled) {
-            revert Errors.SablierStaking_CampaignAlreadyCanceled(campaignId);
-        }
 
         // Check: `msg.sender` is the campaign admin.
         if (msg.sender != campaign.admin) {
@@ -149,11 +204,9 @@ contract SablierStaking is
         override
         noDelegateCall
         notNull(campaignId)
+        notCanceled(campaignId)
         returns (uint128 rewards)
     {
-        // Check: the campaign is not canceled.
-        _revertIfCanceled(campaignId);
-
         uint40 currentTimestamp = uint40(block.timestamp);
         uint40 startTime = _stakingCampaign[campaignId].startTime;
 
@@ -316,10 +369,16 @@ contract SablierStaking is
     }
 
     /// @inheritdoc ISablierStaking
-    function stakeERC20Token(uint256 campaignId, uint128 amount) external override noDelegateCall notNull(campaignId) {
-        // Check: the campaign is not canceled.
-        _revertIfCanceled(campaignId);
-
+    function stakeERC20Token(
+        uint256 campaignId,
+        uint128 amount
+    )
+        external
+        override
+        noDelegateCall
+        notNull(campaignId)
+        notCanceled(campaignId)
+    {
         // Retrieve the campaign from storage into memory.
         StakingCampaign memory campaign = _stakingCampaign[campaignId];
 
@@ -365,10 +424,8 @@ contract SablierStaking is
         override
         noDelegateCall
         notNull(campaignId)
+        notCanceled(campaignId)
     {
-        // Check: the campaign is not canceled.
-        _revertIfCanceled(campaignId);
-
         // Check: the lockup is whitelisted.
         if (!_lockupWhitelist[lockup]) {
             revert Errors.SablierStaking_LockupNotWhitelisted(lockup);
@@ -562,8 +619,11 @@ contract SablierStaking is
         return campaign.totalRewards / rewardDuration;
     }
 
-    /// @notice Calculates cumulative rewards distributed since the last snapshot.
-    /// @dev It assumes that the campaign has started and the last time update is less than the campaign end time.
+    /// @notice Calculates cumulative rewards distributed since the last snapshot without looking at the campaign
+    /// status.
+    /// @dev Returns 0 if:
+    ///  - The total staked tokens are 0.
+    ///  - The last time update is greater than or equal to the campaign end time.
     function _rewardsDistributedSinceLastSnapshot(uint256 campaignId)
         private
         view
@@ -571,8 +631,13 @@ contract SablierStaking is
     {
         GlobalSnapshot memory globalSnapshot = _globalSnapshot[campaignId];
 
-        // If the total staked tokens is 0, return 0.
+        // If the total staked tokens are 0, return 0.
         if (globalSnapshot.totalStakedTokens == 0) {
+            return 0;
+        }
+
+        // If the last time update is greater than or equal to the campaign end time, return 0.
+        if (globalSnapshot.lastUpdateTime >= _stakingCampaign[campaignId].endTime) {
             return 0;
         }
 
@@ -595,8 +660,8 @@ contract SablierStaking is
             endingTimestamp = uint40(block.timestamp);
         }
 
-        uint40 elapsedTime;
-        uint40 campaignDuration;
+        uint256 campaignDuration;
+        uint256 elapsedTime;
 
         // Safe to use `unchecked` because the calculations cannot overflow.
         unchecked {
@@ -613,15 +678,47 @@ contract SablierStaking is
         // Safe to use `unchecked` because the calculations cannot overflow.
         unchecked {
             // Calculate the total rewards distributed since the last snapshot.
-            rewardsDistributed = uint128((elapsedTime * campaign.totalRewards) / campaignDuration);
+            rewardsDistributed = ((campaign.totalRewards * elapsedTime) / campaignDuration).toUint128();
         }
 
         return rewardsDistributed;
     }
 
-    /// @notice Calculates cumulative rewards distributed per ERC20 token since the last snapshot.
-    function _rewardsDistributedPerTokenSinceLastSnapshot(uint256 campaignId) private view returns (uint128) {
-        return _rewardsDistributedSinceLastSnapshot(campaignId) / _globalSnapshot[campaignId].totalStakedTokens;
+    /// @dev Calculates the rewards distributed per ERC20 token since the last snapshot, scaled by 1e18.
+    function _rewardsPerTokenSinceLastSnapshotScaled(uint256 campaignId)
+        private
+        view
+        returns (uint256 rewardsPerTokenScaled)
+    {
+        uint256 rewardsSinceLastSnapshot = _rewardsDistributedSinceLastSnapshot(campaignId);
+
+        return rewardsSinceLastSnapshot * 1e18 / _globalSnapshot[campaignId].totalStakedTokens;
+    }
+
+    /// @dev Calculates the rewards earned by the user since the last snapshot.
+    function _userRewardsSinceLastSnapshot(
+        uint256 campaignId,
+        address user
+    )
+        private
+        view
+        returns (uint128 rewardsEarned)
+    {
+        UserSnapshot memory userSnapshot = _userSnapshot[user][campaignId];
+
+        // Get the rewards distributed per ERC20 token since the last snapshot, scaled by 1e18.
+        uint256 rewardsPerTokenSinceLastSnapshotScaled = _rewardsPerTokenSinceLastSnapshotScaled(campaignId);
+
+        // Calculate the cumulative rewards distributed per ERC20 token.
+        uint256 rewardsPerTokenScaled =
+            _globalSnapshot[campaignId].rewardsDistributedPerTokenScaled + rewardsPerTokenSinceLastSnapshotScaled;
+
+        // Calculate the rewards earned per ERC20 token by the user since the last snapshot.
+        uint256 userRewardsPerTokenSinceLastSnapshotScaled =
+            rewardsPerTokenScaled - userSnapshot.rewardsEarnedPerTokenScaled;
+
+        // Calculate the rewards earned by the user since the last snapshot.
+        rewardsEarned = (userRewardsPerTokenSinceLastSnapshotScaled * userSnapshot.totalStakedTokens / 1e18).toUint128();
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -629,8 +726,7 @@ contract SablierStaking is
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Snapshots rewards data for the specified campaign and user.
-    /// @dev It does nothing if the campaign has not started or if the last time update is not less than the campaign
-    /// end time.
+    /// @dev It does nothing if the campaign has not started.
     function _snapshotRewards(uint256 campaignId, address user) private {
         StakingCampaign memory campaign = _stakingCampaign[campaignId];
 
@@ -639,62 +735,90 @@ contract SablierStaking is
             return;
         }
 
-        GlobalSnapshot memory globalSnapshot = _globalSnapshot[campaignId];
+        // Get the rewards distributed since the last snapshot.
+        uint256 rewardsSinceLastSnapshot = _rewardsDistributedSinceLastSnapshot(campaignId);
 
-        // Retrieve the rewards distributed per ERC20 token since the last snapshot.
-        uint128 rewardsDistributedPerTokenSinceLastSnapshot = _rewardsDistributedPerTokenSinceLastSnapshot(campaignId);
+        // Update the global snapshot.
+        uint256 rewardsPerTokenScaled = _updateGlobalSnapshot(campaignId, rewardsSinceLastSnapshot);
 
-        uint128 totalRewardsDistributedPerToken = globalSnapshot.rewardsDistributedPerToken;
-
-        // Update the global snapshot if:
-        //  - The rewards distributed per ERC20 token since the last snapshot is greater than 0.
-        //  - The last time update is less than the campaign end time.
-        if (rewardsDistributedPerTokenSinceLastSnapshot > 0 && globalSnapshot.lastUpdateTime < campaign.endTime) {
-            // Update the cumulative rewards distributed per ERC20 token since the beginning of the campaign.
-            totalRewardsDistributedPerToken += rewardsDistributedPerTokenSinceLastSnapshot;
-
-            // Effect: update the rewards distributed per ERC20 token.
-            _globalSnapshot[campaignId].rewardsDistributedPerToken = totalRewardsDistributedPerToken;
-        }
-
-        // Effect: update the last time update.
-        _globalSnapshot[campaignId].lastUpdateTime = uint40(block.timestamp);
-
-        UserSnapshot memory userSnapshot = _userSnapshot[user][campaignId];
-
-        uint128 updatedUserRewards;
-
-        // Update the user snapshot if:
-        //  - The user has tokens staked.
-        //  - The last time update is less than the campaign end time.
-        if (userSnapshot.totalStakedTokens > 0 && userSnapshot.lastUpdateTime < campaign.endTime) {
-            // Compute the rewards earned per ERC20 token by the user since the previous snapshot.
-            uint128 rewardsEarnedPerTokenSinceLastSnapshot =
-                totalRewardsDistributedPerToken - userSnapshot.rewardsEarnedPerToken;
-
-            // Compute the new rewards earned by the user since the last snapshot.
-            uint128 rewardsEarnedSinceLastSnapshot =
-                rewardsEarnedPerTokenSinceLastSnapshot * userSnapshot.totalStakedTokens;
-
-            // Effect: update the rewards earned by the user.
-            updatedUserRewards = userSnapshot.rewards + rewardsEarnedSinceLastSnapshot;
-            _userSnapshot[user][campaignId].rewards = updatedUserRewards;
-
-            // Effect: update the rewards earned per ERC20 token by the user.
-            _userSnapshot[user][campaignId].rewardsEarnedPerToken = totalRewardsDistributedPerToken;
-
-            // Effect: update the last time update.
-            _userSnapshot[user][campaignId].lastUpdateTime = uint40(block.timestamp);
-        }
+        // Update the user snapshot.
+        (uint128 userRewards, uint128 userStakedTokens) = _updateUserSnapshot(campaignId, user, rewardsPerTokenScaled);
 
         // Log the event.
         emit SnapshotRewards({
             campaignId: campaignId,
             lastUpdateTime: uint40(block.timestamp),
-            rewardsDistributedPerToken: totalRewardsDistributedPerToken,
+            rewardsDistributedPerTokenScaled: rewardsPerTokenScaled,
             user: user,
-            userRewards: updatedUserRewards,
-            userStakedTokens: userSnapshot.totalStakedTokens
+            userRewards: userRewards,
+            userStakedTokens: userStakedTokens
         });
+    }
+
+    /// @dev Private function to update the global snapshot.
+    function _updateGlobalSnapshot(
+        uint256 campaignId,
+        uint256 rewardsSinceLastSnapshot
+    )
+        private
+        returns (uint256 rewardsPerTokenScaled)
+    {
+        GlobalSnapshot memory globalSnapshot = _globalSnapshot[campaignId];
+
+        rewardsPerTokenScaled = globalSnapshot.rewardsDistributedPerTokenScaled;
+
+        // Update the global rewards if the rewards since the last snapshot is greater than 0.
+        if (rewardsSinceLastSnapshot > 0) {
+            // Get the rewards distributed per ERC20 token since the last snapshot, scaled by 1e18.
+            uint256 rewardsPerTokenSinceLastSnapshotScaled = _rewardsPerTokenSinceLastSnapshotScaled(campaignId);
+
+            // Update the cumulative rewards distributed per ERC20 token since the beginning of the campaign.
+            rewardsPerTokenScaled += rewardsPerTokenSinceLastSnapshotScaled;
+
+            // Effect: update the rewards distributed per ERC20 token.
+            _globalSnapshot[campaignId].rewardsDistributedPerTokenScaled = rewardsPerTokenScaled;
+        }
+
+        // Effect: update the last time update.
+        _globalSnapshot[campaignId].lastUpdateTime = uint40(block.timestamp);
+    }
+
+    /// @dev Private function to update the user snapshot.
+    function _updateUserSnapshot(
+        uint256 campaignId,
+        address user,
+        uint256 rewardsPerTokenScaled
+    )
+        private
+        returns (uint128 userRewards, uint128 userStakedTokens)
+    {
+        StakingCampaign memory campaign = _stakingCampaign[campaignId];
+        UserSnapshot memory userSnapshot = _userSnapshot[user][campaignId];
+
+        userStakedTokens = userSnapshot.totalStakedTokens;
+
+        // Update the user snapshot if the last time update is less than the campaign end time.
+        if (userSnapshot.lastUpdateTime < campaign.endTime) {
+            // If the user has tokens staked, update the user rewards earned.
+            if (userStakedTokens > 0) {
+                // Compute the rewards earned per ERC20 token by the user since the previous snapshot.
+                uint256 userRewardsPerTokenSinceLastSnapshotScaled =
+                    rewardsPerTokenScaled - userSnapshot.rewardsEarnedPerTokenScaled;
+
+                // Compute the new rewards earned by the user since the last snapshot.
+                uint128 userRewardsSinceLastSnapshot =
+                    (userRewardsPerTokenSinceLastSnapshotScaled * userStakedTokens / 1e18).toUint128();
+
+                // Effect: update the rewards earned by the user.
+                userRewards = userSnapshot.rewards + userRewardsSinceLastSnapshot;
+                _userSnapshot[user][campaignId].rewards = userRewards;
+            }
+
+            // Effect: update the rewards earned per ERC20 token by the user.
+            _userSnapshot[user][campaignId].rewardsEarnedPerTokenScaled = rewardsPerTokenScaled;
+
+            // Effect: update the last time update.
+            _userSnapshot[user][campaignId].lastUpdateTime = uint40(block.timestamp);
+        }
     }
 }

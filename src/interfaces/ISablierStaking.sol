@@ -59,7 +59,7 @@ interface ISablierStaking is
     event SnapshotRewards(
         uint256 indexed campaignId,
         uint40 lastUpdateTime,
-        uint128 rewardsDistributedPerToken,
+        uint256 rewardsDistributedPerTokenScaled,
         address indexed user,
         uint128 userRewards,
         uint128 userStakedTokens
@@ -89,15 +89,38 @@ interface ISablierStaking is
                                 READ-ONLY FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
+    /// @notice Returns the amount of reward ERC20 tokens available to claim by the user.
+    /// @dev Reverts if `campaignId` references a null campaign or a canceled campaign, or if `user` is the zero
+    /// address.
+    function getClaimableRewards(uint256 campaignId, address user) external view returns (uint128);
+
     /// @notice Returns the amount of reward ERC20 tokens that total staked ERC20 tokens are earning every second.
     /// Returns 0 if total staked tokens are 0.
-    /// @dev Reverts if `campaignId` references a null stream, or is inactive (including canceled).
+    /// @dev Reverts if `campaignId` references a null campaign, or is inactive (including canceled).
     function rewardRate(uint256 campaignId) external view returns (uint128);
 
     /// @notice Returns the amount of reward ERC20 token that each staked ERC20 token is earning every second. Returns 0
     /// if total staked tokens are 0.
-    /// @dev Reverts if `campaignId` references a null stream or is inactive (including canceled).
+    /// @dev Reverts if `campaignId` references a null campaign or is inactive (including canceled).
     function rewardRatePerTokenStaked(uint256 campaignId) external view returns (uint128);
+
+    /// @notice Calculates cumulative rewards distributed since the last snapshot.
+    /// @dev Returns 0 if the total staked tokens are 0 or the last time update is greater than or equal to the campaign
+    /// end time.
+    ///
+    /// Requirements:
+    ///  - `campaignId` must not reference a null campaign or a canceled campaign.
+    ///  -  The campaign start time must not be in the future.
+    function rewardsDistributedSinceLastSnapshot(uint256 campaignId) external view returns (uint128);
+
+    /// @notice Calculates cumulative rewards distributed per ERC20 token since the last snapshot.
+    /// @dev Returns 0 if the total staked tokens are 0 or the last time update is greater than or equal to the campaign
+    /// end time.
+    ///
+    /// Requirements:
+    ///  - `campaignId` must not reference a null campaign or a canceled campaign.
+    ///  -  The campaign start time must not be in the future.
+    function rewardsDistributedPerTokenSinceLastSnapshot(uint256 campaignId) external view returns (uint128);
 
     /*//////////////////////////////////////////////////////////////////////////
                               STATE-CHANGING FUNCTIONS
@@ -108,7 +131,7 @@ interface ISablierStaking is
     ///
     /// Requirements:
     ///  - Must not be delegate called.
-    ///  - `campaignId` must not reference a null stream or a canceled campaign.
+    ///  - `campaignId` must not reference a null campaign or a canceled campaign.
     ///  - `msg.sender` must be the campaign admin.
     ///  - The campaign's start time must be in the future.
     ///
@@ -124,7 +147,7 @@ interface ISablierStaking is
     ///
     /// Requirements:
     ///  - Must not be delegate called.
-    ///  - `campaignId` must not reference a null stream or a canceled campaign.
+    ///  - `campaignId` must not reference a null campaign or a canceled campaign.
     ///  - The block timestamp must be greater than or equal to the campaign start time.
     ///  - Claimable rewards must be greater than 0.
     ///
@@ -176,7 +199,7 @@ interface ISablierStaking is
     ///
     /// Requirements:
     ///  - Must not be delegate called.
-    ///  - `campaignId` must not reference a null stream or a canceled campaign.
+    ///  - `campaignId` must not reference a null campaign or a canceled campaign.
     ///
     /// @param campaignId The campaign ID to snapshot rewards data for.
     /// @param user The address of the user to snapshot rewards data for.
@@ -192,7 +215,7 @@ interface ISablierStaking is
     ///
     /// Requirements:
     ///  - Must not be delegate called.
-    ///  - `campaignId` must not reference a null stream or a canceled campaign.
+    ///  - `campaignId` must not reference a null campaign or a canceled campaign.
     ///  - Campaign end time must be in the future.
     ///  - `amount` must be greater than 0.
     ///  - `msg.sender` must have approved this contract to spend the ERC20 token.
@@ -210,7 +233,7 @@ interface ISablierStaking is
     ///
     /// Requirements:
     ///  - Must not be delegate called.
-    ///  - `campaignId` must not reference a null stream or a canceled campaign.
+    ///  - `campaignId` must not reference a null campaign or a canceled campaign.
     ///  - `lockup` must be a whitelisted Lockup contract.
     ///  - Campaign end time must be in the future.
     ///  - Stream's underlying token must be same as the campaign's staking token.
@@ -231,7 +254,7 @@ interface ISablierStaking is
     ///
     /// Requirements:
     ///  - Must not be delegate called.
-    ///  - `campaignId` must not reference a null stream.
+    ///  - `campaignId` must not reference a null campaign.
     ///  - `amount` must be greater than 0 and must not exceed the user's staked ERC20 amount in the campaign.
     ///
     /// @param campaignId The campaign ID to unstake the ERC20 token from.

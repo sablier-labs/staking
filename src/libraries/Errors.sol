@@ -43,7 +43,7 @@ library Errors {
     );
 
     /// @notice Thrown when the caller is not the campaign admin.
-    error SablierStaking_CallerNotCampaignAdmin(address caller, address campaignAdmin);
+    error SablierStaking_CallerNotCampaignAdmin(uint256 campaignId, address caller, address campaignAdmin);
 
     /// @notice Thrown when the caller is not the original owner of the stream.
     error SablierStaking_CallerNotStreamOwner(
@@ -51,13 +51,13 @@ library Errors {
     );
 
     /// @notice Thrown when trying to cancel a campaign that has already started.
-    error SablierStaking_CampaignAlreadyStarted(uint40 startTime);
+    error SablierStaking_CampaignAlreadyStarted(uint256 campaignId, uint40 startTime);
 
     /// @notice Thrown when user is staking in a campaign that has ended.
-    error SablierStaking_CampaignHasEnded(uint40 endTime);
+    error SablierStaking_CampaignHasEnded(uint256 campaignId, uint40 endTime);
 
     /// @notice Thrown when campaign has not started yet.
-    error SablierStaking_CampaignNotStarted(uint40 startTime);
+    error SablierStaking_CampaignNotStarted(uint256 campaignId, uint40 startTime);
 
     /// @notice Thrown when staking a depleted stream.
     error SablierStaking_DepletedStream(ISablierLockupNFT lockup, uint256 streamId);

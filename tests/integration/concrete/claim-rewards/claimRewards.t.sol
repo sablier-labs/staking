@@ -32,7 +32,11 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
     }
 
     function test_RevertWhen_StartTimeInFuture() external whenNoDelegateCall whenNotNull givenNotCanceled {
-        vm.expectRevert(abi.encodeWithSelector(Errors.SablierStaking_CampaignNotStarted.selector, START_TIME));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.SablierStaking_CampaignNotStarted.selector, campaignIds.defaultCampaign, START_TIME
+            )
+        );
         staking.claimRewards(campaignIds.defaultCampaign);
     }
 

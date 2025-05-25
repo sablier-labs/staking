@@ -28,8 +28,9 @@ contract CreateCampaign_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
     {
         // Ensure the parameters are within constraints.
         vm.assume(admin != address(0) && campaignCreator != address(0));
-        vm.assume(startTime >= getBlockTimestamp() && startTime < endTime);
-        vm.assume(totalRewards > 0);
+        endTime = boundUint40(endTime, getBlockTimestamp() + 1 seconds, MAX_UINT40);
+        startTime = boundUint40(startTime, getBlockTimestamp(), endTime - 1);
+        totalRewards = boundUint128(totalRewards, 1, MAX_UINT128);
 
         // Deal reward token to the campaign creator.
         deal({ token: address(rewardToken), to: campaignCreator, give: totalRewards });

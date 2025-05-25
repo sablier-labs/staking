@@ -104,15 +104,6 @@ interface ISablierStaking is
     /// @dev Reverts if `campaignId` references a null campaign or is inactive (including canceled).
     function rewardRatePerTokenStaked(uint256 campaignId) external view returns (uint128);
 
-    /// @notice Calculates cumulative rewards distributed since the last snapshot.
-    /// @dev Returns 0 if the total staked tokens are 0 or the last time update is greater than or equal to the campaign
-    /// end time.
-    ///
-    /// Requirements:
-    ///  - `campaignId` must not reference a null campaign or a canceled campaign.
-    ///  -  The campaign start time must not be in the future.
-    function rewardsDistributedSinceLastSnapshot(uint256 campaignId) external view returns (uint128);
-
     /// @notice Calculates cumulative rewards distributed per ERC20 token since the last snapshot.
     /// @dev Returns 0 if the total staked tokens are 0 or the last time update is greater than or equal to the campaign
     /// end time.
@@ -120,7 +111,16 @@ interface ISablierStaking is
     /// Requirements:
     ///  - `campaignId` must not reference a null campaign or a canceled campaign.
     ///  -  The campaign start time must not be in the future.
-    function rewardsDistributedPerTokenSinceLastSnapshot(uint256 campaignId) external view returns (uint128);
+    function rewardsPerTokenSinceLastSnapshot(uint256 campaignId) external view returns (uint128);
+
+    /// @notice Calculates cumulative rewards distributed since the last snapshot.
+    /// @dev Returns 0 if the total staked tokens are 0 or the last time update is greater than or equal to the campaign
+    /// end time.
+    ///
+    /// Requirements:
+    ///  - `campaignId` must not reference a null campaign or a canceled campaign.
+    ///  -  The campaign start time must not be in the future.
+    function rewardsSinceLastSnapshot(uint256 campaignId) external view returns (uint128);
 
     /*//////////////////////////////////////////////////////////////////////////
                               STATE-CHANGING FUNCTIONS

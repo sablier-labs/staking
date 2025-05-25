@@ -23,7 +23,11 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         warpStateTo(timestamp);
 
         // It should revert.
-        vm.expectRevert(abi.encodeWithSelector(Errors.SablierStaking_CampaignNotStarted.selector, START_TIME));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.SablierStaking_CampaignNotStarted.selector, campaignIds.defaultCampaign, START_TIME
+            )
+        );
         staking.claimRewards(campaignIds.defaultCampaign);
     }
 

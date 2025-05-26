@@ -24,7 +24,7 @@ struct Amounts {
 
 /// @notice A data structure to store the total rewards snapshot data for each campaign.
 /// @param rewardsDistributedPerTokenScaled The amount of rewards distributed per staking token (includes both direct
-/// staking and through Sablier streams), scaled by 1e18 to minimize precision loss.
+/// staking and through Sablier streams), scaled by {Helpers.SCALE_FACTOR} to minimize precision loss.
 /// @param totalStakedTokens The total amount of staking tokens staked (both direct staking and through Sablier
 /// streams), denoted in staking token's decimals.
 /// @param lastUpdateTime The last time this snapshot was updated, denoted in UNIX timestamp.
@@ -72,7 +72,7 @@ struct StakedStream {
 /// @notice A data structure to store a user's rewards and staking data for a given campaign.
 /// @param rewards The amount of reward tokens available to be claimed by the user, denoted in reward token's decimals.
 /// @param rewardsEarnedPerTokenScaled The amount of rewards earned per staking token (includes both direct staking and
-/// through Sablier streams), scaled by 1e18 to minimize precision loss.
+/// through Sablier streams), scaled by {Helpers.SCALE_FACTOR} to minimize precision loss.
 /// @param totalStakedTokens The total amount of staking tokens staked (both direct staking and through Sablier
 /// streams), denoted in staking token's decimals.
 /// @param directStakedTokens The amount of staking tokens staked directly, denoted in staking token's decimals.

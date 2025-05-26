@@ -32,7 +32,7 @@ jobs:
     if: needs.build.outputs.cache-status != 'primary'
     uses: "sablier-labs/gha-utils/.github/workflows/forge-test.yml@main"
     with:
-      foundry-fuzz-runs: 10000
+      foundry-fuzz-runs: 100000
       foundry-profile: "test-optimized"
       match-path: "tests/integration/**/*.sol"
       name: "Integration tests"

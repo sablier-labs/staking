@@ -12,16 +12,16 @@ abstract contract Utils is Constants, EvmUtilsBase {
         return SablierStaking(deployCode("out-optimized/SablierStaking.sol/SablierStaking.json", abi.encode(admin)));
     }
 
-    /// @dev Descales the value by dividing it by 1e18.
+    /// @dev Descales the value by dividing it by `SCALE_FACTOR`.
     function getDescaledValue(uint256 value) internal pure returns (uint128) {
-        require(value <= MAX_UINT128 * UNIT, "exceeds MAX_UINT128");
+        require(value <= MAX_UINT128 * SCALE_FACTOR, "exceeds MAX_UINT128");
 
-        return uint128(value / UNIT);
+        return uint128(value / SCALE_FACTOR);
     }
 
-    /// @dev Scales the value by multiplying it by 1e18.
+    /// @dev Scales the value by multiplying it by `SCALE_FACTOR`.
     function getScaledValue(uint128 value) internal pure returns (uint256) {
-        return uint256(value) * UNIT;
+        return uint256(value) * SCALE_FACTOR;
     }
 
     /// @dev Returns the minimum duration, in seconds, it takes to earn one reward token with `amount` staked.

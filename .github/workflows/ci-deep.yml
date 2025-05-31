@@ -4,8 +4,6 @@ env:
   MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
 
 on:
-  schedule:
-    - cron: "0 3 * * 3,6" # at 3:00am UTC on Wednesday and Saturday
   workflow_dispatch:
     inputs:
       integrationFuzzRuns:

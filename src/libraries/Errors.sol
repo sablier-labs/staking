@@ -39,7 +39,7 @@ library Errors {
 
     /// @notice Thrown when the unstaking amount exceeds the ERC20 staked amount.
     error SablierStaking_AmountExceedsStakedAmount(
-        uint256 campaignId, uint256 amountUnstaking, uint256 totalStakedAmount
+        uint256 campaignId, uint256 amountUnstaking, uint256 totalAmountStaked
     );
 
     /// @notice Thrown when the caller is not the campaign admin.

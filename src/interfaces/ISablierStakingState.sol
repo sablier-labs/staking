@@ -80,7 +80,7 @@ interface ISablierStakingState {
     /// @notice Returns the total amount of tokens staked (both direct staking and through Sablier streams), denoted in
     /// staking token's decimals.
     /// @dev Reverts if `campaignId` references a null campaign.
-    function totalStakedTokens(uint256 campaignId) external view returns (uint128);
+    function totalAmountStaked(uint256 campaignId) external view returns (uint128);
 
     /// @notice Retrieves the rewards snapshot of a user for the given campaign ID.
     /// @dev Reverts if `campaignId` references a null campaign or `user` is the zero address.

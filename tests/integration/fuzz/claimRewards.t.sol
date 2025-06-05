@@ -104,11 +104,11 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
 
         // Get total staked amount.
         (, uint256 rewardsPerTokenScaledAtStake) = staking.globalSnapshot(campaignIds.defaultCampaign);
-        uint128 totalStakedAmountAtStake = staking.totalStakedTokens(campaignIds.defaultCampaign);
+        uint128 totalAmountStakedAtStake = staking.totalAmountStaked(campaignIds.defaultCampaign);
 
         // Randomly select a timestamp to claim rewards.
         uint40 claimTimestamp = randomUint40({
-            min: stakingTimestamp + minDurationToEarnOneToken(amountToStake, totalStakedAmountAtStake),
+            min: stakingTimestamp + minDurationToEarnOneToken(amountToStake, totalAmountStakedAtStake),
             max: END_TIME + 1 days
         });
 
@@ -120,7 +120,7 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         uint128 expectedRewardsDistributedSinceStake = REWARD_AMOUNT * rewardDurationSinceStake / CAMPAIGN_DURATION;
 
         uint256 expectedRewardsPerTokenScaledSinceStake =
-            getScaledValue(expectedRewardsDistributedSinceStake) / totalStakedAmountAtStake;
+            getScaledValue(expectedRewardsDistributedSinceStake) / totalAmountStakedAtStake;
         vars.expectedUserRewards = getDescaledValue(expectedRewardsPerTokenScaledSinceStake * amountToStake);
         vars.expectedRewardsPerTokenScaled = rewardsPerTokenScaledAtStake + expectedRewardsPerTokenScaledSinceStake;
 
@@ -149,7 +149,7 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         // Warp EVM state to the given timestamp.
         warpStateTo(timestamp);
 
-        uint128 totalStakedAmount = staking.totalStakedTokens(campaignIds.defaultCampaign);
+        uint128 totalAmountStaked = staking.totalAmountStaked(campaignIds.defaultCampaign);
         (uint40 lastTimeUpdate, uint256 globalRewardsPerTokenScaled) =
             staking.globalSnapshot(campaignIds.defaultCampaign);
 
@@ -160,14 +160,14 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         uint128 rewardsSinceLastUpdate = REWARD_AMOUNT * timeElapsed / CAMPAIGN_DURATION;
 
         vars.expectedRewardsPerTokenScaled =
-            globalRewardsPerTokenScaled + getScaledValue(rewardsSinceLastUpdate) / totalStakedAmount;
+            globalRewardsPerTokenScaled + getScaledValue(rewardsSinceLastUpdate) / totalAmountStaked;
 
         (, uint256 userRewardsPerTokenScaled, uint128 rewardsAtLastUserSnapshot) =
             staking.userSnapshot(campaignIds.defaultCampaign, users.recipient);
         Amounts memory amounts = staking.amountStakedByUser(campaignIds.defaultCampaign, users.recipient);
 
         vars.expectedUserRewards = rewardsAtLastUserSnapshot
-            + getDescaledValue((vars.expectedRewardsPerTokenScaled - userRewardsPerTokenScaled) * amounts.totalStakedAmount);
+            + getDescaledValue((vars.expectedRewardsPerTokenScaled - userRewardsPerTokenScaled) * amounts.totalAmountStaked);
 
         // Test claim rewards.
         _test_ClaimRewards(users.recipient, timestamp);
@@ -184,7 +184,7 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
             vars.expectedRewardsPerTokenScaled,
             caller,
             vars.expectedUserRewards,
-            amounts.totalStakedAmount
+            amounts.totalAmountStaked
         );
         vm.expectEmit({ emitter: address(rewardToken) });
         emit IERC20.Transfer(address(staking), caller, vars.expectedUserRewards);

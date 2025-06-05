@@ -40,6 +40,10 @@ abstract contract Modifiers is EvmUtilsBase {
         _;
     }
 
+    modifier whenAmountNotZero() {
+        _;
+    }
+
     modifier whenCallerCampaignAdmin() {
         setMsgSender(users.campaignCreator);
         _;
@@ -54,6 +58,10 @@ abstract contract Modifiers is EvmUtilsBase {
     }
 
     modifier whenEndTimeGreaterThanStartTime() {
+        _;
+    }
+
+    modifier whenEndTimeInFuture() {
         _;
     }
 

@@ -24,7 +24,7 @@ contract GetClaimableRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Te
         // Warp the EVM state to the given timestamp.
         warpStateTo(timestamp);
 
-        uint128 totalStakedAmount = staking.totalStakedTokens(campaignIds.defaultCampaign);
+        uint128 totalAmountStaked = staking.totalAmountStaked(campaignIds.defaultCampaign);
         (uint40 lastTimeUpdate, uint256 globalRewardsPerTokenScaled) =
             staking.globalSnapshot(campaignIds.defaultCampaign);
 
@@ -35,14 +35,14 @@ contract GetClaimableRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Te
         uint128 rewardsSinceLastUpdate = REWARD_AMOUNT * timeElapsed / CAMPAIGN_DURATION;
 
         uint256 expectedRewardsPerTokenScaled =
-            globalRewardsPerTokenScaled + getScaledValue(rewardsSinceLastUpdate) / totalStakedAmount;
+            globalRewardsPerTokenScaled + getScaledValue(rewardsSinceLastUpdate) / totalAmountStaked;
 
         (, uint256 userRewardsPerTokenScaled, uint128 rewardsAtLastUserSnapshot) =
             staking.userSnapshot(campaignIds.defaultCampaign, caller);
 
         Amounts memory amounts = staking.amountStakedByUser(campaignIds.defaultCampaign, caller);
         uint128 expectedUserRewards = rewardsAtLastUserSnapshot
-            + getDescaledValue((expectedRewardsPerTokenScaled - userRewardsPerTokenScaled) * amounts.totalStakedAmount);
+            + getDescaledValue((expectedRewardsPerTokenScaled - userRewardsPerTokenScaled) * amounts.totalAmountStaked);
 
         uint128 actualRewards = staking.getClaimableRewards(campaignIds.defaultCampaign, caller);
         assertEq(actualRewards, expectedUserRewards, "rewards");

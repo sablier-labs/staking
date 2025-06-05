@@ -30,7 +30,7 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         assertEq(amounts.streamsCount, 0, "staker: streamsCount");
         assertEq(amounts.directAmountStaked, DIRECT_AMOUNT_STAKED_BY_STAKER_END_TIME, "staker: directAmountStaked");
         assertEq(amounts.streamAmountStaked, 0, "staker: streamAmountStaked");
-        assertEq(amounts.totalStakedAmount, AMOUNT_STAKED_BY_STAKER_END_TIME, "staker: totalStakedAmount");
+        assertEq(amounts.totalAmountStaked, AMOUNT_STAKED_BY_STAKER_END_TIME, "staker: totalAmountStaked");
 
         amounts = staking.amountStakedByUser(campaignIds.defaultCampaign, users.recipient);
         assertEq(amounts.streamsCount, STREAMS_COUNT_FOR_RECIPIENT_END_TIME, "recipient: streamsCount");
@@ -38,7 +38,7 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
             amounts.directAmountStaked, DIRECT_AMOUNT_STAKED_BY_RECIPIENT_END_TIME, "recipient: directAmountStaked"
         );
         assertEq(amounts.streamAmountStaked, 2 * STREAM_AMOUNT_18D, "recipient: streamAmountStaked");
-        assertEq(amounts.totalStakedAmount, AMOUNT_STAKED_BY_RECIPIENT_END_TIME, "recipient: totalStakedAmount");
+        assertEq(amounts.totalAmountStaked, AMOUNT_STAKED_BY_RECIPIENT_END_TIME, "recipient: totalAmountStaked");
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -127,13 +127,13 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         (uint40 lastUpdateTime, uint256 rewardsPerTokenScaled) = staking.globalSnapshot(campaignIds.defaultCampaign);
 
         // It should return zero last update time.
-        assertEq(lastUpdateTime, 0, "lastUpdateTime");
+        assertEq(lastUpdateTime, FEB_1_2025, "lastUpdateTime");
 
         // It should return zero rewards distributed per token.
         assertEq(rewardsPerTokenScaled, 0, "rewardsPerTokenScaled");
 
-        // It should return correct total staked tokens.
-        assertEq(staking.totalStakedTokens(campaignIds.defaultCampaign), TOTAL_STAKED_PRE_START, "totalStakedAmount");
+        // It should return correct total amount staked.
+        assertEq(staking.totalAmountStaked(campaignIds.defaultCampaign), TOTAL_STAKED_PRE_START, "totalAmountStaked");
     }
 
     function test_GlobalSnapshotWhenStartTimeInPresent() external whenNotNull {
@@ -147,8 +147,8 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         // It should return zero rewards distributed per token.
         assertEq(rewardsPerTokenScaled, 0, "rewardsPerTokenScaled");
 
-        // It should return correct total staked tokens.
-        assertEq(staking.totalStakedTokens(campaignIds.defaultCampaign), TOTAL_STAKED_START_TIME, "totalStakedAmount");
+        // It should return correct total amount staked.
+        assertEq(staking.totalAmountStaked(campaignIds.defaultCampaign), TOTAL_STAKED_START_TIME, "totalAmountStaked");
     }
 
     function test_GlobalSnapshotWhenEndTimeInFuture() external whenNotNull whenStartTimeInPast {
@@ -163,8 +163,8 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         uint256 expectedRewardsPerTokenScaled = getScaledValue(REWARDS_DISTRIBUTED_PER_TOKEN);
         assertEq(rewardsPerTokenScaled, expectedRewardsPerTokenScaled, "rewardsPerTokenScaled");
 
-        // It should return correct total staked tokens.
-        assertEq(staking.totalStakedTokens(campaignIds.defaultCampaign), TOTAL_STAKED, "totalStakedAmount");
+        // It should return correct total amount staked.
+        assertEq(staking.totalAmountStaked(campaignIds.defaultCampaign), TOTAL_STAKED, "totalAmountStaked");
     }
 
     function test_GlobalSnapshotWhenEndTimeNotInFuture() external whenNotNull whenStartTimeInPast {
@@ -182,8 +182,8 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         uint256 expectedRewardsPerTokenScaled = getScaledValue(REWARDS_DISTRIBUTED_PER_TOKEN_END_TIME);
         assertEq(rewardsPerTokenScaled, expectedRewardsPerTokenScaled, "rewardsPerTokenScaled");
 
-        // It should return correct total staked tokens.
-        assertEq(staking.totalStakedTokens(campaignIds.defaultCampaign), TOTAL_STAKED_END_TIME, "totalStakedAmount");
+        // It should return correct total amount staked.
+        assertEq(staking.totalAmountStaked(campaignIds.defaultCampaign), TOTAL_STAKED_END_TIME, "totalAmountStaked");
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -244,13 +244,13 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
                                 TOTAL-STAKED-TOKENS
     //////////////////////////////////////////////////////////////////////////*/
 
-    function test_TotalStakedTokensRevertWhen_Null() external {
-        expectRevert_Null({ callData: abi.encodeCall(staking.totalStakedTokens, campaignIds.nullCampaign) });
+    function test_TotalAmountStakedRevertWhen_Null() external {
+        expectRevert_Null({ callData: abi.encodeCall(staking.totalAmountStaked, campaignIds.nullCampaign) });
     }
 
-    function test_TotalStakedTokensWhenNotNull() external {
+    function test_TotalAmountStakedWhenNotNull() external {
         warpStateTo(END_TIME);
-        assertEq(staking.totalStakedTokens(campaignIds.defaultCampaign), TOTAL_STAKED_END_TIME, "totalStakedTokens");
+        assertEq(staking.totalAmountStaked(campaignIds.defaultCampaign), TOTAL_STAKED_END_TIME, "totalAmountStaked");
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -272,7 +272,7 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         (uint40 lastUpdateTime, uint256 rewardsPerTokenScaled, uint128 rewards) =
             staking.userSnapshot(campaignIds.defaultCampaign, users.staker);
 
-        assertEq(lastUpdateTime, 0, "staker: lastUpdateTime");
+        assertEq(lastUpdateTime, FEB_1_2025, "staker: lastUpdateTime");
         assertEq(rewardsPerTokenScaled, 0, "staker: rewardsPerTokenScaled");
         assertEq(rewards, 0, "staker: rewards");
 

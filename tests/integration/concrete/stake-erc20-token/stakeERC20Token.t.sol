@@ -13,6 +13,9 @@ contract StakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concret
         Shared_Integration_Concrete_Test.setUp();
 
         setMsgSender(users.recipient);
+
+        // Warp to 40% of the campaign duration for this test suite.
+        warpStateTo(WARP_40_PERCENT);
     }
 
     function test_RevertWhen_DelegateCall() external {
@@ -107,8 +110,6 @@ contract StakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concret
         whenAmountNotZero
         whenEndTimeInFuture
     {
-        warpStateTo(WARP_40_PERCENT);
-
         // It should stake tokens.
         _test_StakeERC20Token({
             expectedRewardsPerTokenScaled: getScaledValue(REWARDS_DISTRIBUTED_PER_TOKEN),
@@ -116,26 +117,23 @@ contract StakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concret
         });
     }
 
+    /// @dev Helper function to test the staking of ERC20 tokens.
     function _test_StakeERC20Token(uint256 expectedRewardsPerTokenScaled, uint128 expectedUserRewards) private {
         Amounts memory amountStakedByUser = staking.amountStakedByUser(campaignIds.defaultCampaign, users.recipient);
         uint128 expectedAmountStakedByUser = amountStakedByUser.totalAmountStaked + DEFAULT_AMOUNT;
         uint128 expectedDirectAmountStakedByUser = amountStakedByUser.directAmountStaked + DEFAULT_AMOUNT;
 
-        // It should emit {SnapshotRewards} if user has tokens staked.
-        if (amountStakedByUser.totalAmountStaked > 0) {
-            vm.expectEmit({ emitter: address(staking) });
-            emit ISablierStaking.SnapshotRewards(
-                campaignIds.defaultCampaign,
-                getBlockTimestamp(),
-                expectedRewardsPerTokenScaled,
-                users.recipient,
-                expectedUserRewards,
-                amountStakedByUser.totalAmountStaked
-            );
-        }
-
-        // It should emit {Transfer} and {StakeERC20Token} events.
-        vm.expectEmit({ emitter: address(dai) });
+        // It should emit {SnapshotRewards}, {Transfer} and {StakeERC20Token} events.
+        vm.expectEmit({ emitter: address(staking) });
+        emit ISablierStaking.SnapshotRewards(
+            campaignIds.defaultCampaign,
+            getBlockTimestamp(),
+            expectedRewardsPerTokenScaled,
+            users.recipient,
+            expectedUserRewards,
+            amountStakedByUser.totalAmountStaked
+        );
+        vm.expectEmit({ emitter: address(stakingToken) });
         emit IERC20.Transfer(users.recipient, address(staking), DEFAULT_AMOUNT);
         vm.expectEmit({ emitter: address(staking) });
         emit ISablierStaking.StakeERC20Token(campaignIds.defaultCampaign, users.recipient, DEFAULT_AMOUNT);

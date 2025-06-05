@@ -17,6 +17,7 @@ abstract contract Constants {
     // Miscellaneous
     uint40 internal constant FEB_1_2025 = 1_738_368_000;
     uint128 internal constant DEFAULT_AMOUNT = 10_000e18;
+    uint128 internal constant MAX_AMOUNT_STAKED = AMOUNT_STAKED_BY_RECIPIENT_END_TIME + AMOUNT_STAKED_BY_STAKER_END_TIME;
     uint40 internal constant ONE_MONTH = 30 days; // "30/360" convention
     uint40 internal constant ONE_MONTH_SINCE_CREATE = FEB_1_2025 + ONE_MONTH;
     uint256 internal constant SCALE_FACTOR = 1e20;

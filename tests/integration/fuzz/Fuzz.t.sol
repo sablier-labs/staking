@@ -1,15 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.22;
 
-import { Vars } from "../../utils/Types.sol";
 import { Integration_Test } from "../Integration.t.sol";
 
 abstract contract Shared_Integration_Fuzz_Test is Integration_Test {
     /*//////////////////////////////////////////////////////////////////////////
                                      VARIABLES
     //////////////////////////////////////////////////////////////////////////*/
-
-    Vars internal vars;
 
     address[2] internal excludedCallers = [address(0), address(staking)];
 

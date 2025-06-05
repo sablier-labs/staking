@@ -4,7 +4,6 @@ pragma solidity >=0.8.22;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ISablierStaking } from "src/interfaces/ISablierStaking.sol";
 import { Errors } from "src/libraries/Errors.sol";
-import { Amounts } from "src/types/DataTypes.sol";
 
 import { Shared_Integration_Fuzz_Test } from "./Fuzz.t.sol";
 
@@ -81,7 +80,7 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         whenClaimableRewardsNotZero
     {
         // Bound amount to stake such that there are always rewards to claim.
-        amountToStake = boundUint128(amountToStake, 1e18, MAX_UINT128 / 2);
+        amountToStake = boundUint128(amountToStake, 1e18, MAX_UINT128 - MAX_AMOUNT_STAKED);
 
         assumeNoExcludedCallers(caller);
 
@@ -96,14 +95,12 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
 
         // Change the caller and approve the staking contract.
         setMsgSender(caller);
-        deal({ token: address(dai), to: caller, give: amountToStake });
-        dai.approve(address(staking), amountToStake);
+        deal({ token: address(stakingToken), to: caller, give: amountToStake });
+        stakingToken.approve(address(staking), amountToStake);
 
         // Caller stakes first and then warp to a new randomized timestamp.
         staking.stakeERC20Token(campaignIds.defaultCampaign, amountToStake);
 
-        // Get total staked amount.
-        (, uint256 rewardsPerTokenScaledAtStake) = staking.globalSnapshot(campaignIds.defaultCampaign);
         uint128 totalAmountStakedAtStake = staking.totalAmountStaked(campaignIds.defaultCampaign);
 
         // Randomly select a timestamp to claim rewards.
@@ -111,18 +108,6 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
             min: stakingTimestamp + minDurationToEarnOneToken(amountToStake, totalAmountStakedAtStake),
             max: END_TIME + 1 days
         });
-
-        // Calculate reward duration for caller.
-        uint40 rewardDurationSinceStake =
-            claimTimestamp >= END_TIME ? END_TIME - stakingTimestamp : claimTimestamp - stakingTimestamp;
-
-        // Calculate expected rewards.
-        uint128 expectedRewardsDistributedSinceStake = REWARD_AMOUNT * rewardDurationSinceStake / CAMPAIGN_DURATION;
-
-        uint256 expectedRewardsPerTokenScaledSinceStake =
-            getScaledValue(expectedRewardsDistributedSinceStake) / totalAmountStakedAtStake;
-        vars.expectedUserRewards = getDescaledValue(expectedRewardsPerTokenScaledSinceStake * amountToStake);
-        vars.expectedRewardsPerTokenScaled = rewardsPerTokenScaledAtStake + expectedRewardsPerTokenScaledSinceStake;
 
         // Warp to the new timestamp.
         vm.warp(claimTimestamp);
@@ -149,64 +134,47 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         // Warp EVM state to the given timestamp.
         warpStateTo(timestamp);
 
-        uint128 totalAmountStaked = staking.totalAmountStaked(campaignIds.defaultCampaign);
-        (uint40 lastTimeUpdate, uint256 globalRewardsPerTokenScaled) =
-            staking.globalSnapshot(campaignIds.defaultCampaign);
-
-        // Calculate time elapsed since last global snapshot.
-        uint40 timeElapsed = timestamp >= END_TIME ? END_TIME - lastTimeUpdate : timestamp - lastTimeUpdate;
-
-        // Calculate expected rewards.
-        uint128 rewardsSinceLastUpdate = REWARD_AMOUNT * timeElapsed / CAMPAIGN_DURATION;
-
-        vars.expectedRewardsPerTokenScaled =
-            globalRewardsPerTokenScaled + getScaledValue(rewardsSinceLastUpdate) / totalAmountStaked;
-
-        (, uint256 userRewardsPerTokenScaled, uint128 rewardsAtLastUserSnapshot) =
-            staking.userSnapshot(campaignIds.defaultCampaign, users.recipient);
-        Amounts memory amounts = staking.amountStakedByUser(campaignIds.defaultCampaign, users.recipient);
-
-        vars.expectedUserRewards = rewardsAtLastUserSnapshot
-            + getDescaledValue((vars.expectedRewardsPerTokenScaled - userRewardsPerTokenScaled) * amounts.totalAmountStaked);
-
         // Test claim rewards.
         _test_ClaimRewards(users.recipient, timestamp);
     }
 
     function _test_ClaimRewards(address caller, uint40 timestamp) private {
-        Amounts memory amounts = staking.amountStakedByUser(campaignIds.defaultCampaign, caller);
+        (uint256 expectedRewardsPerTokenScaled, uint128 expectedUserRewards) = calculateLatestRewards(caller);
+
+        uint128 totalAmountStakedByUser =
+            staking.amountStakedByUser(campaignIds.defaultCampaign, caller).totalAmountStaked;
 
         // It should emit {SnapshotRewards}, {Transfer} and {ClaimRewards} events.
         vm.expectEmit({ emitter: address(staking) });
         emit ISablierStaking.SnapshotRewards(
             campaignIds.defaultCampaign,
             timestamp,
-            vars.expectedRewardsPerTokenScaled,
+            expectedRewardsPerTokenScaled,
             caller,
-            vars.expectedUserRewards,
-            amounts.totalAmountStaked
+            expectedUserRewards,
+            totalAmountStakedByUser
         );
         vm.expectEmit({ emitter: address(rewardToken) });
-        emit IERC20.Transfer(address(staking), caller, vars.expectedUserRewards);
+        emit IERC20.Transfer(address(staking), caller, expectedUserRewards);
         vm.expectEmit({ emitter: address(staking) });
-        emit ISablierStaking.ClaimRewards(campaignIds.defaultCampaign, caller, vars.expectedUserRewards);
+        emit ISablierStaking.ClaimRewards(campaignIds.defaultCampaign, caller, expectedUserRewards);
 
         // Claim the rewards.
         uint128 actualRewards = staking.claimRewards(campaignIds.defaultCampaign);
 
         // It should return the rewards.
-        assertEq(actualRewards, vars.expectedUserRewards, "return value");
+        assertEq(actualRewards, expectedUserRewards, "return value");
 
-        (vars.actualLastUpdateTime, vars.actualRewardsPerTokenScaled,) =
+        (uint40 actualLastUpdateTime, uint256 actualRewardsPerTokenScaled,) =
             staking.userSnapshot(campaignIds.defaultCampaign, caller);
 
         // It should set last time update to current timestamp.
-        assertEq(vars.actualLastUpdateTime, timestamp, "lastUpdateTime");
+        assertEq(actualLastUpdateTime, timestamp, "lastUpdateTime");
 
         // It should set rewards to zero.
         assertEq(staking.getClaimableRewards(campaignIds.defaultCampaign, caller), 0, "rewards");
 
         // It should set the rewards earned per token.
-        assertEq(vars.actualRewardsPerTokenScaled, vars.expectedRewardsPerTokenScaled, "rewardsEarnedPerTokenScaled");
+        assertEq(actualRewardsPerTokenScaled, expectedRewardsPerTokenScaled, "rewardsEarnedPerTokenScaled");
     }
 }

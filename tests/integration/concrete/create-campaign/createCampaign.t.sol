@@ -10,7 +10,8 @@ import { Shared_Integration_Concrete_Test } from "../Concrete.t.sol";
 contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     function test_RevertWhen_DelegateCall() external {
         bytes memory callData = abi.encodeCall(
-            staking.createCampaign, (users.campaignCreator, dai, START_TIME, END_TIME, rewardToken, REWARD_AMOUNT)
+            staking.createCampaign,
+            (users.campaignCreator, stakingToken, START_TIME, END_TIME, rewardToken, REWARD_AMOUNT)
         );
         expectRevert_DelegateCall(callData);
     }
@@ -19,7 +20,7 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
         vm.expectRevert(Errors.SablierStaking_AdminZeroAddress.selector);
         staking.createCampaign({
             admin: address(0),
-            stakingToken: dai,
+            stakingToken: stakingToken,
             startTime: START_TIME,
             endTime: END_TIME,
             rewardToken: rewardToken,
@@ -31,7 +32,7 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
         vm.expectRevert(abi.encodeWithSelector(Errors.SablierStaking_StartTimeInPast.selector, FEB_1_2025 - 1));
         staking.createCampaign({
             admin: users.campaignCreator,
-            stakingToken: dai,
+            stakingToken: stakingToken,
             startTime: FEB_1_2025 - 1,
             endTime: END_TIME,
             rewardToken: rewardToken,
@@ -49,13 +50,13 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
         emit IERC20.Transfer(users.campaignCreator, address(staking), REWARD_AMOUNT);
         vm.expectEmit({ emitter: address(staking) });
         emit ISablierStaking.CreateCampaign(
-            expectedCampaignId, users.campaignCreator, dai, rewardToken, currentTime, END_TIME, REWARD_AMOUNT
+            expectedCampaignId, users.campaignCreator, stakingToken, rewardToken, currentTime, END_TIME, REWARD_AMOUNT
         );
 
         // It should create the campaign.
         uint256 actualCampaignId = staking.createCampaign({
             admin: users.campaignCreator,
-            stakingToken: dai,
+            stakingToken: stakingToken,
             startTime: currentTime,
             endTime: END_TIME,
             rewardToken: rewardToken,
@@ -82,7 +83,7 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
         );
         staking.createCampaign({
             admin: users.campaignCreator,
-            stakingToken: dai,
+            stakingToken: stakingToken,
             startTime: START_TIME,
             endTime: START_TIME - 1,
             rewardToken: rewardToken,
@@ -103,7 +104,7 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
         );
         staking.createCampaign({
             admin: users.campaignCreator,
-            stakingToken: dai,
+            stakingToken: stakingToken,
             startTime: START_TIME,
             endTime: START_TIME,
             rewardToken: rewardToken,
@@ -140,7 +141,7 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
         vm.expectRevert(Errors.SablierStaking_RewardTokenZeroAddress.selector);
         staking.createCampaign({
             admin: users.campaignCreator,
-            stakingToken: dai,
+            stakingToken: stakingToken,
             startTime: START_TIME,
             endTime: END_TIME,
             rewardToken: IERC20(address(0)),
@@ -160,7 +161,7 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
         vm.expectRevert(Errors.SablierStaking_RewardAmountZero.selector);
         staking.createCampaign({
             admin: users.campaignCreator,
-            stakingToken: dai,
+            stakingToken: stakingToken,
             startTime: START_TIME,
             endTime: END_TIME,
             rewardToken: rewardToken,
@@ -184,13 +185,13 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
         emit IERC20.Transfer(users.campaignCreator, address(staking), REWARD_AMOUNT);
         vm.expectEmit({ emitter: address(staking) });
         emit ISablierStaking.CreateCampaign(
-            expectedCampaignId, users.campaignCreator, dai, rewardToken, START_TIME, END_TIME, REWARD_AMOUNT
+            expectedCampaignId, users.campaignCreator, stakingToken, rewardToken, START_TIME, END_TIME, REWARD_AMOUNT
         );
 
         // It should create the campaign.
         uint256 actualCampaignId = staking.createCampaign({
             admin: users.campaignCreator,
-            stakingToken: dai,
+            stakingToken: stakingToken,
             startTime: START_TIME,
             endTime: END_TIME,
             rewardToken: rewardToken,
@@ -205,7 +206,7 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
 
         // It should set the correct campaign state.
         assertEq(staking.getAdmin(actualCampaignId), users.campaignCreator, "admin");
-        assertEq(staking.getStakingToken(actualCampaignId), dai, "stakingToken");
+        assertEq(staking.getStakingToken(actualCampaignId), stakingToken, "stakingToken");
         assertEq(staking.getStartTime(actualCampaignId), START_TIME, "startTime");
         assertEq(staking.getEndTime(actualCampaignId), END_TIME, "endTime");
         assertEq(staking.getRewardToken(actualCampaignId), rewardToken, "rewardToken");

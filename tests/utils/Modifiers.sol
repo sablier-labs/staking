@@ -20,7 +20,19 @@ abstract contract Modifiers is EvmUtilsBase {
                                        GIVEN
     //////////////////////////////////////////////////////////////////////////*/
 
+    modifier givenAmountInStreamNotZero() {
+        _;
+    }
+
+    modifier givenLockupWhitelisted() {
+        _;
+    }
+
     modifier givenNotCanceled() {
+        _;
+    }
+
+    modifier givenStreamNotStaked() {
         _;
     }
 
@@ -102,6 +114,10 @@ abstract contract Modifiers is EvmUtilsBase {
     }
 
     modifier whenStartTimeNotInPast() {
+        _;
+    }
+
+    modifier whenStreamTokenMatchesStakingToken() {
         _;
     }
 

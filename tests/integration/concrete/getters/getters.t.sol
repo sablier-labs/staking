@@ -86,7 +86,9 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     }
 
     function test_GetStakingTokenWhenNotNull() external view {
-        assertEq(address(staking.getStakingToken(campaignIds.defaultCampaign)), address(dai), "getStakingToken");
+        assertEq(
+            address(staking.getStakingToken(campaignIds.defaultCampaign)), address(stakingToken), "getStakingToken"
+        );
     }
 
     /*//////////////////////////////////////////////////////////////////////////

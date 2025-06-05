@@ -1,0 +1,36 @@
+StakeLockupNFT_Integration_Concrete_Test
+├── when delegate call
+│  └── it should revert
+└── when no delegate call
+   ├── when null
+   │  └── it should revert
+   └── when not null
+      ├── given canceled
+      │  └── it should revert
+      └── given not canceled
+         ├── when end time in past
+         │  └── it should revert
+         ├── when end time in present
+         │  └── it should revert
+         └── when end time in future
+            ├── given lockup not whitelisted
+            │  └── it should revert
+            └── given lockup whitelisted
+               ├── when stream token not match staking token
+               │  └── it should revert
+               └── when stream token matches staking token
+                  ├── given stream staked
+                  │  └── it should revert
+                  └── given stream not staked
+                     ├── given amount in stream zero
+                     │  └── it should revert
+                     └── given amount in stream not zero
+                        ├── when start time in future
+                        │  └── it should stake stream
+                        ├── when start time in present
+                        │  └── it should stake stream
+                        └── when start time in past
+                           ├── it should stake stream
+                           ├── it should update global rewards snapshot
+                           ├── it should update user rewards snapshot
+                           └── it should emit {SnapshotRewards}, {Transfer} and {StakeLockupNFT} events

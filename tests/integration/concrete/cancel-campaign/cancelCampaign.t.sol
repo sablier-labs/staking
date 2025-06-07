@@ -47,8 +47,6 @@ contract CancelCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
         givenNotCanceled
         whenCallerCampaignAdmin
     {
-        warpStateTo(WARP_40_PERCENT);
-
         // It should revert.
         vm.expectRevert(
             abi.encodeWithSelector(

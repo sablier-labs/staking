@@ -111,7 +111,9 @@ library Errors {
     error SablierStaking_UnsupportedOnAllowedToHook(uint256 index, ISablierLockupNFT lockup);
 
     /// @notice Thrown when trying to withdraw from a staked stream.
-    error SablierStaking_WithdrawNotAllowed(ISablierLockupNFT lockup, uint256 streamId);
+    error SablierStaking_WithdrawNotAllowed(
+        ISablierLockupNFT lockup, uint256 streamId, address caller, address to, uint128 amount
+    );
 
     /// @notice Thrown when the input argument is the zero address.
     error SablierStaking_ZeroAddress();

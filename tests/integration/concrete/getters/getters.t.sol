@@ -153,9 +153,7 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         assertEq(staking.totalAmountStaked(campaignIds.defaultCampaign), TOTAL_STAKED_START_TIME, "totalAmountStaked");
     }
 
-    function test_GlobalSnapshotWhenEndTimeInFuture() external whenNotNull whenStartTimeInPast {
-        warpStateTo(WARP_40_PERCENT);
-
+    function test_GlobalSnapshotWhenEndTimeInFuture() external view whenNotNull whenStartTimeInPast {
         (uint40 lastUpdateTime, uint256 rewardsPerTokenScaled) = staking.globalSnapshot(campaignIds.defaultCampaign);
 
         // It should return correct last update time.
@@ -233,9 +231,7 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         staking.stakedStream(lockup, streamIds.defaultStream);
     }
 
-    function test_StakedStreamWhenStreamStaked() external whenNotZeroAddress givenWhitelisted {
-        warpStateTo(WARP_40_PERCENT);
-
+    function test_StakedStreamWhenStreamStaked() external view whenNotZeroAddress givenWhitelisted {
         // It should return the campaign ID and owner.
         (uint256 actualCampaignId, address actualOwner) = staking.stakedStream(lockup, streamIds.defaultStakedStream);
         assertEq(actualCampaignId, campaignIds.defaultCampaign, "campaignId");
@@ -309,8 +305,6 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     }
 
     function test_UserSnapshotWhenEndTimeInFuture() external whenNotNull whenNotZeroAddress whenStartTimeInPast {
-        warpStateTo(WARP_40_PERCENT);
-
         // Take snapshots of the rewards.
         staking.snapshotRewards(campaignIds.defaultCampaign, users.staker);
         staking.snapshotRewards(campaignIds.defaultCampaign, users.recipient);

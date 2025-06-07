@@ -32,6 +32,8 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
     }
 
     function test_RevertWhen_StartTimeInFuture() external whenNoDelegateCall whenNotNull givenNotCanceled {
+        warpStateTo(START_TIME - 1);
+
         vm.expectRevert(
             abi.encodeWithSelector(
                 Errors.SablierStaking_CampaignNotStarted.selector, campaignIds.defaultCampaign, START_TIME
@@ -59,8 +61,6 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
         givenNotCanceled
         whenStartTimeInPast
     {
-        warpStateTo(WARP_40_PERCENT);
-
         // Switch to a different user who has no rewards.
         setMsgSender(users.eve);
 
@@ -80,8 +80,6 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
         givenNotCanceled
         whenStartTimeInPast
     {
-        warpStateTo(WARP_40_PERCENT);
-
         uint256 initialCallerBalance = rewardToken.balanceOf(users.recipient);
         uint256 initialContractBalance = rewardToken.balanceOf(address(staking));
 

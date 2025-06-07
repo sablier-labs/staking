@@ -21,7 +21,7 @@ import { GlobalSnapshot, StakedStream, StakingCampaign, UserSnapshot } from "./t
 /// @notice See the documentation in {ISablierStaking}.
 contract SablierStaking is
     ERC721Holder, // 1 inherited component
-    ISablierStaking, // 6 inherited components
+    ISablierStaking, // 5 inherited components
     NoDelegateCall, // 0 inherited components
     RoleAdminable, // 3 inherited components
     SablierStakingState // 1 inherited component
@@ -64,25 +64,21 @@ contract SablierStaking is
         return _userSnapshot[user][campaignId].rewards + rewardsEarnedSinceLastSnapshot;
     }
 
-    /// @inheritdoc ISablierLockupRecipient
-    /// @notice Handles the hook call from the Lockup contract when withdraw is called on a staked stream.
-    /// @dev This function reverts and does not permit withdrawing from a staked stream.
-    ///
-    /// @param streamId The ID of the stream on which withdraw is called.
-    /// @return The required selector.
+    /// @inheritdoc ISablierStaking
     function onSablierLockupWithdraw(
         uint256 streamId,
-        address, /* caller */
-        address, /* recipient */
-        uint128 /* amount */
+        address caller,
+        address to,
+        uint128 amount
     )
         external
         view
         override
+        noDelegateCall
         returns (bytes4)
     {
         // Revert regardless of the parameters.
-        revert Errors.SablierStaking_WithdrawNotAllowed(ISablierLockupNFT(msg.sender), streamId);
+        revert Errors.SablierStaking_WithdrawNotAllowed(ISablierLockupNFT(msg.sender), streamId, caller, to, amount);
     }
 
     /// @inheritdoc ISablierStaking
@@ -322,22 +318,7 @@ contract SablierStaking is
         emit CreateCampaign(campaignId, admin, stakingToken, rewardToken, startTime, endTime, totalRewards);
     }
 
-    /// @inheritdoc ISablierLockupRecipient
-    /// @notice Handles the hook call from the Lockup contract when a staked stream is canceled.
-    /// @dev This function permits cancelling a staked stream and adjusts the total staked tokens in the campaign
-    /// accordingly.
-    ///
-    /// Notes:
-    ///  - Updates global rewards and user rewards data.
-    ///
-    /// Requirements:
-    ///  - Must not be delegate called.
-    ///  - `msg.sender` must be a whitelisted Lockup contract.
-    ///  - `streamId` must be staked in a campaign.
-    ///
-    /// @param streamId The ID of the stream on which cancel is called.
-    /// @param senderAmount The amount of tokens refunded to the sender.
-    /// @return The required selector.
+    /// @inheritdoc ISablierStaking
     function onSablierLockupCancel(
         uint256 streamId,
         address, /* sender */
@@ -349,11 +330,6 @@ contract SablierStaking is
         noDelegateCall
         returns (bytes4)
     {
-        // Check: `msg.sender` is a whitelisted Lockup contract.
-        if (!_lockupWhitelist[ISablierLockupNFT(msg.sender)]) {
-            revert Errors.SablierStaking_UnauthorizedCaller();
-        }
-
         StakedStream memory stakedStream = _stakedStream[ISablierLockupNFT(msg.sender)][streamId];
 
         // Check: the `streamId` is staked in a campaign.

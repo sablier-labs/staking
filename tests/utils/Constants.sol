@@ -10,7 +10,9 @@ abstract contract Constants {
     uint40 internal constant START_TIME = ONE_MONTH_SINCE_CREATE;
 
     // Lockup Stream
-    uint40 internal constant STREAM_DURATION = ONE_MONTH * 12; //  12 months
+    // Streams will have their end time before campaign end time because streams are created at `FEB_1_2025` whereas
+    // campaign starts at `FEB_1_2025 + 1 month`.
+    uint40 internal constant STREAM_DURATION = ONE_MONTH * 10; // 10 months.
     uint128 internal constant STREAM_AMOUNT = 10_000; // equivalent to DEFAULT_STAKED_AMOUNT in 18 decimals
     uint128 internal constant STREAM_AMOUNT_18D = 10_000e18;
 

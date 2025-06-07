@@ -3,8 +3,8 @@ pragma solidity >=0.8.22;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IERC721Receiver } from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import { IRoleAdminable } from "@sablier/evm-utils/src/interfaces/IRoleAdminable.sol";
-import { ISablierLockupRecipient } from "@sablier/lockup/src/interfaces/ISablierLockupRecipient.sol";
 
 import { ISablierLockupNFT } from "./ISablierLockupNFT.sol";
 import { ISablierStakingState } from "./ISablierStakingState.sol";
@@ -26,9 +26,9 @@ import { ISablierStakingState } from "./ISablierStakingState.sol";
 ///  - Withdrawing from a staked stream would revert.
 ///  - Campaign admin can cancel the campaign until the start time.
 interface ISablierStaking is
+    IERC165, // 0 inherited components
     IERC721Receiver, // 0 inherited components
     IRoleAdminable, // 1 inherited component
-    ISablierLockupRecipient, // 1 inherited component
     ISablierStakingState // 0 inherited components
 {
     /*//////////////////////////////////////////////////////////////////////////
@@ -93,6 +93,28 @@ interface ISablierStaking is
     /// @dev Reverts if `campaignId` references a null campaign or a canceled campaign, or if `user` is the zero
     /// address.
     function getClaimableRewards(uint256 campaignId, address user) external view returns (uint128);
+
+    /// @notice Reverts on the hook call from the Lockup contract when a withdraw is called on a staked stream
+    /// @dev This function reverts and does not permit withdrawing from a staked stream
+    ///
+    /// Requirements:
+    ///  - Must not be delegate called.
+    ///
+    /// @param streamId The ID of the stream on which withdraw is called.
+    /// @param caller The original `msg.sender` address that triggered the withdrawal.
+    /// @param to The address receiving the withdrawn tokens.
+    /// @param amount The amount of tokens withdrawn, denoted in units of the token's decimals.
+    ///
+    /// @return selector The selector of this function needed to validate the hook.
+    function onSablierLockupWithdraw(
+        uint256 streamId,
+        address caller,
+        address to,
+        uint128 amount
+    )
+        external
+        view
+        returns (bytes4 selector);
 
     /// @notice Returns the amount of reward ERC20 tokens that total staked ERC20 tokens are earning every second.
     /// Returns 0 if total staked tokens are 0.
@@ -185,6 +207,34 @@ interface ISablierStaking is
     )
         external
         returns (uint256 campaignId);
+
+    /// @notice Handles the hook call from the Lockup contract when a staked stream is cancelled. This adjusts the total
+    /// staked tokens in the campaign accordingly.
+    /// @dev Emits a {SnapshotRewards} event.
+    ///
+    /// Notes:
+    ///  - Updates global rewards and user rewards data.
+    ///
+    /// Requirements:
+    ///  - Must not be delegate called.
+    ///  - `streamId` associated with `msg.sender` must be staked in a valid campaign.
+    ///
+    /// @param streamId The ID of the staked stream on which cancel is called.
+    /// @param sender The stream's sender, who canceled the stream.
+    /// @param senderAmount The amount of tokens to be refunded to the stream's sender, denoted in units of the token's
+    /// decimals.
+    /// @param recipientAmount The amount of tokens left for the stream's recipient to withdraw, denoted in units of
+    /// the token's decimals.
+    ///
+    /// @return selector The selector of this function needed to validate the hook.
+    function onSablierLockupCancel(
+        uint256 streamId,
+        address sender,
+        uint128 senderAmount,
+        uint128 recipientAmount
+    )
+        external
+        returns (bytes4 selector);
 
     /// @notice Snapshot global rewards and user rewards data for the specified campaign and user.
     /// @dev Emits a {SnapshotRewards} event.

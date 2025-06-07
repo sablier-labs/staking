@@ -2,9 +2,7 @@
 pragma solidity >=0.8.22;
 
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import { LockupNFTDescriptor } from "@sablier/lockup/src/LockupNFTDescriptor.sol";
-import { SablierLockup } from "@sablier/lockup/src/SablierLockup.sol";
-import { ISablierLockupNFT } from "src/interfaces/ISablierLockupNFT.sol";
+import { ISablierLockup } from "@sablier/lockup/src/interfaces/ISablierLockup.sol";
 import { ISablierStaking } from "src/interfaces/ISablierStaking.sol";
 import { Errors } from "src/libraries/Errors.sol";
 import { Amounts } from "src/types/DataTypes.sol";
@@ -16,9 +14,6 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
         Shared_Integration_Concrete_Test.setUp();
 
         setMsgSender(users.recipient);
-
-        // Warp to 40% of the campaign duration for this test suite.
-        warpStateTo(WARP_40_PERCENT);
     }
 
     function test_RevertWhen_DelegateCall() external {
@@ -70,8 +65,7 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
         whenEndTimeInFuture
     {
         // Deploy a new Lockup contract for this test.
-        LockupNFTDescriptor nftDescriptor = new LockupNFTDescriptor();
-        lockup = ISablierLockupNFT(address(new SablierLockup(users.admin, nftDescriptor, 1000)));
+        lockup = deployLockup();
 
         // It should revert.
         vm.expectRevert(abi.encodeWithSelector(Errors.SablierStaking_LockupNotWhitelisted.selector, lockup));
@@ -115,8 +109,11 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
         whenStreamTokenMatchesStakingToken
         givenStreamNotStaked
     {
+        // Warp to the end time of the campaign so that stream gets fully streamed to the recipient.
+        warpStateTo(END_TIME - 1);
+
         // Withdraw all tokens from the stream.
-        SablierLockup(address(lockup)).withdrawMax(streamIds.defaultStream, users.recipient);
+        ISablierLockup(address(lockup)).withdrawMax(streamIds.defaultStream, users.recipient);
 
         vm.expectRevert(
             abi.encodeWithSelector(Errors.SablierStaking_DepletedStream.selector, lockup, streamIds.defaultStream)

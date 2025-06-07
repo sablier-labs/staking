@@ -1,0 +1,21 @@
+WhitelistLockups_Integration_Concrete_Test
+├── when delegate call
+│  └── it should revert
+└── when no delegate call
+   ├── when caller not admin
+   │  ├── when caller without role
+   │  │  └── it should revert
+   │  └── when caller with role
+   │     └── it should whitelist lockup
+   └── when caller admin
+      ├── when zero address
+      │  └── it should revert
+      └── when not zero address
+         ├── given already whitelisted
+         │  └── it should revert
+         └── given not whitelisted
+            ├── when isAllowedToHook returns false
+            │  └── it should revert
+            └── when isAllowedToHook returns true
+               ├── it should emit {LockupWhitelisted} event
+               └── it should whitelist lockup

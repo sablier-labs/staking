@@ -13,9 +13,6 @@ contract StakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concret
         Shared_Integration_Concrete_Test.setUp();
 
         setMsgSender(users.recipient);
-
-        // Warp to 40% of the campaign duration for this test suite.
-        warpStateTo(WARP_40_PERCENT);
     }
 
     function test_RevertWhen_DelegateCall() external {

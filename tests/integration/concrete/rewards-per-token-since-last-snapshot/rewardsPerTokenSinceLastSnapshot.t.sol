@@ -19,6 +19,8 @@ contract RewardsPerTokenSinceLastSnapshot_Integration_Concrete_Test is Shared_In
     }
 
     function test_RevertWhen_StartTimeInFuture() external whenNotNull givenNotCanceled {
+        warpStateTo(START_TIME - 1);
+
         vm.expectRevert(
             abi.encodeWithSelector(
                 Errors.SablierStaking_CampaignNotStarted.selector, campaignIds.defaultCampaign, START_TIME, END_TIME
@@ -27,9 +29,7 @@ contract RewardsPerTokenSinceLastSnapshot_Integration_Concrete_Test is Shared_In
         staking.rewardsPerTokenSinceLastSnapshot(campaignIds.defaultCampaign);
     }
 
-    function test_GivenTotalStakedZero() external whenNotNull givenNotCanceled whenStartTimeNotInFuture {
-        warpStateTo(WARP_40_PERCENT);
-
+    function test_GivenTotalStakedZero() external view whenNotNull givenNotCanceled whenStartTimeNotInFuture {
         // It should return zero.
         uint128 actualRewardRatePerTokenStaked = staking.rewardsPerTokenSinceLastSnapshot(campaignIds.freshCampaign);
         assertEq(actualRewardRatePerTokenStaked, 0, "rewardsPerTokenSinceLastSnapshot");

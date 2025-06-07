@@ -62,8 +62,7 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
         }
 
         // Deploy the Lockup contract for testing.
-        LockupNFTDescriptor nftDescriptor = new LockupNFTDescriptor();
-        lockup = ISablierLockupNFT(address(new SablierLockup(users.admin, nftDescriptor, 1000)));
+        lockup = deployLockup();
 
         // Label the contracts.
         vm.label({ account: address(lockup), newLabel: "Lockup" });
@@ -76,9 +75,12 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
         // Set the variables in Modifiers contract.
         setVariables(users);
 
-        // Assign fee collector role to the accountant user.
+        // Assign lockup whitelist role to the accountant user.
         setMsgSender(users.admin);
-        staking.grantRole(FEE_COLLECTOR_ROLE, users.accountant);
+        staking.grantRole(staking.LOCKUP_WHITELIST_ROLE(), users.accountant);
+
+        // Warp to Feb 1, 2025 at 00:00 UTC to provide a more realistic testing environment.
+        vm.warp({ newTimestamp: FEB_1_2025 });
 
         // Create and configure Lockup streams for testing.
         createAndConfigureStreams();
@@ -88,9 +90,6 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
         ISablierLockupNFT[] memory lockups = new ISablierLockupNFT[](1);
         lockups[0] = lockup;
         staking.whitelistLockups(lockups);
-
-        // Warp to Feb 1, 2025 at 00:00 UTC to provide a more realistic testing environment.
-        vm.warp({ newTimestamp: FEB_1_2025 });
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -217,5 +216,11 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
         LockupLinear.Durations memory durations = LockupLinear.Durations({ cliff: 0, total: STREAM_DURATION });
 
         return SablierLockup(address(lockup)).createWithDurationsLL(params, unlockAmounts, durations);
+    }
+
+    /// @dev Deploys a new Lockup contract for testing.
+    function deployLockup() internal returns (ISablierLockupNFT) {
+        LockupNFTDescriptor nftDescriptor = new LockupNFTDescriptor();
+        return ISablierLockupNFT(address(new SablierLockup(users.admin, nftDescriptor, 1000)));
     }
 }

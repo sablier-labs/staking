@@ -30,9 +30,6 @@ abstract contract Integration_Test is Base_Test {
 
         // Set campaign creator as the default caller for concrete tests.
         setMsgSender(users.campaignCreator);
-
-        // Warp back to campaign creation date as default.
-        warpStateTo(FEB_1_2025);
     }
 
     /*//////////////////////////////////////////////////////////////////////////

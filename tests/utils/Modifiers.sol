@@ -32,6 +32,10 @@ abstract contract Modifiers is EvmUtilsBase {
         _;
     }
 
+    modifier givenNotWhitelisted() {
+        _;
+    }
+
     modifier givenStreamNotStaked() {
         _;
     }
@@ -56,12 +60,25 @@ abstract contract Modifiers is EvmUtilsBase {
         _;
     }
 
+    modifier whenCallerAdmin() {
+        setMsgSender(users.admin);
+        _;
+    }
+
     modifier whenCallerCampaignAdmin() {
         setMsgSender(users.campaignCreator);
         _;
     }
 
     modifier whenCallerHasStakedTokens() {
+        _;
+    }
+
+    modifier whenCallerLockup() {
+        _;
+    }
+
+    modifier whenCallerNotAdmin() {
         _;
     }
 

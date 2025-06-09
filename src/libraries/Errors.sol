@@ -105,7 +105,7 @@ library Errors {
     error SablierStaking_UnderlyingTokenDifferent(IERC20 underlyingToken, IERC20 stakingToken);
 
     /// @notice Thrown when unstaking a zero amount.
-    error SablierStaking_UnstakingZeroAmount();
+    error SablierStaking_UnstakingZeroAmount(uint256 campaignId);
 
     /// @notice Thrown when lockup contract at the given index has not allowed this contract to hook.
     error SablierStaking_UnsupportedOnAllowedToHook(uint256 index, ISablierLockupNFT lockup);

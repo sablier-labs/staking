@@ -69,6 +69,7 @@ abstract contract Constants {
     uint128 internal constant DIRECT_AMOUNT_STAKED_BY_STAKER = 20_000e18;
     uint128 internal constant REWARDS_DISTRIBUTED = 4_000_000e18; // 4M tokens
     uint128 internal constant REWARDS_DISTRIBUTED_PER_TOKEN = 150; // 100 + 2M / 40k
+    uint256 internal constant REWARDS_DISTRIBUTED_PER_TOKEN_SCALED = REWARDS_DISTRIBUTED_PER_TOKEN * SCALE_FACTOR;
     uint128 internal constant REWARDS_EARNED_BY_RECIPIENT = REWARDS_EARNED_BY_RECIPIENT_20_PERCENT + 1_500_000e18;
     uint128 internal constant REWARDS_EARNED_BY_STAKER = REWARDS_EARNED_BY_STAKER_20_PERCENT + 500_000e18;
     uint8 internal constant STREAMS_COUNT_FOR_RECIPIENT = 2;

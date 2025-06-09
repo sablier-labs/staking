@@ -67,7 +67,7 @@ contract OnSablierLockupCancel_Integration_Concrete_Test is Shared_Integration_C
         emit ISablierStaking.SnapshotRewards(
             campaignIds.defaultCampaign,
             WARP_40_PERCENT,
-            getScaledValue(REWARDS_DISTRIBUTED_PER_TOKEN),
+            REWARDS_DISTRIBUTED_PER_TOKEN_SCALED,
             users.recipient,
             REWARDS_EARNED_BY_RECIPIENT,
             AMOUNT_STAKED_BY_RECIPIENT

@@ -119,7 +119,6 @@ abstract contract Integration_Test is Base_Test {
 
         // Canceled campaign.
         campaignIds.canceledCampaign = createDefaultCampaign();
-        staking.cancelCampaign(campaignIds.canceledCampaign);
 
         // Fresh campaign.
         campaignIds.freshCampaign = createDefaultCampaign();
@@ -131,9 +130,15 @@ abstract contract Integration_Test is Base_Test {
     /// @dev This function simulates the staking behavior of the users at different times and creates EVM snapshots to
     /// be used for testing.
     function simulateAndSnapshotStakingBehavior() internal {
-        // First snapshot after the campaign is created and the staker stakes direct tokens immediately.
+        // First snapshot after the campaigns are created and the staker stakes direct tokens immediately.
         setMsgSender(users.staker);
         staking.stakeERC20Token(campaignIds.defaultCampaign, DEFAULT_AMOUNT);
+        staking.stakeERC20Token(campaignIds.canceledCampaign, DEFAULT_AMOUNT);
+
+        // Cancel the canceledCampaign before snapshot.
+        setMsgSender(users.campaignCreator);
+        staking.cancelCampaign(campaignIds.canceledCampaign);
+
         snapshotState(); // snapshot ID = 0
 
         // Second snapshot when the campaign starts: Recipient stakes a stream.

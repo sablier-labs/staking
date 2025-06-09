@@ -1,0 +1,26 @@
+UnstakeERC20Token_Integration_Concrete_Test
+├── when delegate call
+│  └── it should revert
+└── when no delegate call
+   ├── when null
+   │  └── it should revert
+   └── when not null
+      ├── given direct staked amount zero
+      │  └── it should revert
+      └── given direct staked amount not zero
+         ├── when amount exceeds direct staked amount
+         │  └── it should revert
+         └── when amount not exceed direct staked amount
+            ├── when amount zero
+            │  └── it should revert
+            └── when amount not zero
+               ├── given canceled
+               │  ├── it should unstake
+               │  ├── it should update global rewards snapshot
+               │  ├── it should update user rewards snapshot
+               │  └── it should emit {Transfer} and {UnstakeERC20Token} events
+               └── given not canceled
+                  ├── it should unstake
+                  ├── it should update global rewards snapshot
+                  ├── it should update user rewards snapshot
+                  └── it should emit {SnapshotRewards}, {Transfer} and {UnstakeERC20Token} events

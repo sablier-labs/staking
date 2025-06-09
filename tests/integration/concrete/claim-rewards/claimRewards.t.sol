@@ -88,7 +88,7 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
         emit ISablierStaking.SnapshotRewards(
             campaignIds.defaultCampaign,
             WARP_40_PERCENT,
-            getScaledValue(REWARDS_DISTRIBUTED_PER_TOKEN),
+            REWARDS_DISTRIBUTED_PER_TOKEN_SCALED,
             users.recipient,
             REWARDS_EARNED_BY_RECIPIENT,
             AMOUNT_STAKED_BY_RECIPIENT
@@ -126,8 +126,6 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
         assertEq(actualRewards, REWARDS_EARNED_BY_RECIPIENT, "return value");
 
         // It should update the user snapshot correctly.
-        assertEq(
-            rewardsEarnedPerTokenScaled, getScaledValue(REWARDS_DISTRIBUTED_PER_TOKEN), "rewardsEarnedPerTokenScaled"
-        );
+        assertEq(rewardsEarnedPerTokenScaled, REWARDS_DISTRIBUTED_PER_TOKEN_SCALED, "rewardsEarnedPerTokenScaled");
     }
 }

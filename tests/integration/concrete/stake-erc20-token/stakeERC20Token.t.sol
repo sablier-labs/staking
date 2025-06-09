@@ -109,7 +109,7 @@ contract StakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concret
     {
         // It should stake tokens.
         _test_StakeERC20Token({
-            expectedRewardsPerTokenScaled: getScaledValue(REWARDS_DISTRIBUTED_PER_TOKEN),
+            expectedRewardsPerTokenScaled: REWARDS_DISTRIBUTED_PER_TOKEN_SCALED,
             expectedUserRewards: REWARDS_EARNED_BY_RECIPIENT
         });
     }

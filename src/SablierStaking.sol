@@ -350,7 +350,15 @@ contract SablierStaking is
     }
 
     /// @inheritdoc ISablierStaking
-    function snapshotRewards(uint256 campaignId, address user) external override noDelegateCall {
+    function snapshotRewards(
+        uint256 campaignId,
+        address user
+    )
+        external
+        override
+        noDelegateCall
+        notCanceled(campaignId)
+    {
         // Effect: snapshot rewards data to the latest values for `user`.
         _snapshotRewards(campaignId, user);
     }
@@ -477,7 +485,7 @@ contract SablierStaking is
     {
         // Check: the amount is not zero.
         if (amount == 0) {
-            revert Errors.SablierStaking_UnstakingZeroAmount();
+            revert Errors.SablierStaking_UnstakingZeroAmount(campaignId);
         }
 
         // Retrieve the user snapshot from storage into memory.
@@ -488,11 +496,20 @@ contract SablierStaking is
             revert Errors.SablierStaking_AmountExceedsStakedAmount(campaignId, amount, userSnapshot.directAmountStaked);
         }
 
-        // Effect: update rewards.
-        _snapshotRewards(campaignId, msg.sender);
+        // Snapshot rewards if the campaign is not canceled.
+        if (!_stakingCampaign[campaignId].wasCanceled) {
+            // Effect: update rewards.
+            _snapshotRewards(campaignId, msg.sender);
+        }
+        // Otherwise, update the last update time only.
+        else {
+            // Effect: update the last update time.
+            _globalSnapshot[campaignId].lastUpdateTime = uint40(block.timestamp);
+            _userSnapshot[msg.sender][campaignId].lastUpdateTime = uint40(block.timestamp);
+        }
 
-        // Effect: reduce total amount staked in the campaign.
-        _globalSnapshot[campaignId].totalAmountStaked -= amount;
+        // Effect: update the global last update time.
+        _globalSnapshot[campaignId].lastUpdateTime = uint40(block.timestamp);
 
         // Effect: reduce total amount staked by `msg.sender`.
         _userSnapshot[msg.sender][campaignId].totalAmountStaked = userSnapshot.totalAmountStaked - amount;
@@ -525,8 +542,17 @@ contract SablierStaking is
         // Retrieves the amount of token available in the stream.
         uint128 amountInStream = Helpers.amountInStream(lockup, streamId);
 
-        // Effect: update rewards.
-        _snapshotRewards(campaignId, msg.sender);
+        // Snapshot rewards if the campaign is not canceled.
+        if (!_stakingCampaign[campaignId].wasCanceled) {
+            // Effect: update rewards.
+            _snapshotRewards(campaignId, msg.sender);
+        }
+        // Otherwise, update the last update time only.
+        else {
+            // Effect: update the last update time.
+            _globalSnapshot[campaignId].lastUpdateTime = uint40(block.timestamp);
+            _userSnapshot[msg.sender][campaignId].lastUpdateTime = uint40(block.timestamp);
+        }
 
         // Effect: reduce total amount staked in the campaign.
         _globalSnapshot[campaignId].totalAmountStaked -= amountInStream;

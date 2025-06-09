@@ -160,7 +160,7 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         assertEq(lastUpdateTime, WARP_40_PERCENT, "lastUpdateTime");
 
         // It should return correct rewards distributed per token.
-        uint256 expectedRewardsPerTokenScaled = getScaledValue(REWARDS_DISTRIBUTED_PER_TOKEN);
+        uint256 expectedRewardsPerTokenScaled = REWARDS_DISTRIBUTED_PER_TOKEN_SCALED;
         assertEq(rewardsPerTokenScaled, expectedRewardsPerTokenScaled, "rewardsPerTokenScaled");
 
         // It should return correct total amount staked.
@@ -313,16 +313,14 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
             staking.userSnapshot(campaignIds.defaultCampaign, users.staker);
 
         assertEq(lastUpdateTime, WARP_40_PERCENT, "staker: lastUpdateTime");
-        assertEq(rewardsPerTokenScaled, getScaledValue(REWARDS_DISTRIBUTED_PER_TOKEN), "staker: rewardsPerTokenScaled");
+        assertEq(rewardsPerTokenScaled, REWARDS_DISTRIBUTED_PER_TOKEN_SCALED, "staker: rewardsPerTokenScaled");
         assertEq(rewards, REWARDS_EARNED_BY_STAKER, "staker: rewards");
 
         (lastUpdateTime, rewardsPerTokenScaled, rewards) =
             staking.userSnapshot(campaignIds.defaultCampaign, users.recipient);
 
         assertEq(lastUpdateTime, WARP_40_PERCENT, "recipient: lastUpdateTime");
-        assertEq(
-            rewardsPerTokenScaled, getScaledValue(REWARDS_DISTRIBUTED_PER_TOKEN), "recipient: rewardsPerTokenScaled"
-        );
+        assertEq(rewardsPerTokenScaled, REWARDS_DISTRIBUTED_PER_TOKEN_SCALED, "recipient: rewardsPerTokenScaled");
         assertEq(rewards, REWARDS_EARNED_BY_RECIPIENT, "recipient: rewards");
     }
 

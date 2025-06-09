@@ -24,6 +24,10 @@ abstract contract Modifiers is EvmUtilsBase {
         _;
     }
 
+    modifier givenDirectStakedAmountNotZero() {
+        _;
+    }
+
     modifier givenLockupWhitelisted() {
         _;
     }
@@ -53,6 +57,10 @@ abstract contract Modifiers is EvmUtilsBase {
     //////////////////////////////////////////////////////////////////////////*/
 
     modifier whenAdminNotZeroAddress() {
+        _;
+    }
+
+    modifier whenAmountNotExceedDirectStakedAmount() {
         _;
     }
 

@@ -165,7 +165,7 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
         givenAmountInStreamNotZero
     {
         _test_StakeLockupNFT({
-            expectedRewardsPerTokenScaled: getScaledValue(REWARDS_DISTRIBUTED_PER_TOKEN),
+            expectedRewardsPerTokenScaled: REWARDS_DISTRIBUTED_PER_TOKEN_SCALED,
             expectedUserRewards: REWARDS_EARNED_BY_RECIPIENT
         });
     }

@@ -20,7 +20,27 @@ abstract contract Modifiers is EvmUtilsBase {
                                        GIVEN
     //////////////////////////////////////////////////////////////////////////*/
 
+    modifier givenAmountInStreamNotZero() {
+        _;
+    }
+
+    modifier givenDirectStakedAmountNotZero() {
+        _;
+    }
+
+    modifier givenLockupWhitelisted() {
+        _;
+    }
+
     modifier givenNotCanceled() {
+        _;
+    }
+
+    modifier givenNotWhitelisted() {
+        _;
+    }
+
+    modifier givenStreamNotStaked() {
         _;
     }
 
@@ -40,6 +60,19 @@ abstract contract Modifiers is EvmUtilsBase {
         _;
     }
 
+    modifier whenAmountNotExceedDirectStakedAmount() {
+        _;
+    }
+
+    modifier whenAmountNotZero() {
+        _;
+    }
+
+    modifier whenCallerAdmin() {
+        setMsgSender(users.admin);
+        _;
+    }
+
     modifier whenCallerCampaignAdmin() {
         setMsgSender(users.campaignCreator);
         _;
@@ -49,11 +82,23 @@ abstract contract Modifiers is EvmUtilsBase {
         _;
     }
 
+    modifier whenCallerLockup() {
+        _;
+    }
+
+    modifier whenCallerNotAdmin() {
+        _;
+    }
+
     modifier whenClaimableRewardsNotZero() {
         _;
     }
 
     modifier whenEndTimeGreaterThanStartTime() {
+        _;
+    }
+
+    modifier whenEndTimeInFuture() {
         _;
     }
 
@@ -94,6 +139,10 @@ abstract contract Modifiers is EvmUtilsBase {
     }
 
     modifier whenStartTimeNotInPast() {
+        _;
+    }
+
+    modifier whenStreamTokenMatchesStakingToken() {
         _;
     }
 

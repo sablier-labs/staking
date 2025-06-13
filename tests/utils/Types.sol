@@ -42,11 +42,3 @@ struct Users {
     address payable sender;
     address payable staker;
 }
-
-/// @notice A struct to manage variables during tests preventing stack too deep errors.
-struct Vars {
-    uint40 actualLastUpdateTime;
-    uint256 actualRewardsPerTokenScaled;
-    uint256 expectedRewardsPerTokenScaled;
-    uint128 expectedUserRewards;
-}

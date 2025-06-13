@@ -31,7 +31,10 @@ contract CancelCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                Errors.SablierStaking_CallerNotCampaignAdmin.selector, users.eve, users.campaignCreator
+                Errors.SablierStaking_CallerNotCampaignAdmin.selector,
+                campaignIds.defaultCampaign,
+                users.eve,
+                users.campaignCreator
             )
         );
         staking.cancelCampaign(campaignIds.defaultCampaign);
@@ -44,10 +47,12 @@ contract CancelCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
         givenNotCanceled
         whenCallerCampaignAdmin
     {
-        warpStateTo(WARP_40_PERCENT);
-
         // It should revert.
-        vm.expectRevert(abi.encodeWithSelector(Errors.SablierStaking_CampaignAlreadyStarted.selector, START_TIME));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.SablierStaking_CampaignAlreadyStarted.selector, campaignIds.defaultCampaign, START_TIME
+            )
+        );
         staking.cancelCampaign(campaignIds.defaultCampaign);
     }
 
@@ -60,7 +65,11 @@ contract CancelCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
     {
         warpStateTo(START_TIME);
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.SablierStaking_CampaignAlreadyStarted.selector, START_TIME));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.SablierStaking_CampaignAlreadyStarted.selector, campaignIds.defaultCampaign, START_TIME
+            )
+        );
         staking.cancelCampaign(campaignIds.defaultCampaign);
     }
 

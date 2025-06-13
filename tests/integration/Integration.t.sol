@@ -30,9 +30,6 @@ abstract contract Integration_Test is Base_Test {
 
         // Set campaign creator as the default caller for concrete tests.
         setMsgSender(users.campaignCreator);
-
-        // Warp back to campaign creation date as default.
-        warpStateTo(FEB_1_2025);
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -59,11 +56,53 @@ abstract contract Integration_Test is Base_Test {
                                       HELPERS
     //////////////////////////////////////////////////////////////////////////*/
 
+    /// @notice Calculate latest rewards for a user.
+    function calculateLatestRewards(address user)
+        internal
+        view
+        returns (uint256 rewardsEarnedPerTokenScaled, uint128 rewards)
+    {
+        if (getBlockTimestamp() <= START_TIME) {
+            return (0, 0);
+        }
+
+        // Get total amount staked by user and globally.
+        uint128 totalAmountStaked = staking.totalAmountStaked(campaignIds.defaultCampaign);
+        uint128 totalAmountStakedByUser =
+            staking.amountStakedByUser(campaignIds.defaultCampaign, user).totalAmountStaked;
+
+        (uint40 lastUpdateTime, uint256 rewardsDistributedPerTokenScaled) =
+            staking.globalSnapshot(campaignIds.defaultCampaign);
+
+        // Calculate starting point in time for rewards calculation.
+        uint40 startingPointInTime = lastUpdateTime >= START_TIME ? lastUpdateTime : START_TIME;
+
+        // Calculate time elapsed.
+        uint40 timeElapsed =
+            getBlockTimestamp() >= END_TIME ? END_TIME - startingPointInTime : getBlockTimestamp() - startingPointInTime;
+
+        // Calculate global rewards distributed since last update.
+        uint128 rewardsDistributedSinceLastUpdate = REWARD_AMOUNT * timeElapsed / CAMPAIGN_DURATION;
+
+        // Update global rewards distributed per token scaled.
+        rewardsDistributedPerTokenScaled += getScaledValue(rewardsDistributedSinceLastUpdate) / totalAmountStaked;
+
+        // Get user rewards snapshot.
+        (, rewardsEarnedPerTokenScaled, rewards) = staking.userSnapshot(campaignIds.defaultCampaign, user);
+
+        // Calculate latest rewards earned per token scaled.
+        uint256 rewardsEarnedPerTokenScaledDelta = rewardsDistributedPerTokenScaled - rewardsEarnedPerTokenScaled;
+        rewardsEarnedPerTokenScaled += rewardsEarnedPerTokenScaledDelta;
+
+        // Calculate latest rewards for user.
+        rewards += getDescaledValue(rewardsEarnedPerTokenScaledDelta * totalAmountStakedByUser);
+    }
+
     /// @notice Creates a default campaign.
     function createDefaultCampaign() internal returns (uint256 campaignId) {
         return staking.createCampaign({
             admin: users.campaignCreator,
-            stakingToken: dai,
+            stakingToken: stakingToken,
             startTime: START_TIME,
             endTime: END_TIME,
             rewardToken: rewardToken,
@@ -80,7 +119,6 @@ abstract contract Integration_Test is Base_Test {
 
         // Canceled campaign.
         campaignIds.canceledCampaign = createDefaultCampaign();
-        staking.cancelCampaign(campaignIds.canceledCampaign);
 
         // Fresh campaign.
         campaignIds.freshCampaign = createDefaultCampaign();
@@ -92,9 +130,15 @@ abstract contract Integration_Test is Base_Test {
     /// @dev This function simulates the staking behavior of the users at different times and creates EVM snapshots to
     /// be used for testing.
     function simulateAndSnapshotStakingBehavior() internal {
-        // First snapshot after the campaign is created and the staker stakes direct tokens immediately.
+        // First snapshot after the campaigns are created and the staker stakes direct tokens immediately.
         setMsgSender(users.staker);
         staking.stakeERC20Token(campaignIds.defaultCampaign, DEFAULT_AMOUNT);
+        staking.stakeERC20Token(campaignIds.canceledCampaign, DEFAULT_AMOUNT);
+
+        // Cancel the canceledCampaign before snapshot.
+        setMsgSender(users.campaignCreator);
+        staking.cancelCampaign(campaignIds.canceledCampaign);
+
         snapshotState(); // snapshot ID = 0
 
         // Second snapshot when the campaign starts: Recipient stakes a stream.

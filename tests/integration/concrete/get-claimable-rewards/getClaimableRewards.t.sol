@@ -22,21 +22,21 @@ contract GetClaimableRewards_Integration_Concrete_Test is Shared_Integration_Con
         staking.getClaimableRewards(campaignIds.defaultCampaign, address(0));
     }
 
-    function test_WhenClaimableRewardsZero() external view whenNotNull givenNotCanceled whenUserNotZeroAddress {
+    function test_WhenClaimableRewardsZero() external whenNotNull givenNotCanceled whenUserNotZeroAddress {
+        warpStateTo(START_TIME);
+
         uint128 actualRewards = staking.getClaimableRewards(campaignIds.defaultCampaign, users.recipient);
         assertEq(actualRewards, 0, "rewards");
     }
 
     function test_WhenCurrentTimeEqualsLastUpdateTime()
         external
+        view
         whenNotNull
         givenNotCanceled
         whenUserNotZeroAddress
         whenClaimableRewardsNotZero
     {
-        // Warp the EVM state to 40% through the campaign.
-        warpStateTo(WARP_40_PERCENT);
-
         uint128 actualRewards = staking.getClaimableRewards(campaignIds.defaultCampaign, users.recipient);
         assertEq(actualRewards, REWARDS_EARNED_BY_RECIPIENT, "rewards");
     }
@@ -51,7 +51,7 @@ contract GetClaimableRewards_Integration_Concrete_Test is Shared_Integration_Con
         // Warp the EVM state to 20% through the campaign.
         warpStateTo(WARP_20_PERCENT);
 
-        // Warp the time to 40% through the campaign.
+        // Warp the time to 40% through the campaign so that last time update is in the past.
         vm.warp(WARP_40_PERCENT);
 
         uint128 actualRewards = staking.getClaimableRewards(campaignIds.defaultCampaign, users.recipient);

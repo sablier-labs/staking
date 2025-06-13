@@ -45,8 +45,8 @@ interface ISablierStakingState {
     /// @dev Reverts if `campaignId` references a null campaign.
     /// @param campaignId The campaign ID for the query.
     /// @return lastUpdateTime The last time this snapshot was updated, denoted in UNIX timestamp.
-    /// @return rewardsDistributedPerTokenScaled The amount of rewards distributed per staking token, scaled by 1e18 to
-    /// minimize precision loss.
+    /// @return rewardsDistributedPerTokenScaled The amount of rewards distributed per staking token, scaled by
+    /// {Helpers.SCALE_FACTOR} to minimize precision loss.
     function globalSnapshot(uint256 campaignId)
         external
         view
@@ -80,15 +80,15 @@ interface ISablierStakingState {
     /// @notice Returns the total amount of tokens staked (both direct staking and through Sablier streams), denoted in
     /// staking token's decimals.
     /// @dev Reverts if `campaignId` references a null campaign.
-    function totalStakedTokens(uint256 campaignId) external view returns (uint128);
+    function totalAmountStaked(uint256 campaignId) external view returns (uint128);
 
     /// @notice Retrieves the rewards snapshot of a user for the given campaign ID.
     /// @dev Reverts if `campaignId` references a null campaign or `user` is the zero address.
     /// @param campaignId The campaign ID for the query.
     /// @param user The user address for the query.
     /// @return lastUpdateTime The last time this snapshot was updated, denoted in UNIX timestamp.
-    /// @return rewardsEarnedPerTokenScaled The amount of rewards earned per staking token, scaled by 1e18 to minimize
-    /// precision loss.
+    /// @return rewardsEarnedPerTokenScaled The amount of rewards earned per staking token, scaled by
+    /// {Helpers.SCALE_FACTOR} to minimize precision loss.
     /// @return rewards The amount of rewards earned by the user until last snapshot, denoted in token's decimals.
     function userSnapshot(
         uint256 campaignId,

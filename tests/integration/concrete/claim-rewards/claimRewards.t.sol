@@ -32,7 +32,13 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
     }
 
     function test_RevertWhen_StartTimeInFuture() external whenNoDelegateCall whenNotNull givenNotCanceled {
-        vm.expectRevert(abi.encodeWithSelector(Errors.SablierStaking_CampaignNotStarted.selector, START_TIME));
+        warpStateTo(START_TIME - 1);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.SablierStaking_CampaignNotStarted.selector, campaignIds.defaultCampaign, START_TIME
+            )
+        );
         staking.claimRewards(campaignIds.defaultCampaign);
     }
 
@@ -55,8 +61,6 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
         givenNotCanceled
         whenStartTimeInPast
     {
-        warpStateTo(WARP_40_PERCENT);
-
         // Switch to a different user who has no rewards.
         setMsgSender(users.eve);
 
@@ -76,8 +80,6 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
         givenNotCanceled
         whenStartTimeInPast
     {
-        warpStateTo(WARP_40_PERCENT);
-
         uint256 initialCallerBalance = rewardToken.balanceOf(users.recipient);
         uint256 initialContractBalance = rewardToken.balanceOf(address(staking));
 
@@ -86,7 +88,7 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
         emit ISablierStaking.SnapshotRewards(
             campaignIds.defaultCampaign,
             WARP_40_PERCENT,
-            getScaledValue(REWARDS_DISTRIBUTED_PER_TOKEN),
+            REWARDS_DISTRIBUTED_PER_TOKEN_SCALED,
             users.recipient,
             REWARDS_EARNED_BY_RECIPIENT,
             AMOUNT_STAKED_BY_RECIPIENT
@@ -124,8 +126,6 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
         assertEq(actualRewards, REWARDS_EARNED_BY_RECIPIENT, "return value");
 
         // It should update the user snapshot correctly.
-        assertEq(
-            rewardsEarnedPerTokenScaled, getScaledValue(REWARDS_DISTRIBUTED_PER_TOKEN), "rewardsEarnedPerTokenScaled"
-        );
+        assertEq(rewardsEarnedPerTokenScaled, REWARDS_DISTRIBUTED_PER_TOKEN_SCALED, "rewardsEarnedPerTokenScaled");
     }
 }

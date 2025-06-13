@@ -30,7 +30,7 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         assertEq(amounts.streamsCount, 0, "staker: streamsCount");
         assertEq(amounts.directAmountStaked, DIRECT_AMOUNT_STAKED_BY_STAKER_END_TIME, "staker: directAmountStaked");
         assertEq(amounts.streamAmountStaked, 0, "staker: streamAmountStaked");
-        assertEq(amounts.totalStakedAmount, AMOUNT_STAKED_BY_STAKER_END_TIME, "staker: totalStakedAmount");
+        assertEq(amounts.totalAmountStaked, AMOUNT_STAKED_BY_STAKER_END_TIME, "staker: totalAmountStaked");
 
         amounts = staking.amountStakedByUser(campaignIds.defaultCampaign, users.recipient);
         assertEq(amounts.streamsCount, STREAMS_COUNT_FOR_RECIPIENT_END_TIME, "recipient: streamsCount");
@@ -38,7 +38,7 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
             amounts.directAmountStaked, DIRECT_AMOUNT_STAKED_BY_RECIPIENT_END_TIME, "recipient: directAmountStaked"
         );
         assertEq(amounts.streamAmountStaked, 2 * STREAM_AMOUNT_18D, "recipient: streamAmountStaked");
-        assertEq(amounts.totalStakedAmount, AMOUNT_STAKED_BY_RECIPIENT_END_TIME, "recipient: totalStakedAmount");
+        assertEq(amounts.totalAmountStaked, AMOUNT_STAKED_BY_RECIPIENT_END_TIME, "recipient: totalAmountStaked");
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -86,7 +86,9 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     }
 
     function test_GetStakingTokenWhenNotNull() external view {
-        assertEq(address(staking.getStakingToken(campaignIds.defaultCampaign)), address(dai), "getStakingToken");
+        assertEq(
+            address(staking.getStakingToken(campaignIds.defaultCampaign)), address(stakingToken), "getStakingToken"
+        );
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -127,13 +129,13 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         (uint40 lastUpdateTime, uint256 rewardsPerTokenScaled) = staking.globalSnapshot(campaignIds.defaultCampaign);
 
         // It should return zero last update time.
-        assertEq(lastUpdateTime, 0, "lastUpdateTime");
+        assertEq(lastUpdateTime, FEB_1_2025, "lastUpdateTime");
 
         // It should return zero rewards distributed per token.
         assertEq(rewardsPerTokenScaled, 0, "rewardsPerTokenScaled");
 
-        // It should return correct total staked tokens.
-        assertEq(staking.totalStakedTokens(campaignIds.defaultCampaign), TOTAL_STAKED_PRE_START, "totalStakedAmount");
+        // It should return correct total amount staked.
+        assertEq(staking.totalAmountStaked(campaignIds.defaultCampaign), TOTAL_STAKED_PRE_START, "totalAmountStaked");
     }
 
     function test_GlobalSnapshotWhenStartTimeInPresent() external whenNotNull {
@@ -147,24 +149,22 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         // It should return zero rewards distributed per token.
         assertEq(rewardsPerTokenScaled, 0, "rewardsPerTokenScaled");
 
-        // It should return correct total staked tokens.
-        assertEq(staking.totalStakedTokens(campaignIds.defaultCampaign), TOTAL_STAKED_START_TIME, "totalStakedAmount");
+        // It should return correct total amount staked.
+        assertEq(staking.totalAmountStaked(campaignIds.defaultCampaign), TOTAL_STAKED_START_TIME, "totalAmountStaked");
     }
 
-    function test_GlobalSnapshotWhenEndTimeInFuture() external whenNotNull whenStartTimeInPast {
-        warpStateTo(WARP_40_PERCENT);
-
+    function test_GlobalSnapshotWhenEndTimeInFuture() external view whenNotNull whenStartTimeInPast {
         (uint40 lastUpdateTime, uint256 rewardsPerTokenScaled) = staking.globalSnapshot(campaignIds.defaultCampaign);
 
         // It should return correct last update time.
         assertEq(lastUpdateTime, WARP_40_PERCENT, "lastUpdateTime");
 
         // It should return correct rewards distributed per token.
-        uint256 expectedRewardsPerTokenScaled = getScaledValue(REWARDS_DISTRIBUTED_PER_TOKEN);
+        uint256 expectedRewardsPerTokenScaled = REWARDS_DISTRIBUTED_PER_TOKEN_SCALED;
         assertEq(rewardsPerTokenScaled, expectedRewardsPerTokenScaled, "rewardsPerTokenScaled");
 
-        // It should return correct total staked tokens.
-        assertEq(staking.totalStakedTokens(campaignIds.defaultCampaign), TOTAL_STAKED, "totalStakedAmount");
+        // It should return correct total amount staked.
+        assertEq(staking.totalAmountStaked(campaignIds.defaultCampaign), TOTAL_STAKED, "totalAmountStaked");
     }
 
     function test_GlobalSnapshotWhenEndTimeNotInFuture() external whenNotNull whenStartTimeInPast {
@@ -182,8 +182,8 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         uint256 expectedRewardsPerTokenScaled = getScaledValue(REWARDS_DISTRIBUTED_PER_TOKEN_END_TIME);
         assertEq(rewardsPerTokenScaled, expectedRewardsPerTokenScaled, "rewardsPerTokenScaled");
 
-        // It should return correct total staked tokens.
-        assertEq(staking.totalStakedTokens(campaignIds.defaultCampaign), TOTAL_STAKED_END_TIME, "totalStakedAmount");
+        // It should return correct total amount staked.
+        assertEq(staking.totalAmountStaked(campaignIds.defaultCampaign), TOTAL_STAKED_END_TIME, "totalAmountStaked");
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -231,9 +231,7 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         staking.stakedStream(lockup, streamIds.defaultStream);
     }
 
-    function test_StakedStreamWhenStreamStaked() external whenNotZeroAddress givenWhitelisted {
-        warpStateTo(WARP_40_PERCENT);
-
+    function test_StakedStreamWhenStreamStaked() external view whenNotZeroAddress givenWhitelisted {
         // It should return the campaign ID and owner.
         (uint256 actualCampaignId, address actualOwner) = staking.stakedStream(lockup, streamIds.defaultStakedStream);
         assertEq(actualCampaignId, campaignIds.defaultCampaign, "campaignId");
@@ -244,13 +242,13 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
                                 TOTAL-STAKED-TOKENS
     //////////////////////////////////////////////////////////////////////////*/
 
-    function test_TotalStakedTokensRevertWhen_Null() external {
-        expectRevert_Null({ callData: abi.encodeCall(staking.totalStakedTokens, campaignIds.nullCampaign) });
+    function test_TotalAmountStakedRevertWhen_Null() external {
+        expectRevert_Null({ callData: abi.encodeCall(staking.totalAmountStaked, campaignIds.nullCampaign) });
     }
 
-    function test_TotalStakedTokensWhenNotNull() external {
+    function test_TotalAmountStakedWhenNotNull() external {
         warpStateTo(END_TIME);
-        assertEq(staking.totalStakedTokens(campaignIds.defaultCampaign), TOTAL_STAKED_END_TIME, "totalStakedTokens");
+        assertEq(staking.totalAmountStaked(campaignIds.defaultCampaign), TOTAL_STAKED_END_TIME, "totalAmountStaked");
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -272,7 +270,7 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         (uint40 lastUpdateTime, uint256 rewardsPerTokenScaled, uint128 rewards) =
             staking.userSnapshot(campaignIds.defaultCampaign, users.staker);
 
-        assertEq(lastUpdateTime, 0, "staker: lastUpdateTime");
+        assertEq(lastUpdateTime, FEB_1_2025, "staker: lastUpdateTime");
         assertEq(rewardsPerTokenScaled, 0, "staker: rewardsPerTokenScaled");
         assertEq(rewards, 0, "staker: rewards");
 
@@ -307,8 +305,6 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     }
 
     function test_UserSnapshotWhenEndTimeInFuture() external whenNotNull whenNotZeroAddress whenStartTimeInPast {
-        warpStateTo(WARP_40_PERCENT);
-
         // Take snapshots of the rewards.
         staking.snapshotRewards(campaignIds.defaultCampaign, users.staker);
         staking.snapshotRewards(campaignIds.defaultCampaign, users.recipient);
@@ -317,16 +313,14 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
             staking.userSnapshot(campaignIds.defaultCampaign, users.staker);
 
         assertEq(lastUpdateTime, WARP_40_PERCENT, "staker: lastUpdateTime");
-        assertEq(rewardsPerTokenScaled, getScaledValue(REWARDS_DISTRIBUTED_PER_TOKEN), "staker: rewardsPerTokenScaled");
+        assertEq(rewardsPerTokenScaled, REWARDS_DISTRIBUTED_PER_TOKEN_SCALED, "staker: rewardsPerTokenScaled");
         assertEq(rewards, REWARDS_EARNED_BY_STAKER, "staker: rewards");
 
         (lastUpdateTime, rewardsPerTokenScaled, rewards) =
             staking.userSnapshot(campaignIds.defaultCampaign, users.recipient);
 
         assertEq(lastUpdateTime, WARP_40_PERCENT, "recipient: lastUpdateTime");
-        assertEq(
-            rewardsPerTokenScaled, getScaledValue(REWARDS_DISTRIBUTED_PER_TOKEN), "recipient: rewardsPerTokenScaled"
-        );
+        assertEq(rewardsPerTokenScaled, REWARDS_DISTRIBUTED_PER_TOKEN_SCALED, "recipient: rewardsPerTokenScaled");
         assertEq(rewards, REWARDS_EARNED_BY_RECIPIENT, "recipient: rewards");
     }
 

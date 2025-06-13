@@ -19,6 +19,8 @@ contract RewardRate_Integration_Concrete_Test is Shared_Integration_Concrete_Tes
     }
 
     function test_RevertWhen_StartTimeInFuture() external whenNotNull givenNotCanceled {
+        warpStateTo(START_TIME - 1);
+
         vm.expectRevert(
             abi.encodeWithSelector(
                 Errors.SablierStakingState_CampaignNotActive.selector, campaignIds.defaultCampaign, START_TIME, END_TIME
@@ -39,13 +41,12 @@ contract RewardRate_Integration_Concrete_Test is Shared_Integration_Concrete_Tes
 
     function test_GivenTotalStakedZero()
         external
+        view
         whenNotNull
         givenNotCanceled
         whenStartTimeNotInFuture
         whenEndTimeNotInPast
     {
-        warpStateTo(WARP_40_PERCENT);
-
         // It should return zero.
         uint128 actualRewardRate = staking.rewardRate(campaignIds.freshCampaign);
         assertEq(actualRewardRate, 0, "reward rate");
@@ -53,13 +54,12 @@ contract RewardRate_Integration_Concrete_Test is Shared_Integration_Concrete_Tes
 
     function test_GivenTotalStakedNotZero()
         external
+        view
         whenNotNull
         givenNotCanceled
         whenStartTimeNotInFuture
         whenEndTimeNotInPast
     {
-        warpStateTo(WARP_40_PERCENT);
-
         // It should return correct reward rate.
         uint128 actualRewardRate = staking.rewardRate(campaignIds.defaultCampaign);
         assertEq(actualRewardRate, REWARD_RATE, "reward rate");

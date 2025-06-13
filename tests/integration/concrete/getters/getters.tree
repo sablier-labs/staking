@@ -78,11 +78,11 @@ Getters_Integration_Concrete_Test::stakedStream
       └── when stream staked
          └── it should return campaign id and owner
 
-Getters_Integration_Concrete_Test::totalStakedTokens
+Getters_Integration_Concrete_Test::totalAmountStaked
 ├── when null
 │  └── it should revert
 └── when not null
-   └── it should return the total staked tokens
+   └── it should return the total amount staked
 
 Getters_Integration_Concrete_Test::userSnapshot
 ├── when null

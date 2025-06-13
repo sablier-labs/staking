@@ -26,6 +26,7 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
     //////////////////////////////////////////////////////////////////////////*/
 
     ERC20Mock internal rewardToken;
+    ERC20Mock internal stakingToken;
     StreamIds internal streamIds;
     Users internal users;
 
@@ -47,6 +48,10 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
         rewardToken = new ERC20Mock("Reward Token", "REWARD_TOKEN", 18);
         tokens.push(rewardToken);
 
+        // Deploy the staking token.
+        stakingToken = new ERC20Mock("Staking Token", "STAKING_TOKEN", 18);
+        tokens.push(stakingToken);
+
         users.admin = payable(makeAddr("admin"));
 
         // Deploy the staking protocol.
@@ -57,8 +62,7 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
         }
 
         // Deploy the Lockup contract for testing.
-        LockupNFTDescriptor nftDescriptor = new LockupNFTDescriptor();
-        lockup = ISablierLockupNFT(address(new SablierLockup(users.admin, nftDescriptor, 1000)));
+        lockup = deployLockup();
 
         // Label the contracts.
         vm.label({ account: address(lockup), newLabel: "Lockup" });
@@ -71,9 +75,12 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
         // Set the variables in Modifiers contract.
         setVariables(users);
 
-        // Assign fee collector role to the accountant user.
+        // Assign lockup whitelist role to the accountant user.
         setMsgSender(users.admin);
-        staking.grantRole(FEE_COLLECTOR_ROLE, users.accountant);
+        staking.grantRole(staking.LOCKUP_WHITELIST_ROLE(), users.accountant);
+
+        // Warp to Feb 1, 2025 at 00:00 UTC to provide a more realistic testing environment.
+        vm.warp({ newTimestamp: FEB_1_2025 });
 
         // Create and configure Lockup streams for testing.
         createAndConfigureStreams();
@@ -83,9 +90,6 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
         ISablierLockupNFT[] memory lockups = new ISablierLockupNFT[](1);
         lockups[0] = lockup;
         staking.whitelistLockups(lockups);
-
-        // Warp to Feb 1, 2025 at 00:00 UTC to provide a more realistic testing environment.
-        vm.warp({ newTimestamp: FEB_1_2025 });
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -124,9 +128,9 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
     }
 
     /// @dev Creates the following Lockup streams:
-    /// - A DAI stream that is cancelable.
-    /// - A DAI stream that is not cancelable.
-    /// - A USDC stream that is cancelable.
+    /// - A stream with staking token that is cancelable.
+    /// - A stream with staking token that is not cancelable.
+    /// - A stream with USDC that is cancelable.
     function createAndConfigureStreams() internal {
         SablierLockup lockupContract = SablierLockup(address(lockup));
 
@@ -136,54 +140,87 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
         // Change caller to the sender.
         setMsgSender(users.sender);
 
-        (
-            Lockup.CreateWithDurations memory params,
-            LockupLinear.UnlockAmounts memory unlockAmounts,
-            LockupLinear.Durations memory durations
-        ) = defaultCreateWithDurationsLLParams(dai);
+        // A stream that is cancelable and will not be staked into the default campaign.
+        streamIds.defaultStream = defaultCreateWithDurationsLL();
 
-        // A DAI stream that is cancelable and will not be staked into the default campaign.
-        streamIds.defaultStream = lockupContract.createWithDurationsLL(params, unlockAmounts, durations);
+        // A stream that is cancelable and will be staked into the default campaign.
+        streamIds.defaultStakedStream = defaultCreateWithDurationsLL();
 
-        // A DAI stream that is cancelable and will be staked into the default campaign.
-        streamIds.defaultStakedStream = lockupContract.createWithDurationsLL(params, unlockAmounts, durations);
-
-        // A DAI stream that is not cancelable and will be staked into the default campaign.
-        (params, unlockAmounts, durations) = defaultCreateWithDurationsLLParams(dai);
-        params.cancelable = false;
-        streamIds.defaultStakedStreamNonCancelable =
-            lockupContract.createWithDurationsLL(params, unlockAmounts, durations);
+        // A stream that is not cancelable and will be staked into the default campaign.
+        streamIds.defaultStakedStreamNonCancelable = defaultCreateWithDurationsLL({ cancelable: false });
 
         // A USDC stream that is cancelable.
-        (params, unlockAmounts, durations) = defaultCreateWithDurationsLLParams(usdc);
-        streamIds.differentTokenStream = lockupContract.createWithDurationsLL(params, unlockAmounts, durations);
+        streamIds.differentTokenStream = defaultCreateWithDurationsLL(usdc);
 
         // Approve the staking contract to spend the Lockup NFTs.
         setMsgSender(users.recipient);
         lockupContract.setApprovalForAll({ operator: address(staking), approved: true });
     }
 
-    /// @dev Returns the defaults parameters of the `createWithDurationsLL` function.
-    function defaultCreateWithDurationsLLParams(ERC20 token)
+    /// @dev Create a stream with `createWithDurationsLL` function using the default parameters.
+    function defaultCreateWithDurationsLL() internal returns (uint256 streamId) {
+        return defaultCreateWithDurationsLL(true, users.recipient, stakingToken);
+    }
+
+    /// @dev Create a stream with `createWithDurationsLL` function with cancelable parameter.
+    function defaultCreateWithDurationsLL(bool cancelable) internal returns (uint256 streamId) {
+        return defaultCreateWithDurationsLL(cancelable, users.recipient, stakingToken);
+    }
+
+    /// @dev Create a stream with `createWithDurationsLL` function with recipient parameter.
+    function defaultCreateWithDurationsLL(address recipient) internal returns (uint256 streamId) {
+        return defaultCreateWithDurationsLL(true, recipient, stakingToken);
+    }
+
+    /// @dev Create a stream with `createWithDurationsLL` function with token parameter.
+    function defaultCreateWithDurationsLL(ERC20 token) internal returns (uint256 streamId) {
+        return defaultCreateWithDurationsLL(true, users.recipient, token);
+    }
+
+    /// @dev Create a stream with `createWithDurationsLL` function with cancelable, recipient and token parameters.
+    function defaultCreateWithDurationsLL(
+        bool cancelable,
+        address recipient,
+        ERC20 token
+    )
         internal
-        view
-        returns (Lockup.CreateWithDurations memory, LockupLinear.UnlockAmounts memory, LockupLinear.Durations memory)
+        returns (uint256 streamId)
     {
         uint128 totalAmount = (STREAM_AMOUNT * 10 ** token.decimals()).toUint128();
 
-        return (
-            Lockup.CreateWithDurations({
-                sender: users.sender,
-                recipient: users.recipient,
-                totalAmount: totalAmount,
-                token: token,
-                cancelable: true,
-                transferable: true,
-                shape: "linear",
-                broker: Broker({ account: address(0), fee: ZERO })
-            }),
-            LockupLinear.UnlockAmounts({ start: 0, cliff: 0 }),
-            LockupLinear.Durations({ cliff: 0, total: STREAM_DURATION })
-        );
+        return defaultCreateWithDurationsLL(totalAmount, cancelable, recipient, token);
+    }
+
+    /// @dev Create a stream with `createWithDurationsLL` function with amount, cancelable, recipient and token
+    /// parameters.
+    function defaultCreateWithDurationsLL(
+        uint128 amount,
+        bool cancelable,
+        address recipient,
+        ERC20 token
+    )
+        internal
+        returns (uint256 streamId)
+    {
+        Lockup.CreateWithDurations memory params = Lockup.CreateWithDurations({
+            sender: users.sender,
+            recipient: recipient,
+            totalAmount: amount,
+            token: token,
+            cancelable: cancelable,
+            transferable: true,
+            shape: "linear",
+            broker: Broker({ account: address(0), fee: ZERO })
+        });
+        LockupLinear.UnlockAmounts memory unlockAmounts = LockupLinear.UnlockAmounts({ start: 0, cliff: 0 });
+        LockupLinear.Durations memory durations = LockupLinear.Durations({ cliff: 0, total: STREAM_DURATION });
+
+        return SablierLockup(address(lockup)).createWithDurationsLL(params, unlockAmounts, durations);
+    }
+
+    /// @dev Deploys a new Lockup contract for testing.
+    function deployLockup() internal returns (ISablierLockupNFT) {
+        LockupNFTDescriptor nftDescriptor = new LockupNFTDescriptor();
+        return ISablierLockupNFT(address(new SablierLockup(users.admin, nftDescriptor, 1000)));
     }
 }

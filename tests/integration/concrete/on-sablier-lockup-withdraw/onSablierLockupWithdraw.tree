@@ -1,0 +1,14 @@
+OnSablierLockupWithdraw_Integration_Concrete_Test
+├── when delegate call
+│  └── it should revert
+└── when no delegate call
+   ├── when caller not lockup
+   │  └── it should revert
+   └── when caller lockup
+      ├── given lockup not whitelisted
+      │  └── it should revert
+      └── given lockup whitelisted
+         ├── given stream not staked
+         │  └── it should revert
+         └── given stream staked
+            └── it should revert

@@ -3,35 +3,37 @@ pragma solidity >=0.8.22;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+/**
+ * This file defines all structs used in this Sablier Staking contract. You will notice that some structs contain "slot"
+ * annotations - they are used to indicate the storage layout of the struct. It is more gas efficient to group small
+ * data types together so that they fit in a single 32-byte slot.
+ */
+
 /// @notice An in-memory struct to group user staked amounts.
 /// @param streamsCount The number of Sablier streams that the user has staked.
 /// @param directAmountStaked The total amount of ERC20 tokens staked directly by the user, denoted in staking token's
 /// decimals.
 /// @param streamAmountStaked The total amount of ERC20 tokens staked through Sablier streams, denoted in staking
 /// token's decimals.
-/// @param totalStakedAmount The combined amount of ERC20 tokens staked by the user (includes both direct staking
+/// @param totalAmountStaked The combined amount of ERC20 tokens staked by the user (includes both direct staking
 /// and through Sablier streams), denoted in staking token's decimals.
 struct Amounts {
     uint128 streamsCount;
     uint128 directAmountStaked;
     uint128 streamAmountStaked;
-    uint128 totalStakedAmount;
+    uint128 totalAmountStaked;
 }
-
-// This file defines all structs used in this Sablier Staking contract. You will notice that some structs contain "slot"
-// annotations - they are used to indicate the storage layout of the struct. It is more gas efficient to group small
-// data types together so that they fit in a single 32-byte slot.
 
 /// @notice A data structure to store the total rewards snapshot data for each campaign.
 /// @param rewardsDistributedPerTokenScaled The amount of rewards distributed per staking token (includes both direct
-/// staking and through Sablier streams), scaled by 1e18 to minimize precision loss.
-/// @param totalStakedTokens The total amount of staking tokens staked (both direct staking and through Sablier
+/// staking and through Sablier streams), scaled by {Helpers.SCALE_FACTOR} to minimize precision loss.
+/// @param totalAmountStaked The total amount of staking tokens staked (both direct staking and through Sablier
 /// streams), denoted in staking token's decimals.
 /// @param lastUpdateTime The last time this snapshot was updated, denoted in UNIX timestamp.
 struct GlobalSnapshot {
     // Slot 0
     uint256 rewardsDistributedPerTokenScaled;
-    uint128 totalStakedTokens;
+    uint128 totalAmountStaked;
     // Slot 1
     uint40 lastUpdateTime;
 }
@@ -72,10 +74,10 @@ struct StakedStream {
 /// @notice A data structure to store a user's rewards and staking data for a given campaign.
 /// @param rewards The amount of reward tokens available to be claimed by the user, denoted in reward token's decimals.
 /// @param rewardsEarnedPerTokenScaled The amount of rewards earned per staking token (includes both direct staking and
-/// through Sablier streams), scaled by 1e18 to minimize precision loss.
-/// @param totalStakedTokens The total amount of staking tokens staked (both direct staking and through Sablier
+/// through Sablier streams), scaled by {Helpers.SCALE_FACTOR} to minimize precision loss.
+/// @param directAmountStaked The amount of staking tokens staked directly, denoted in staking token's decimals.
+/// @param totalAmountStaked The total amount of staking tokens staked (both direct staking and through Sablier
 /// streams), denoted in staking token's decimals.
-/// @param directStakedTokens The amount of staking tokens staked directly, denoted in staking token's decimals.
 /// @param streamsCount The number of Sablier streams staked by the user.
 /// @param lastUpdateTime The last time this snapshot was updated, denoted in UNIX timestamp.
 struct UserSnapshot {
@@ -83,8 +85,8 @@ struct UserSnapshot {
     uint128 rewards;
     uint256 rewardsEarnedPerTokenScaled;
     // Slot 1
-    uint128 directStakedTokens;
-    uint128 totalStakedTokens;
+    uint128 directAmountStaked;
+    uint128 totalAmountStaked;
     // Slot 2
     uint32 streamsCount;
     uint40 lastUpdateTime;

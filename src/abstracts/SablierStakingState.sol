@@ -88,9 +88,9 @@ abstract contract SablierStakingState is ISablierStakingState {
 
         return Amounts({
             streamsCount: snapshot.streamsCount,
-            directAmountStaked: snapshot.directStakedTokens,
-            streamAmountStaked: snapshot.totalStakedTokens - snapshot.directStakedTokens,
-            totalStakedAmount: snapshot.totalStakedTokens
+            directAmountStaked: snapshot.directAmountStaked,
+            streamAmountStaked: snapshot.totalAmountStaked - snapshot.directAmountStaked,
+            totalAmountStaked: snapshot.totalAmountStaked
         });
     }
 
@@ -176,8 +176,8 @@ abstract contract SablierStakingState is ISablierStakingState {
     }
 
     /// @inheritdoc ISablierStakingState
-    function totalStakedTokens(uint256 campaignId) external view notNull(campaignId) returns (uint128) {
-        return _globalSnapshot[campaignId].totalStakedTokens;
+    function totalAmountStaked(uint256 campaignId) external view notNull(campaignId) returns (uint128) {
+        return _globalSnapshot[campaignId].totalAmountStaked;
     }
 
     /// @inheritdoc ISablierStakingState

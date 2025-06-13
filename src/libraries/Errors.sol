@@ -39,11 +39,11 @@ library Errors {
 
     /// @notice Thrown when the unstaking amount exceeds the ERC20 staked amount.
     error SablierStaking_AmountExceedsStakedAmount(
-        uint256 campaignId, uint256 amountUnstaking, uint256 totalStakedAmount
+        uint256 campaignId, uint256 amountUnstaking, uint256 totalAmountStaked
     );
 
     /// @notice Thrown when the caller is not the campaign admin.
-    error SablierStaking_CallerNotCampaignAdmin(address caller, address campaignAdmin);
+    error SablierStaking_CallerNotCampaignAdmin(uint256 campaignId, address caller, address campaignAdmin);
 
     /// @notice Thrown when the caller is not the original owner of the stream.
     error SablierStaking_CallerNotStreamOwner(
@@ -51,13 +51,13 @@ library Errors {
     );
 
     /// @notice Thrown when trying to cancel a campaign that has already started.
-    error SablierStaking_CampaignAlreadyStarted(uint40 startTime);
+    error SablierStaking_CampaignAlreadyStarted(uint256 campaignId, uint40 startTime);
 
     /// @notice Thrown when user is staking in a campaign that has ended.
-    error SablierStaking_CampaignHasEnded(uint40 endTime);
+    error SablierStaking_CampaignHasEnded(uint256 campaignId, uint40 endTime);
 
     /// @notice Thrown when campaign has not started yet.
-    error SablierStaking_CampaignNotStarted(uint40 startTime);
+    error SablierStaking_CampaignNotStarted(uint256 campaignId, uint40 startTime);
 
     /// @notice Thrown when staking a depleted stream.
     error SablierStaking_DepletedStream(ISablierLockupNFT lockup, uint256 streamId);
@@ -90,7 +90,7 @@ library Errors {
     error SablierStaking_StakingTokenZeroAddress();
 
     /// @notice Thrown when trying to stake a zero amount.
-    error SablierStaking_StakingZeroAmount();
+    error SablierStaking_StakingZeroAmount(uint256 campaignId);
 
     /// @notice Thrown when trying to create a campaign with start time in the past.
     error SablierStaking_StartTimeInPast(uint40 startTime);
@@ -105,13 +105,15 @@ library Errors {
     error SablierStaking_UnderlyingTokenDifferent(IERC20 underlyingToken, IERC20 stakingToken);
 
     /// @notice Thrown when unstaking a zero amount.
-    error SablierStaking_UnstakingZeroAmount();
+    error SablierStaking_UnstakingZeroAmount(uint256 campaignId);
 
     /// @notice Thrown when lockup contract at the given index has not allowed this contract to hook.
     error SablierStaking_UnsupportedOnAllowedToHook(uint256 index, ISablierLockupNFT lockup);
 
     /// @notice Thrown when trying to withdraw from a staked stream.
-    error SablierStaking_WithdrawNotAllowed(ISablierLockupNFT lockup, uint256 streamId);
+    error SablierStaking_WithdrawNotAllowed(
+        ISablierLockupNFT lockup, uint256 streamId, address caller, address to, uint128 amount
+    );
 
     /// @notice Thrown when the input argument is the zero address.
     error SablierStaking_ZeroAddress();

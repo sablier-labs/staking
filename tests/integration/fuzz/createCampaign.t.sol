@@ -28,8 +28,9 @@ contract CreateCampaign_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
     {
         // Ensure the parameters are within constraints.
         vm.assume(admin != address(0) && campaignCreator != address(0));
-        vm.assume(startTime >= getBlockTimestamp() && startTime < endTime);
-        vm.assume(totalRewards > 0);
+        endTime = boundUint40(endTime, getBlockTimestamp() + 1 seconds, MAX_UINT40);
+        startTime = boundUint40(startTime, getBlockTimestamp(), endTime - 1);
+        totalRewards = boundUint128(totalRewards, 1, MAX_UINT128);
 
         // Deal reward token to the campaign creator.
         deal({ token: address(rewardToken), to: campaignCreator, give: totalRewards });
@@ -45,13 +46,13 @@ contract CreateCampaign_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         emit IERC20.Transfer(campaignCreator, address(staking), totalRewards);
         vm.expectEmit({ emitter: address(staking) });
         emit ISablierStaking.CreateCampaign(
-            expectedCampaignId, campaignCreator, dai, rewardToken, startTime, endTime, totalRewards
+            expectedCampaignId, campaignCreator, stakingToken, rewardToken, startTime, endTime, totalRewards
         );
 
         // Create the campaign.
         uint256 actualCampaignId = staking.createCampaign({
             admin: campaignCreator,
-            stakingToken: dai,
+            stakingToken: stakingToken,
             startTime: startTime,
             endTime: endTime,
             rewardToken: rewardToken,
@@ -66,7 +67,7 @@ contract CreateCampaign_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
 
         // It should set the correct campaign state.
         assertEq(staking.getAdmin(actualCampaignId), campaignCreator, "admin");
-        assertEq(staking.getStakingToken(actualCampaignId), dai, "stakingToken");
+        assertEq(staking.getStakingToken(actualCampaignId), stakingToken, "stakingToken");
         assertEq(staking.getStartTime(actualCampaignId), startTime, "startTime");
         assertEq(staking.getEndTime(actualCampaignId), endTime, "endTime");
         assertEq(staking.getRewardToken(actualCampaignId), rewardToken, "rewardToken");

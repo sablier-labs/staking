@@ -10,16 +10,19 @@ abstract contract Constants {
     uint40 internal constant START_TIME = ONE_MONTH_SINCE_CREATE;
 
     // Lockup Stream
-    uint40 internal constant STREAM_DURATION = ONE_MONTH * 12; //  12 months
+    // Streams will have their end time before campaign end time because streams are created at `FEB_1_2025` whereas
+    // campaign starts at `FEB_1_2025 + 1 month`.
+    uint40 internal constant STREAM_DURATION = ONE_MONTH * 10; // 10 months.
     uint128 internal constant STREAM_AMOUNT = 10_000; // equivalent to DEFAULT_STAKED_AMOUNT in 18 decimals
     uint128 internal constant STREAM_AMOUNT_18D = 10_000e18;
 
     // Miscellaneous
     uint40 internal constant FEB_1_2025 = 1_738_368_000;
     uint128 internal constant DEFAULT_AMOUNT = 10_000e18;
+    uint128 internal constant MAX_AMOUNT_STAKED = AMOUNT_STAKED_BY_RECIPIENT_END_TIME + AMOUNT_STAKED_BY_STAKER_END_TIME;
     uint40 internal constant ONE_MONTH = 30 days; // "30/360" convention
     uint40 internal constant ONE_MONTH_SINCE_CREATE = FEB_1_2025 + ONE_MONTH;
-    uint256 internal constant UNIT = 1e18;
+    uint256 internal constant SCALE_FACTOR = 1e20;
 
     // Pre campaign start
     uint128 internal constant AMOUNT_STAKED_BY_RECIPIENT_PRE_START = 0;
@@ -66,6 +69,7 @@ abstract contract Constants {
     uint128 internal constant DIRECT_AMOUNT_STAKED_BY_STAKER = 20_000e18;
     uint128 internal constant REWARDS_DISTRIBUTED = 4_000_000e18; // 4M tokens
     uint128 internal constant REWARDS_DISTRIBUTED_PER_TOKEN = 150; // 100 + 2M / 40k
+    uint256 internal constant REWARDS_DISTRIBUTED_PER_TOKEN_SCALED = REWARDS_DISTRIBUTED_PER_TOKEN * SCALE_FACTOR;
     uint128 internal constant REWARDS_EARNED_BY_RECIPIENT = REWARDS_EARNED_BY_RECIPIENT_20_PERCENT + 1_500_000e18;
     uint128 internal constant REWARDS_EARNED_BY_STAKER = REWARDS_EARNED_BY_STAKER_20_PERCENT + 500_000e18;
     uint8 internal constant STREAMS_COUNT_FOR_RECIPIENT = 2;

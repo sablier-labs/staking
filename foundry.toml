@@ -33,6 +33,7 @@
 # Compile only the production code and the test mocks with via IR
 [profile.optimized]
   out = "out-optimized"
+  test = "src"
   via_ir = true
 
 # Test the optimized contracts without re-compiling them
@@ -90,7 +91,7 @@
   linea_sepolia = "https://rpc.sepolia.linea.build"
   localhost = "http://localhost:8545"
   mode_sepolia = "https://sepolia.mode.network/"
-  monat_testnet = "https://testnet-rpc.monad.xyz"
+  monad_testnet = "https://testnet-rpc.monad.xyz"
   morph_holesky = "https://rpc-holesky.morphl2.io"
   optimism_sepolia = "https://sepolia.optimism.io"
   sei_testnet = "https://evm-rpc.arctic-1.seinetwork.io"

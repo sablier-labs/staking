@@ -384,7 +384,7 @@ contract SablierStaking is
 
         // Check: the amount is not zero.
         if (amount == 0) {
-            revert Errors.SablierStaking_StakingZeroAmount();
+            revert Errors.SablierStaking_StakingZeroAmount(campaignId);
         }
 
         // Effect: update rewards for `msg.sender`.
@@ -613,6 +613,32 @@ contract SablierStaking is
                             PRIVATE READ-ONLY FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
+    /// @dev Calculates the latest cumulative rewards distributed per ERC20 token.
+    function _latestRewardsDistributedPerTokenScaled(uint256 campaignId)
+        private
+        view
+        returns (uint256 rewardsPerTokenScaled)
+    {
+        // Load the global snapshot into memory.
+        GlobalSnapshot memory globalSnapshot = _globalSnapshot[campaignId];
+
+        rewardsPerTokenScaled = globalSnapshot.rewardsDistributedPerTokenScaled;
+
+        // Get the rewards distributed since the last snapshot.
+        uint256 rewardsDistributedSinceLastSnapshot = _rewardsDistributedSinceLastSnapshot(campaignId);
+
+        if (rewardsDistributedSinceLastSnapshot > 0) {
+            // Get the rewards distributed per ERC20 token since the last snapshot, by scaling up.
+            uint256 rewardsPerTokenSinceLastSnapshotScaled =
+                rewardsDistributedSinceLastSnapshot.scaleUp() / globalSnapshot.totalAmountStaked;
+
+            // Calculate the cumulative rewards distributed per ERC20 token.
+            rewardsPerTokenScaled += rewardsPerTokenSinceLastSnapshotScaled;
+        }
+
+        return rewardsPerTokenScaled;
+    }
+
     /// @notice Calculates the reward distributed per second without checking if the campaign is active.
     function _rewardRate(uint256 campaignId) private view returns (uint128) {
         StakingCampaign memory campaign = _stakingCampaign[campaignId];
@@ -704,21 +730,8 @@ contract SablierStaking is
             return 0;
         }
 
-        GlobalSnapshot memory globalSnapshot = _globalSnapshot[campaignId];
-
-        uint256 rewardsPerTokenScaled = globalSnapshot.rewardsDistributedPerTokenScaled;
-
-        // Get the rewards distributed since the last snapshot.
-        uint256 rewardsDistributedSinceLastSnapshot = _rewardsDistributedSinceLastSnapshot(campaignId);
-
-        if (rewardsDistributedSinceLastSnapshot > 0) {
-            // Get the rewards distributed per ERC20 token since the last snapshot, by scaling up.
-            uint256 rewardsPerTokenSinceLastSnapshotScaled =
-                rewardsDistributedSinceLastSnapshot.scaleUp() / globalSnapshot.totalAmountStaked;
-
-            // Calculate the cumulative rewards distributed per ERC20 token.
-            rewardsPerTokenScaled += rewardsPerTokenSinceLastSnapshotScaled;
-        }
+        // Get the latest value of the cumulative rewards distributed per ERC20 token.
+        uint256 rewardsPerTokenScaled = _latestRewardsDistributedPerTokenScaled(campaignId);
 
         // Calculate the rewards earned per ERC20 token by the user since the last snapshot.
         uint256 userRewardsPerTokenSinceLastSnapshotScaled =
@@ -756,24 +769,11 @@ contract SablierStaking is
 
     /// @notice Private function to update the global snapshot.
     function _updateGlobalSnapshot(uint256 campaignId) private returns (uint256 rewardsPerTokenScaled) {
-        GlobalSnapshot memory globalSnapshot = _globalSnapshot[campaignId];
-        rewardsPerTokenScaled = globalSnapshot.rewardsDistributedPerTokenScaled;
+        // Get the latest value of the cumulative rewards distributed per ERC20 token.
+        rewardsPerTokenScaled = _latestRewardsDistributedPerTokenScaled(campaignId);
 
-        // Get the rewards distributed since the last snapshot.
-        uint256 rewardsDistributedSinceLastSnapshot = _rewardsDistributedSinceLastSnapshot(campaignId);
-
-        // Update the global rewards if the rewards since the last snapshot is greater than 0.
-        if (rewardsDistributedSinceLastSnapshot > 0) {
-            // Get the rewards distributed per ERC20 token since the last snapshot, by scaling up.
-            uint256 rewardsPerTokenSinceLastSnapshotScaled =
-                rewardsDistributedSinceLastSnapshot.scaleUp() / globalSnapshot.totalAmountStaked;
-
-            // Update the cumulative rewards distributed per ERC20 token since the beginning of the campaign.
-            rewardsPerTokenScaled += rewardsPerTokenSinceLastSnapshotScaled;
-
-            // Effect: update the rewards distributed per ERC20 token.
-            _globalSnapshot[campaignId].rewardsDistributedPerTokenScaled = rewardsPerTokenScaled;
-        }
+        // Effect: update the rewards distributed per ERC20 token.
+        _globalSnapshot[campaignId].rewardsDistributedPerTokenScaled = rewardsPerTokenScaled;
 
         // Effect: update the last time update.
         _globalSnapshot[campaignId].lastUpdateTime = uint40(block.timestamp);

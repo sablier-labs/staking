@@ -33,7 +33,9 @@ contract StakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concret
     }
 
     function test_RevertWhen_AmountZero() external whenNoDelegateCall whenNotNull givenNotCanceled {
-        vm.expectRevert(Errors.SablierStaking_StakingZeroAmount.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(Errors.SablierStaking_StakingZeroAmount.selector, campaignIds.defaultCampaign)
+        );
         staking.stakeERC20Token(campaignIds.defaultCampaign, 0);
     }
 

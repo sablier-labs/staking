@@ -90,7 +90,7 @@ library Errors {
     error SablierStaking_StakingTokenZeroAddress();
 
     /// @notice Thrown when trying to stake a zero amount.
-    error SablierStaking_StakingZeroAmount();
+    error SablierStaking_StakingZeroAmount(uint256 campaignId);
 
     /// @notice Thrown when trying to create a campaign with start time in the past.
     error SablierStaking_StartTimeInPast(uint40 startTime);

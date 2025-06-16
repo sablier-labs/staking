@@ -12,6 +12,9 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
         Shared_Integration_Concrete_Test.setUp();
 
         warpStateTo(FEB_1_2025);
+
+        // Set campaign creator as the default caller for this test.
+        setMsgSender(users.campaignCreator);
     }
 
     function test_RevertWhen_DelegateCall() external {

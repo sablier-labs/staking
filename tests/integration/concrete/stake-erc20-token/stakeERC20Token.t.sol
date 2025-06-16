@@ -9,12 +9,6 @@ import { Amounts } from "src/types/DataTypes.sol";
 import { Shared_Integration_Concrete_Test } from "../Concrete.t.sol";
 
 contract StakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
-    function setUp() public override {
-        Shared_Integration_Concrete_Test.setUp();
-
-        setMsgSender(users.recipient);
-    }
-
     function test_RevertWhen_DelegateCall() external {
         bytes memory callData = abi.encodeCall(staking.stakeERC20Token, (campaignIds.defaultCampaign, DEFAULT_AMOUNT));
         expectRevert_DelegateCall(callData);

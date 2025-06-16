@@ -9,16 +9,6 @@ import { Amounts } from "src/types/DataTypes.sol";
 import { Shared_Integration_Concrete_Test } from "../Concrete.t.sol";
 
 contract UnstakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
-    function setUp() public override {
-        Shared_Integration_Concrete_Test.setUp();
-
-        // Forward time to 40% through the campaign for this test.
-        warpStateTo(WARP_40_PERCENT);
-
-        // Set users.recipient as the caller for this test.
-        setMsgSender(users.recipient);
-    }
-
     function test_RevertWhen_DelegateCall() external {
         bytes memory callData = abi.encodeCall(staking.unstakeERC20Token, (campaignIds.defaultCampaign, DEFAULT_AMOUNT));
         expectRevert_DelegateCall(callData);

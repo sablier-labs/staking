@@ -28,8 +28,8 @@ abstract contract Integration_Test is Base_Test {
         // Simulate the staking behavior of the users at different times and create EVM snapshots.
         simulateAndSnapshotStakingBehavior();
 
-        // Set campaign creator as the default caller for concrete tests.
-        setMsgSender(users.campaignCreator);
+        // Set recipient as the default caller for concrete tests.
+        setMsgSender(users.recipient);
     }
 
     /*//////////////////////////////////////////////////////////////////////////

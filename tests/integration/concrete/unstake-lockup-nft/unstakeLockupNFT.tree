@@ -1,0 +1,20 @@
+UnstakeLockupNFT_Integration_Concrete_Test
+├── when delegate call
+│  └── it should revert
+└── when no delegate call
+   ├── given no staked NFT
+   │  └── it should revert
+   └── given staked NFT
+      ├── given canceled
+      │  ├── it should unstake NFT
+      │  ├── it should update global rewards snapshot
+      │  ├── it should update user rewards snapshot
+      │  └── it should emit {Transfer} and {UnstakeLockupNFT} events
+      └── given not canceled
+         ├── when caller not NFT owner
+         │  └── it should revert
+         └── when caller NFT owner
+            ├── it should unstake NFT
+            ├── it should update global rewards snapshot
+            ├── it should update user rewards snapshot
+            └── it should emit {SnapshotRewards}, {Transfer} and {UnstakeLockupNFT} events

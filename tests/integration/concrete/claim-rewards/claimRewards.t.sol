@@ -8,12 +8,6 @@ import { Errors } from "src/libraries/Errors.sol";
 import { Shared_Integration_Concrete_Test } from "../Concrete.t.sol";
 
 contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
-    function setUp() public override {
-        Shared_Integration_Concrete_Test.setUp();
-
-        setMsgSender(users.recipient);
-    }
-
     function test_RevertWhen_DelegateCall() external {
         bytes memory callData = abi.encodeCall(staking.claimRewards, (campaignIds.defaultCampaign));
         expectRevert_DelegateCall(callData);

@@ -7,13 +7,6 @@ import { Errors } from "src/libraries/Errors.sol";
 import { Shared_Integration_Concrete_Test } from "../Concrete.t.sol";
 
 contract OnSablierLockupWithdraw_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
-    function setUp() public override {
-        Shared_Integration_Concrete_Test.setUp();
-
-        // Set the msg.sender to the recipient for this test.
-        setMsgSender(users.recipient);
-    }
-
     function test_RevertWhen_DelegateCall() external {
         bytes memory callData = abi.encodeCall(
             staking.onSablierLockupWithdraw, (streamIds.defaultStream, users.recipient, users.recipient, 0)

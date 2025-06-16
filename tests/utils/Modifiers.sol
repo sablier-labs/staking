@@ -40,6 +40,10 @@ abstract contract Modifiers is EvmUtilsBase {
         _;
     }
 
+    modifier givenStakedNFT() {
+        _;
+    }
+
     modifier givenStreamNotStaked() {
         _;
     }
@@ -83,6 +87,10 @@ abstract contract Modifiers is EvmUtilsBase {
     }
 
     modifier whenCallerLockup() {
+        _;
+    }
+
+    modifier whenCallerNFTOwner() {
         _;
     }
 

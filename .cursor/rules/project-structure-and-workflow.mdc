@@ -1,0 +1,140 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+# Project Structure and Development Workflow
+
+## Project Overview
+
+This is a Sablier Staking contract repository focusing on secure, efficient staking mechanisms with features like:
+- ERC20 token staking
+- Lockup NFT staking integration
+- Reward distribution systems
+- Campaign management
+- Multi-token support
+
+## Project Structure
+
+```
+staking/
+├── src/                           # Smart contract source files
+│   ├── abstracts/                 # Abstract base contracts
+│   ├── interfaces/                # Contract interfaces
+│   ├── libraries/                 # Utility libraries (Errors, Helpers)
+│   ├── types/                     # Data type definitions
+│   └── SablierStaking.sol         # Main staking contract
+├── tests/                         # Test files
+│   ├── fork/                      # Fork tests
+│   ├── integration/concrete/      # Integration tests
+│   ├── integration/fuzz/          # Fuzz tests
+│   ├── invariant/                 # Invariant tests
+│   └── utils/                     # Test utilities
+├── scripts/                       # Deployment and utility scripts
+│   ├── bash/                      # Shell scripts
+│   └── solidity/                  # Solidity scripts
+├── foundry.toml                   # Foundry configuration
+├── package.json                   # NPM configuration
+└── justfile                       # Command shortcuts
+```
+
+## Key Files Reference
+
+- Main contract: [SablierStaking.sol](mdc:src/SablierStaking.sol)
+- Configuration: [foundry.toml](mdc:foundry.toml)
+- Dependencies: [package.json](mdc:package.json)
+- Example test: [unstakeLockupNFT.t.sol](mdc:tests/integration/concrete/unstake-lockup-nft/unstakeLockupNFT.t.sol)
+
+## Development Workflow
+
+### Before Starting Work
+1. Check existing tests and patterns in the codebase
+2. Understand the current contract architecture
+3. Review existing error patterns in `src/libraries/Errors.sol`
+4. Check gas optimization patterns in existing code
+
+### Development Process
+1. **Write tests first** (TDD approach encouraged)
+2. Implement feature following project patterns
+3. Run verification workflow
+4. Update documentation if needed
+5. Create PR with proper gas analysis
+
+## File Naming Conventions
+
+### Test Files
+- Integration tests: `tests/integration/concrete/{feature-name}/{featureName}.t.sol`
+- Fuzz tests: `tests/integration/fuzz/{featureName}.t.sol`
+- Invariant tests: `tests/invariant/{FeatureName}.t.sol`
+
+### Contract Files
+- Main contracts: PascalCase (e.g., `SablierStaking.sol`)
+- Interfaces: `I` prefix (e.g., `ISablierStaking.sol`)
+- Libraries: PascalCase (e.g., `Errors.sol`, `Helpers.sol`)
+- Abstract contracts: PascalCase with descriptive names
+
+## Code Organization Patterns
+
+### Contract Structure
+1. SPDX license identifier
+2. Pragma statement
+3. Imports (external libraries first, then internal)
+4. Contract declaration with inheritance
+5. State variables
+6. Events
+7. Errors
+8. Modifiers
+9. Constructor
+10. External functions
+11. Public functions
+12. Internal functions
+13. Private functions
+
+### Function Ordering
+- Read-only functions first
+- State-changing functions second
+- Internal/private functions last
+- Group related functions together
+
+## Testing Patterns
+
+### Test Contract Naming
+```solidity
+contract FeatureName_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
+    // Test implementation
+}
+```
+
+### Test Function Naming
+```solidity
+function test_RevertWhen_Condition() external { }
+function test_RevertGiven_Scenario() external { }
+function test_WhenCondition() external { }
+function testFuzz_FeatureName(uint256 param) external { }
+```
+
+## Critical Reminders
+
+### DO NOT
+- Create documentation files unless explicitly requested
+- Modify files outside the workspace
+- Create standalone test files - use existing test infrastructure
+- Make performance claims without proper measurement
+
+### ALWAYS
+- Use existing project patterns and conventions
+- Write comprehensive tests for new features
+- Follow the gas optimization guidelines
+- Use custom errors instead of require statements
+- Check for security implications of changes
+- Run full verification workflow before submitting
+
+## Integration Points
+
+The staking contract integrates with:
+- Sablier Lockup contracts for NFT staking
+- ERC20 tokens for direct staking
+- Campaign management system
+- Reward distribution mechanisms
+
+Understanding these integration points is crucial for making changes that don't break existing functionality.

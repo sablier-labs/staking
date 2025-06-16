@@ -4,3 +4,9 @@ import "./node_modules/@sablier/devkit/just/evm.just"
 
 default:
   @just --list
+
+coverage:
+  forge coverage
+
+gas-report:
+  forge test --gas-report

@@ -10,7 +10,7 @@ contract RewardRate_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         // Bound timestamp such that the start time is in the future.
         timestamp = boundUint40(timestamp, 0, START_TIME - 1);
 
-        // Warp to the EVM state at the given timestamp.
+        // Warp the EVM state to the given timestamp.
         warpStateTo(timestamp);
 
         // It should revert.
@@ -26,7 +26,7 @@ contract RewardRate_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         // Bound timestamp such that the end time is in the past.
         timestamp = boundUint40(timestamp, END_TIME + 1, type(uint40).max);
 
-        // Warp to the EVM state at the given timestamp.
+        // Warp the EVM state to the given timestamp.
         warpStateTo(timestamp);
 
         // It should revert.
@@ -48,7 +48,7 @@ contract RewardRate_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         // Bound timestamp between the start and end times.
         timestamp = boundUint40(timestamp, START_TIME, END_TIME);
 
-        // Warp to the EVM state at the given timestamp.
+        // Warp the EVM state to the given timestamp.
         warpStateTo(timestamp);
 
         // It should return the correct reward rate.

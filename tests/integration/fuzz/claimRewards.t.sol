@@ -18,7 +18,7 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         // Bound timestamp such that the start time is in the future.
         timestamp = boundUint40(timestamp, 0, START_TIME - 1);
 
-        // Warp to the EVM state at the given timestamp.
+        // Warp the EVM state to the given timestamp.
         warpStateTo(timestamp);
 
         // It should revert.
@@ -47,7 +47,7 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         // Bound timestamp between the start and 365 days after the end time.
         timestamp = boundUint40(timestamp, START_TIME + 1, END_TIME + 365 days);
 
-        // Warp to the EVM state at the given timestamp.
+        // Warp the EVM state to the given timestamp.
         warpStateTo(timestamp);
 
         // Change the caller.

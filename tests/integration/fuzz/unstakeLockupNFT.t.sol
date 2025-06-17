@@ -58,7 +58,7 @@ contract UnstakeLockupNFT_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test 
         vm.warp(timestamp);
 
         // Test unstaking the NFT.
-        _test_UnstakeLockupNFT(timestamp, DEFAULT_AMOUNT - refundedAmount);
+        _test_UnstakeLockupNFT({ timestamp: timestamp, amountUnstaked: DEFAULT_AMOUNT - refundedAmount });
 
         // Check the stream status is canceled.
         assertTrue(ISablierLockup(address(lockup)).wasCanceled(streamIds.defaultStakedStream), "wasCanceled");
@@ -81,7 +81,7 @@ contract UnstakeLockupNFT_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test 
         warpStateTo(timestamp);
 
         // Test unstaking the NFT.
-        _test_UnstakeLockupNFT(timestamp, DEFAULT_AMOUNT);
+        _test_UnstakeLockupNFT({ timestamp: timestamp, amountUnstaked: DEFAULT_AMOUNT });
     }
 
     /// @dev A shared private function to test the unstaking of a Lockup NFT.

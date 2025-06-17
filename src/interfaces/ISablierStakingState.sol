@@ -63,8 +63,7 @@ interface ISablierStakingState {
     function nextCampaignId() external view returns (uint256);
 
     /// @notice Retrieves the details of a stream staked.
-    /// @dev Reverts if the lockup contract either is the zero address or is not whitelisted or the stream is not staked
-    /// in any campaign.
+    /// @dev Reverts if the lockup is the zero address or the stream ID is not staked in any campaign.
     /// @param lockup The lockup contract for the query.
     /// @param streamId The stream ID for the query.
     /// @return campaignId The campaign ID of the campaign in which the stream is staked.

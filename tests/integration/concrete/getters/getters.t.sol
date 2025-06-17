@@ -216,14 +216,7 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         staking.stakedStream(ISablierLockupNFT(address(0)), 0);
     }
 
-    function test_StakedStreamRevertGiven_NotWhitelisted() external whenNotZeroAddress {
-        vm.expectRevert(
-            abi.encodeWithSelector(Errors.SablierStakingState_LockupNotWhitelisted.selector, address(0x1234))
-        );
-        staking.stakedStream(ISablierLockupNFT(address(0x1234)), 0);
-    }
-
-    function test_StakedStreamRevertWhen_StreamNotStaked() external whenNotZeroAddress givenWhitelisted {
+    function test_StakedStreamRevertWhen_StreamNotStaked() external whenNotZeroAddress {
         // It should revert.
         vm.expectRevert(
             abi.encodeWithSelector(Errors.SablierStakingState_StreamNotStaked.selector, lockup, streamIds.defaultStream)
@@ -231,7 +224,7 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         staking.stakedStream(lockup, streamIds.defaultStream);
     }
 
-    function test_StakedStreamWhenStreamStaked() external view whenNotZeroAddress givenWhitelisted {
+    function test_StakedStreamWhenStreamStaked() external view whenNotZeroAddress {
         // It should return the campaign ID and owner.
         (uint256 actualCampaignId, address actualOwner) = staking.stakedStream(lockup, streamIds.defaultStakedStream);
         assertEq(actualCampaignId, campaignIds.defaultCampaign, "campaignId");

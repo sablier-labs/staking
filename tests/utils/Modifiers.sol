@@ -28,6 +28,10 @@ abstract contract Modifiers is EvmUtilsBase {
         _;
     }
 
+    modifier givenLastUpdateTimeLessThanEndTime() {
+        _;
+    }
+
     modifier givenLockupWhitelisted() {
         _;
     }
@@ -40,6 +44,10 @@ abstract contract Modifiers is EvmUtilsBase {
         _;
     }
 
+    modifier givenStakedAmountNotZero() {
+        _;
+    }
+
     modifier givenStakedNFT() {
         _;
     }
@@ -49,10 +57,6 @@ abstract contract Modifiers is EvmUtilsBase {
     }
 
     modifier givenTotalStakedNotZero() {
-        _;
-    }
-
-    modifier givenWhitelisted() {
         _;
     }
 

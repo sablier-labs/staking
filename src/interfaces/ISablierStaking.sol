@@ -99,6 +99,7 @@ interface ISablierStaking is
     ///
     /// Requirements:
     ///  - Must not be delegate called.
+    ///  - `streamId` must be staked in a campaign.
     ///
     /// @param streamId The ID of the stream on which withdraw is called.
     /// @param caller The original `msg.sender` address that triggered the withdrawal.
@@ -239,17 +240,11 @@ interface ISablierStaking is
     /// @notice Snapshot global rewards and user rewards data for the specified campaign and user.
     /// @dev Emits a {SnapshotRewards} event.
     ///
-    /// Notes:
-    ///  - Updates global snapshot data if:
-    ///    - The rewards distributed per ERC20 token since the last snapshot is greater than 0.
-    ///    - The last time update is less than the campaign end time.
-    ///  - Updates the user snapshot data if:
-    ///    - The user has tokens staked.
-    ///    - The last time update is less than the campaign end time.
-    ///
     /// Requirements:
     ///  - Must not be delegate called.
     ///  - `campaignId` must not reference a null campaign or a canceled campaign.
+    ///  - User must be staking in the campaign.
+    ///  - User snapshot's last time update must be less than the campaign end time.
     ///
     /// @param campaignId The campaign ID to snapshot rewards data for.
     /// @param user The address of the user to snapshot rewards data for.

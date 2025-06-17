@@ -56,7 +56,7 @@ contract SablierStaking is
     {
         // Check: the user address is not the zero address.
         if (user == address(0)) {
-            revert Errors.SablierStaking_ZeroAddress();
+            revert Errors.SablierStaking_UserZeroAddress();
         }
 
         uint128 rewardsEarnedSinceLastSnapshot = _userRewardsSinceLastSnapshot(campaignId, user);
@@ -67,9 +67,9 @@ contract SablierStaking is
     /// @inheritdoc ISablierStaking
     function onSablierLockupWithdraw(
         uint256 streamId,
-        address caller,
-        address to,
-        uint128 amount
+        address, /* caller */
+        address, /* to */
+        uint128 /* amount */
     )
         external
         view
@@ -77,8 +77,18 @@ contract SablierStaking is
         noDelegateCall
         returns (bytes4)
     {
-        // Revert regardless of the parameters.
-        revert Errors.SablierStaking_WithdrawNotAllowed(ISablierLockupNFT(msg.sender), streamId, caller, to, amount);
+        // Cast `msg.sender` as the Lockup contract.
+        ISablierLockupNFT lockup = ISablierLockupNFT(msg.sender);
+
+        // Load the staked stream from storage into memory.
+        StakedStream memory stakedStream = _stakedStream[lockup][streamId];
+
+        // Check: the `streamId` is staked in a campaign.
+        if (stakedStream.campaignId == 0) {
+            revert Errors.SablierStaking_StreamNotStaked(lockup, streamId);
+        }
+
+        revert Errors.SablierStaking_WithdrawNotAllowed(stakedStream.campaignId, lockup, streamId);
     }
 
     /// @inheritdoc ISablierStaking
@@ -357,8 +367,21 @@ contract SablierStaking is
         external
         override
         noDelegateCall
+        notNull(campaignId)
         notCanceled(campaignId)
     {
+        UserSnapshot memory userSnapshot = _userSnapshot[user][campaignId];
+
+        // Check: the user has staked in the campaign.
+        if (userSnapshot.totalAmountStaked == 0) {
+            revert Errors.SablierStaking_NoStakedAmount(campaignId, user);
+        }
+
+        // Check: the last update time is less than the campaign end time.
+        if (userSnapshot.lastUpdateTime >= _stakingCampaign[campaignId].endTime) {
+            revert Errors.SablierStaking_SnapshotNotAllowed(campaignId, user, userSnapshot.lastUpdateTime);
+        }
+
         // Effect: snapshot rewards data to the latest values for `user`.
         _snapshotRewards(campaignId, user);
     }

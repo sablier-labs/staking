@@ -18,11 +18,22 @@ contract GetClaimableRewards_Integration_Concrete_Test is Shared_Integration_Con
     }
 
     function test_RevertWhen_UserZeroAddress() external whenNotNull givenNotCanceled {
-        vm.expectRevert(Errors.SablierStaking_ZeroAddress.selector);
+        vm.expectRevert(Errors.SablierStaking_UserZeroAddress.selector);
         staking.getClaimableRewards(campaignIds.defaultCampaign, address(0));
     }
 
-    function test_WhenClaimableRewardsZero() external whenNotNull givenNotCanceled whenUserNotZeroAddress {
+    function test_GivenStakedAmountZero() external view whenNotNull givenNotCanceled whenUserNotZeroAddress {
+        uint128 actualRewards = staking.getClaimableRewards(campaignIds.defaultCampaign, users.eve);
+        assertEq(actualRewards, 0, "rewards");
+    }
+
+    function test_WhenClaimableRewardsZero()
+        external
+        whenNotNull
+        givenNotCanceled
+        whenUserNotZeroAddress
+        givenStakedAmountNotZero
+    {
         warpStateTo(START_TIME);
 
         uint128 actualRewards = staking.getClaimableRewards(campaignIds.defaultCampaign, users.recipient);
@@ -35,6 +46,7 @@ contract GetClaimableRewards_Integration_Concrete_Test is Shared_Integration_Con
         whenNotNull
         givenNotCanceled
         whenUserNotZeroAddress
+        givenStakedAmountNotZero
         whenClaimableRewardsNotZero
     {
         uint128 actualRewards = staking.getClaimableRewards(campaignIds.defaultCampaign, users.recipient);
@@ -46,6 +58,7 @@ contract GetClaimableRewards_Integration_Concrete_Test is Shared_Integration_Con
         whenNotNull
         givenNotCanceled
         whenUserNotZeroAddress
+        givenStakedAmountNotZero
         whenClaimableRewardsNotZero
     {
         // Warp the EVM state to 20% through the campaign.

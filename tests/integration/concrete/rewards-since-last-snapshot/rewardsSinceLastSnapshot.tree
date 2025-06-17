@@ -11,7 +11,7 @@ RewardsSinceLastSnapshot_Integration_Concrete_Test
          ├── given total staked zero
          │  └── it should return zero
          └── given total staked not zero
-            ├── when last update time not less than end time
+            ├── given last update time not less than end time
             │  └── it should return zero
-            └── when last update time less than end time
+            └── given last update time less than end time
                └── it should return correct rewards per token since last snapshot

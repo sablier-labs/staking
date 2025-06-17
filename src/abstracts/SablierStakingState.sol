@@ -22,14 +22,14 @@ abstract contract SablierStakingState is ISablierStakingState {
     /// @inheritdoc ISablierStakingState
     uint256 public override nextCampaignId;
 
-    /// @notice Stores the global staking details for each campaign.
+    /// @notice Tracks the global rewards data and total staked amount for a given campaign.
     /// @dev See the documentation for GlobalSnapshot in {DataTypes}.
     mapping(uint256 campaignId => GlobalSnapshot snapshot) internal _globalSnapshot;
 
     /// @notice Indicates whether the Lockup contract is whitelisted to stake into this contract.
     mapping(ISablierLockupNFT lockup => bool isWhitelisted) internal _lockupWhitelist;
 
-    /// @notice Stores campaign ID and the original owner of the staked stream.
+    /// @notice Reverse lookup to get the campaign ID and the original owner of the staked stream.
     /// @dev See the documentation for StakedStream in {DataTypes}.
     mapping(ISablierLockupNFT lockup => mapping(uint256 streamId => StakedStream details)) internal _stakedStream;
 
@@ -161,12 +161,7 @@ abstract contract SablierStakingState is ISablierStakingState {
             revert Errors.SablierStakingState_ZeroAddress();
         }
 
-        // Check: the lockup is whitelisted.
-        if (!_lockupWhitelist[lockup]) {
-            revert Errors.SablierStakingState_LockupNotWhitelisted(lockup);
-        }
-
-        // Check: the stream ID is staked in any campaign.
+        // Check: the stream ID is staked in a campaign.
         if (_stakedStream[lockup][streamId].campaignId == 0) {
             revert Errors.SablierStakingState_StreamNotStaked(lockup, streamId);
         }

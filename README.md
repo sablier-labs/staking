@@ -3,7 +3,7 @@
 [gha]: https://github.com/sablier-labs/staking/actions
 [gha-badge]: https://github.com/sablier-labs/staking/actions/workflows/ci.yml/badge.svg
 [codecov]: https://codecov.io/gh/sablier-labs/staking
-[codecov-badge]: https://codecov.io/gh/sablier-labs/staking/branch/main/graph/badge.svg
+[codecov-badge]: https://codecov.io/gh/sablier-labs/staking/branch/main/graph/badge.svg?token=unBESErDsQ
 [discord]: https://discord.gg/bSwRCwWRsT
 [discord-badge]: https://img.shields.io/discord/659709894315868191
 [foundry]: https://getfoundry.sh

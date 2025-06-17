@@ -70,13 +70,10 @@ Getters_Integration_Concrete_Test::stakedStream
 ├── when zero address
 │  └── it should revert
 └── when not zero address
-   ├── given not whitelisted
+   ├── when stream not staked
    │  └── it should revert
-   └── given whitelisted
-      ├── when stream not staked
-      │  └── it should revert
-      └── when stream staked
-         └── it should return campaign id and owner
+   └── when stream staked
+      └── it should return campaign id and owner
 
 Getters_Integration_Concrete_Test::totalAmountStaked
 ├── when null

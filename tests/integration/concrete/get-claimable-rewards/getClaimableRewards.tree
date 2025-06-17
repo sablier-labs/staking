@@ -8,10 +8,13 @@ GetClaimableRewards_Integration_Concrete_Test
       ├── when user zero address
       │  └── it should revert
       └── when user not zero address
-         ├── when claimable rewards zero
+         ├── given staked amount zero
          │  └── it should return zero
-         └── when claimable rewards not zero
-            ├── when current time equals last update time
-            │  └── it should return correct rewards
-            └── when current time exceeds last update time
-               └── it should return correct rewards
+         └── given staked amount not zero
+            ├── when claimable rewards zero
+            │  └── it should return zero
+            └── when claimable rewards not zero
+               ├── when current time equals last update time
+               │  └── it should return correct rewards
+               └── when current time exceeds last update time
+                  └── it should return correct rewards

@@ -10,21 +10,7 @@ import { ISablierLockupNFT } from "./ISablierLockupNFT.sol";
 import { ISablierStakingState } from "./ISablierStakingState.sol";
 
 /// @title ISablierStaking
-/// @notice Singleton contract to launch staking campaigns allowing staking of both ERC20 tokens and Sablier Lockup
-/// NFTs.
-///
-/// Features:
-///  - Create staking campaigns by specifying the staking token, reward token, reward duration and reward amount.
-///  - Users can stake ERC20 tokens into the campaign to earn rewards.
-///  - Users can stake their Sablier Lockup streams, as long as the underlying token matches the staking token, to earn
-/// rewards based on the total amount of underlying token in the stream.
-///  - Users can stake multiple Lockup streams, or both Lockup streams and ERC20 tokens simultaneously.
-///  - Supports multiple versions of Lockup contracts, requires whitelisting by the protocol admin.
-///  - Users can unstake their positions, with the ability to stake and unstake multiple times.
-///  - Each Lockup stream can only be staked in one campaign at a time.
-///  - Cancelling a staked stream would adjust the stakers total amount staked.
-///  - Withdrawing from a staked stream would revert.
-///  - Campaign admin can cancel the campaign until the start time.
+/// @notice Creates and manages staking campaigns allowing staking of both ERC20 tokens and Sablier Lockup NFTs.
 interface ISablierStaking is
     IERC165, // 0 inherited components
     IERC721Receiver, // 0 inherited components

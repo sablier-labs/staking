@@ -7,7 +7,8 @@ import { Amounts } from "../types/DataTypes.sol";
 import { ISablierLockupNFT } from "./ISablierLockupNFT.sol";
 
 /// @title ISablierStakingState
-/// @notice See the documentation in {ISablierStakingState}.
+/// @notice  Contract with state variables (storage and constants) for the {SablierStaking} contract, respective getters
+/// and helpful modifiers.
 interface ISablierStakingState {
     /*//////////////////////////////////////////////////////////////////////////
                                 READ-ONLY FUNCTIONS

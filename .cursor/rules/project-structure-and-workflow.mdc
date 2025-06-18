@@ -25,7 +25,6 @@ staking/
 │   ├── types/                     # Data type definitions
 │   └── SablierStaking.sol         # Main staking contract
 ├── tests/                         # Test files
-│   ├── fork/                      # Fork tests
 │   ├── integration/concrete/      # Integration tests
 │   ├── integration/fuzz/          # Fuzz tests
 │   ├── invariant/                 # Invariant tests

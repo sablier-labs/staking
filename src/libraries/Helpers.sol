@@ -4,7 +4,7 @@ pragma solidity >=0.8.22;
 import { ISablierLockupNFT } from "../interfaces/ISablierLockupNFT.sol";
 
 /// @title Helpers
-/// @notice Library with helper functions in {SablierStaking} contract.
+/// @notice Library with helper functions for the {SablierStaking} contract.
 library Helpers {
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTANTS

@@ -9,8 +9,7 @@ import { Errors } from "../libraries/Errors.sol";
 import { Amounts, GlobalSnapshot, StakedStream, StakingCampaign, UserSnapshot } from "../types/DataTypes.sol";
 
 /// @title SablierStakingState
-/// @notice Contract with state variables (storage and constants) for the {SablierStaking} contract, respective getters
-/// and helpful modifiers.
+/// @notice See the documentation in {ISablierStakingState}.
 abstract contract SablierStakingState is ISablierStakingState {
     /*//////////////////////////////////////////////////////////////////////////
                                   STATE VARIABLES

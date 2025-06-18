@@ -6,4 +6,6 @@ The format is based on [Common Changelog](https://common-changelog.org/).
 
 [1.0.0]: https://github.com/sablier-labs/staking/releases/tag/v1.0.0
 
-## [1.0.0] - 2025-04-16
+## [1.0.0] - TBD
+
+TODO

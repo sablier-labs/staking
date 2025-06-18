@@ -11,27 +11,34 @@
 
 In-depth documentation is available at [docs.sablier.com](https://docs.sablier.com).
 
-## Background
+## Overview
 
-TODO
+Traditional staking protocols only support ERC20 tokens, leaving token stream holders unable to earn rewards on their
+vesting or payment streams. This creates a significant opportunity cost for these users who decided to align themselves
+with the long term growth of the token.
 
-## Usage
+Sablier Staking is the first EVM protocol to enable staking of both ERC20 tokens and token streams at the same time.
+This allows users to earn rewards on their vesting tokens without having to withdraw tokens from the streams or waiting
+for their streams to end.
 
-This is just a glimpse of Sablier Staking. For more guides and examples, see the
-[documentation](https://docs.sablier.com).
+### Key Features
+
+- **Permissionless**: Anyone can create and participate in staking campaigns without restrictions.
+- **Stream support**: Stake ERC20 tokens and Sablier Lockup streams in the same campaign.
+- **Immutability**: Campaign parameters cannot be changed after launch (except cancellation before start).
+- **No hidden opportunity cost**: Rewards are earned on the basis of the total underlying tokens in streams, and just
+  available liquidity.
+- **Flexibility**: Stake and unstake multiple times without losing earned rewards.
+
+This unlocks new yield opportunities for the billions of dollars stuck in the illiquid vesting streams.
 
 ## Architecture
 
-TODO
-
-### Branching Tree Technique
-
-You may notice that some test files are accompanied by `.tree` files. This is called the Branching Tree Technique, and
-it is explained in depth [here](https://www.bulloak.dev/).
+Tha technical design of the staking protocol is documented in the [ARCHITECTURE](./ARCHITECTURE.md) guide.
 
 ## Deployments
 
-The list of all deployment addresses can be found [here](https://docs.sablier.com).
+The list of all deployment addresses can be found [here](https://docs.sablier.com/guides/staking/deployments).
 
 ## Security
 

@@ -4,7 +4,6 @@ pragma solidity >=0.8.22;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ISablierStaking } from "src/interfaces/ISablierStaking.sol";
 import { Errors } from "src/libraries/Errors.sol";
-import { Amounts } from "src/types/DataTypes.sol";
 
 import { Shared_Integration_Concrete_Test } from "../Concrete.t.sol";
 
@@ -112,9 +111,7 @@ contract StakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concret
 
     /// @dev Helper function to test the staking of ERC20 tokens.
     function _test_StakeERC20Token(uint256 expectedRewardsPerTokenScaled, uint128 expectedUserRewards) private {
-        Amounts memory amountStakedByUser = staking.amountStakedByUser(campaignIds.defaultCampaign, users.recipient);
-        uint128 expectedAmountStakedByUser = amountStakedByUser.totalAmountStaked + DEFAULT_AMOUNT;
-        uint128 expectedDirectAmountStakedByUser = amountStakedByUser.directAmountStaked + DEFAULT_AMOUNT;
+        (,, uint128 initialDirectAmountStaked) = staking.userShares(campaignIds.defaultCampaign, users.recipient);
 
         // It should emit {SnapshotRewards}, {Transfer} and {StakeERC20Token} events.
         vm.expectEmit({ emitter: address(staking) });
@@ -123,8 +120,7 @@ contract StakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concret
             getBlockTimestamp(),
             expectedRewardsPerTokenScaled,
             users.recipient,
-            expectedUserRewards,
-            amountStakedByUser.totalAmountStaked
+            expectedUserRewards
         );
         vm.expectEmit({ emitter: address(stakingToken) });
         emit IERC20.Transfer(users.recipient, address(staking), DEFAULT_AMOUNT);
@@ -134,9 +130,8 @@ contract StakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concret
         staking.stakeERC20Token(campaignIds.defaultCampaign, DEFAULT_AMOUNT);
 
         // It should stake tokens.
-        amountStakedByUser = staking.amountStakedByUser(campaignIds.defaultCampaign, users.recipient);
-        assertEq(amountStakedByUser.totalAmountStaked, expectedAmountStakedByUser, "totalAmountStakedByUser");
-        assertEq(amountStakedByUser.directAmountStaked, expectedDirectAmountStakedByUser, "directAmountStakedByUser");
+        (,, uint128 actualDirectAmountStaked) = staking.userShares(campaignIds.defaultCampaign, users.recipient);
+        assertEq(actualDirectAmountStaked, initialDirectAmountStaked + DEFAULT_AMOUNT, "directAmountStakedByUser");
 
         // It should update global rewards snapshot.
         (uint40 globalLastUpdateTime, uint256 rewardsDistributedPerTokenScaled) =

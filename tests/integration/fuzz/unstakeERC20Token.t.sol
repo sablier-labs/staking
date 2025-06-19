@@ -4,7 +4,6 @@ pragma solidity >=0.8.22;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ISablierStaking } from "src/interfaces/ISablierStaking.sol";
 import { Errors } from "src/libraries/Errors.sol";
-import { Amounts } from "src/types/DataTypes.sol";
 
 import { Shared_Integration_Fuzz_Test } from "./Fuzz.t.sol";
 
@@ -37,7 +36,7 @@ contract UnstakeERC20Token_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test
         staking.stakeLockupNFT(campaignIds.defaultCampaign, lockup, streamId);
 
         // Check that caller has total staked amount.
-        uint128 totalAmountStaked = staking.amountStakedByUser(campaignIds.defaultCampaign, caller).totalAmountStaked;
+        uint128 totalAmountStaked = staking.totalAmountStakedByUser(campaignIds.defaultCampaign, caller);
         assertEq(totalAmountStaked, STREAM_AMOUNT_18D, "totalAmountStaked");
 
         // Warp EVM state to the given timestamp.
@@ -90,9 +89,8 @@ contract UnstakeERC20Token_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test
         staking.unstakeERC20Token(campaignIds.canceledCampaign, amount);
 
         // It should unstake.
-        Amounts memory actualAmountStakedByUser = staking.amountStakedByUser(campaignIds.canceledCampaign, users.staker);
-        assertEq(actualAmountStakedByUser.totalAmountStaked, DEFAULT_AMOUNT - amount, "totalAmountStakedByUser");
-        assertEq(actualAmountStakedByUser.directAmountStaked, DEFAULT_AMOUNT - amount, "directAmountStakedByUser");
+        (,, uint128 directAmountStaked) = staking.userShares(campaignIds.canceledCampaign, users.staker);
+        assertEq(directAmountStaked, DEFAULT_AMOUNT - amount, "directAmountStakedByUser");
     }
 
     /// @dev Given enough fuzz runs, all of the following scenarios will be fuzzed:
@@ -123,15 +121,15 @@ contract UnstakeERC20Token_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test
         warpStateTo(timestamp);
 
         // If direct amount staked is 0, forward time to 20% through the campaign.
-        Amounts memory previousAmounts = staking.amountStakedByUser(campaignIds.defaultCampaign, caller);
-        if (previousAmounts.directAmountStaked == 0) {
+        (,, uint128 previousDirectAmountStaked) = staking.userShares(campaignIds.defaultCampaign, caller);
+        if (previousDirectAmountStaked == 0) {
             timestamp = boundUint40(timestamp, WARP_20_PERCENT, END_TIME + 365 days);
             warpStateTo(timestamp);
-            previousAmounts = staking.amountStakedByUser(campaignIds.defaultCampaign, caller);
+            (,, previousDirectAmountStaked) = staking.userShares(campaignIds.defaultCampaign, caller);
         }
 
         // Warp amount so that it does not exceed direct staked amount.
-        amount = boundUint128(amount, 1, previousAmounts.directAmountStaked);
+        amount = boundUint128(amount, 1, previousDirectAmountStaked);
 
         setMsgSender(caller);
 
@@ -140,12 +138,7 @@ contract UnstakeERC20Token_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test
         // It should emit {SnapshotRewards}, {Transfer} and {UnstakeERC20Token} events.
         vm.expectEmit({ emitter: address(staking) });
         emit ISablierStaking.SnapshotRewards(
-            campaignIds.defaultCampaign,
-            timestamp,
-            rewardsEarnedPerTokenScaled,
-            caller,
-            rewards,
-            previousAmounts.totalAmountStaked
+            campaignIds.defaultCampaign, timestamp, rewardsEarnedPerTokenScaled, caller, rewards
         );
         vm.expectEmit({ emitter: address(stakingToken) });
         emit IERC20.Transfer(address(staking), caller, amount);
@@ -156,17 +149,8 @@ contract UnstakeERC20Token_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test
         staking.unstakeERC20Token(campaignIds.defaultCampaign, amount);
 
         // It should unstake.
-        Amounts memory actualAmountStakedByUser = staking.amountStakedByUser(campaignIds.defaultCampaign, caller);
-        assertEq(
-            actualAmountStakedByUser.totalAmountStaked,
-            previousAmounts.totalAmountStaked - amount,
-            "totalAmountStakedByUser"
-        );
-        assertEq(
-            actualAmountStakedByUser.directAmountStaked,
-            previousAmounts.directAmountStaked - amount,
-            "directAmountStakedByUser"
-        );
+        (,, uint128 actualDirectAmountStaked) = staking.userShares(campaignIds.defaultCampaign, caller);
+        assertEq(actualDirectAmountStaked, previousDirectAmountStaked - amount, "directAmountStakedByUser");
 
         // It should update global rewards snapshot.
         (uint40 actualLastUpdateTime, uint256 actualRewardsDistributedPerTokenScaled) =

@@ -141,18 +141,10 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
     function _test_ClaimRewards(address caller, uint40 timestamp) private {
         (uint256 expectedRewardsPerTokenScaled, uint128 expectedUserRewards) = calculateLatestRewards(caller);
 
-        uint128 totalAmountStakedByUser =
-            staking.amountStakedByUser(campaignIds.defaultCampaign, caller).totalAmountStaked;
-
         // It should emit {SnapshotRewards}, {Transfer} and {ClaimRewards} events.
         vm.expectEmit({ emitter: address(staking) });
         emit ISablierStaking.SnapshotRewards(
-            campaignIds.defaultCampaign,
-            timestamp,
-            expectedRewardsPerTokenScaled,
-            caller,
-            expectedUserRewards,
-            totalAmountStakedByUser
+            campaignIds.defaultCampaign, timestamp, expectedRewardsPerTokenScaled, caller, expectedUserRewards
         );
         vm.expectEmit({ emitter: address(rewardToken) });
         emit IERC20.Transfer(address(staking), caller, expectedUserRewards);

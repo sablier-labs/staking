@@ -15,7 +15,7 @@ import { ISablierLockupNFT } from "./interfaces/ISablierLockupNFT.sol";
 import { ISablierStaking } from "./interfaces/ISablierStaking.sol";
 import { Errors } from "./libraries/Errors.sol";
 import { Helpers } from "./libraries/Helpers.sol";
-import { GlobalSnapshot, StakedStream, StakingCampaign, UserSnapshot } from "./types/DataTypes.sol";
+import { Campaign, GlobalSnapshot, StreamLookup, UserShares, UserSnapshot } from "./types/DataTypes.sol";
 
 /// @title SablierStaking
 /// @notice See the documentation in {ISablierStaking}.
@@ -80,15 +80,15 @@ contract SablierStaking is
         // Cast `msg.sender` as the Lockup contract.
         ISablierLockupNFT lockup = ISablierLockupNFT(msg.sender);
 
-        // Load the staked stream from storage into memory.
-        StakedStream memory stakedStream = _stakedStream[lockup][streamId];
+        // Get the campaign ID in which the stream ID is staked.
+        uint256 campaignId = _streamLookup[lockup][streamId].campaignId;
 
-        // Check: the `streamId` is staked in a campaign.
-        if (stakedStream.campaignId == 0) {
+        // Check: the campaign ID is not zero.
+        if (campaignId == 0) {
             revert Errors.SablierStaking_StreamNotStaked(lockup, streamId);
         }
 
-        revert Errors.SablierStaking_WithdrawNotAllowed(stakedStream.campaignId, lockup, streamId);
+        revert Errors.SablierStaking_WithdrawNotAllowed(campaignId, lockup, streamId);
     }
 
     /// @inheritdoc ISablierStaking
@@ -101,7 +101,7 @@ contract SablierStaking is
         returns (uint128)
     {
         // If the total amount staked is zero, return 0.
-        if (_globalSnapshot[campaignId].totalAmountStaked == 0) {
+        if (_totalAmountStaked[campaignId] == 0) {
             return 0;
         }
 
@@ -117,7 +117,7 @@ contract SablierStaking is
         isActive(campaignId)
         returns (uint128)
     {
-        uint128 totalAmountStaked = _globalSnapshot[campaignId].totalAmountStaked;
+        uint128 totalAmountStaked = _totalAmountStaked[campaignId];
 
         // If the total amount staked is zero, return 0.
         if (totalAmountStaked == 0) {
@@ -140,8 +140,8 @@ contract SablierStaking is
         returns (uint128)
     {
         // Check: the campaign start time is not in the future.
-        if (_stakingCampaign[campaignId].startTime > uint40(block.timestamp)) {
-            revert Errors.SablierStaking_CampaignNotStarted(campaignId, _stakingCampaign[campaignId].startTime);
+        if (_campaign[campaignId].startTime > uint40(block.timestamp)) {
+            revert Errors.SablierStaking_CampaignNotStarted(campaignId, _campaign[campaignId].startTime);
         }
 
         // Get the rewards distributed since the last snapshot.
@@ -153,7 +153,7 @@ contract SablierStaking is
         }
 
         // Else, calculate it.
-        return rewardsDistributedSinceLastSnapshot / _globalSnapshot[campaignId].totalAmountStaked;
+        return rewardsDistributedSinceLastSnapshot / _totalAmountStaked[campaignId];
     }
 
     /// @inheritdoc ISablierStaking
@@ -166,8 +166,8 @@ contract SablierStaking is
         returns (uint128)
     {
         // Check: the campaign start time is not in the future.
-        if (_stakingCampaign[campaignId].startTime > uint40(block.timestamp)) {
-            revert Errors.SablierStaking_CampaignNotStarted(campaignId, _stakingCampaign[campaignId].startTime);
+        if (_campaign[campaignId].startTime > uint40(block.timestamp)) {
+            revert Errors.SablierStaking_CampaignNotStarted(campaignId, _campaign[campaignId].startTime);
         }
 
         return _rewardsDistributedSinceLastSnapshot(campaignId);
@@ -191,8 +191,8 @@ contract SablierStaking is
         notCanceled(campaignId)
         returns (uint128 amountRefunded)
     {
-        // Load the campaign from storage into memory.
-        StakingCampaign memory campaign = _stakingCampaign[campaignId];
+        // Load the campaign from storage.
+        Campaign memory campaign = _campaign[campaignId];
 
         // Check: `msg.sender` is the campaign admin.
         if (msg.sender != campaign.admin) {
@@ -205,7 +205,7 @@ contract SablierStaking is
         }
 
         // Effect: set the campaign as canceled.
-        _stakingCampaign[campaignId].wasCanceled = true;
+        _campaign[campaignId].wasCanceled = true;
 
         // Interaction: refund the reward tokens to the campaign admin.
         amountRefunded = campaign.totalRewards;
@@ -224,18 +224,15 @@ contract SablierStaking is
         notCanceled(campaignId)
         returns (uint128 rewards)
     {
-        uint40 currentTimestamp = uint40(block.timestamp);
-        uint40 startTime = _stakingCampaign[campaignId].startTime;
-
         // Check: the current timestamp is greater than or equal to the campaign start time.
-        if (currentTimestamp < startTime) {
-            revert Errors.SablierStaking_CampaignNotStarted(campaignId, startTime);
+        if (block.timestamp < _campaign[campaignId].startTime) {
+            revert Errors.SablierStaking_CampaignNotStarted(campaignId, _campaign[campaignId].startTime);
         }
 
         // Effect: snapshot rewards data to the latest values.
         _snapshotRewards(campaignId, msg.sender);
 
-        // Load rewards from storage into memory.
+        // Load rewards from storage.
         rewards = _userSnapshot[msg.sender][campaignId].rewards;
 
         // Check: `msg.sender` has rewards to claim.
@@ -250,7 +247,7 @@ contract SablierStaking is
         _userSnapshot[msg.sender][campaignId].lastUpdateTime = uint40(block.timestamp);
 
         // Interaction: transfer the reward to `msg.sender`.
-        IERC20 rewardToken = _stakingCampaign[campaignId].rewardToken;
+        IERC20 rewardToken = _campaign[campaignId].rewardToken;
         rewardToken.safeTransfer({ to: msg.sender, value: rewards });
 
         // Log the event.
@@ -305,7 +302,7 @@ contract SablierStaking is
         campaignId = nextCampaignId;
 
         // Effect: store the campaign in the storage.
-        _stakingCampaign[campaignId] = StakingCampaign({
+        _campaign[campaignId] = Campaign({
             admin: admin,
             stakingToken: stakingToken,
             startTime: startTime,
@@ -340,21 +337,27 @@ contract SablierStaking is
         noDelegateCall
         returns (bytes4)
     {
-        StakedStream memory stakedStream = _stakedStream[ISablierLockupNFT(msg.sender)][streamId];
+        StreamLookup memory streamLookup = _streamLookup[ISablierLockupNFT(msg.sender)][streamId];
 
-        // Check: the `streamId` is staked in a campaign.
-        if (stakedStream.campaignId == 0) {
+        // Get the campaign ID in which the stream ID is staked.
+        uint256 campaignId = streamLookup.campaignId;
+
+        // Check: the campaign ID is not zero.
+        if (campaignId == 0) {
             revert Errors.SablierStaking_StreamNotStaked(ISablierLockupNFT(msg.sender), streamId);
         }
 
-        // Effect: snapshot rewards data to the latest values.
-        _snapshotRewards(stakedStream.campaignId, stakedStream.owner);
+        // Get the owner of the stream.
+        address owner = streamLookup.owner;
+
+        // Effect: snapshot user rewards.
+        _snapshotRewards(campaignId, owner);
 
         // Effect: decrease the total amount staked in the campaign.
-        _globalSnapshot[stakedStream.campaignId].totalAmountStaked -= senderAmount;
+        _totalAmountStaked[campaignId] -= senderAmount;
 
-        // Effect: decrease the user's total amount staked.
-        _userSnapshot[stakedStream.owner][stakedStream.campaignId].totalAmountStaked -= senderAmount;
+        // Effect: decrease the user's share of stream amount staked.
+        _userShares[owner][campaignId].streamAmountStaked -= senderAmount;
 
         return ISablierLockupRecipient.onSablierLockupCancel.selector;
     }
@@ -370,16 +373,19 @@ contract SablierStaking is
         notNull(campaignId)
         notCanceled(campaignId)
     {
-        UserSnapshot memory userSnapshot = _userSnapshot[user][campaignId];
+        // Get the user shares.
+        UserShares memory userShares = _userShares[user][campaignId];
 
-        // Check: the user has staked in the campaign.
-        if (userSnapshot.totalAmountStaked == 0) {
+        // Check: the total amount staked by user is not zero.
+        if (userShares.directAmountStaked + userShares.streamAmountStaked == 0) {
             revert Errors.SablierStaking_NoStakedAmount(campaignId, user);
         }
 
+        uint40 lastUpdateTime = _userSnapshot[user][campaignId].lastUpdateTime;
+
         // Check: the last update time is less than the campaign end time.
-        if (userSnapshot.lastUpdateTime >= _stakingCampaign[campaignId].endTime) {
-            revert Errors.SablierStaking_SnapshotNotAllowed(campaignId, user, userSnapshot.lastUpdateTime);
+        if (lastUpdateTime >= _campaign[campaignId].endTime) {
+            revert Errors.SablierStaking_SnapshotNotAllowed(campaignId, user, lastUpdateTime);
         }
 
         // Effect: snapshot rewards data to the latest values for `user`.
@@ -397,8 +403,8 @@ contract SablierStaking is
         notNull(campaignId)
         notCanceled(campaignId)
     {
-        // Retrieve the campaign from storage into memory.
-        StakingCampaign memory campaign = _stakingCampaign[campaignId];
+        // Retrieve the campaign from storage.
+        Campaign memory campaign = _campaign[campaignId];
 
         // Check: the campaign end time is in the future.
         if (campaign.endTime <= uint40(block.timestamp)) {
@@ -414,16 +420,10 @@ contract SablierStaking is
         _snapshotRewards(campaignId, msg.sender);
 
         // Effect: update total amount staked in the campaign.
-        _globalSnapshot[campaignId].totalAmountStaked += amount;
-
-        // Retrieve the user snapshot from storage into memory.
-        UserSnapshot memory userSnapshot = _userSnapshot[msg.sender][campaignId];
-
-        // Effect: update total amount staked by `msg.sender`.
-        _userSnapshot[msg.sender][campaignId].totalAmountStaked = userSnapshot.totalAmountStaked + amount;
+        _totalAmountStaked[campaignId] += amount;
 
         // Effect: update direct amount staked by `msg.sender`.
-        _userSnapshot[msg.sender][campaignId].directAmountStaked = userSnapshot.directAmountStaked + amount;
+        _userShares[msg.sender][campaignId].directAmountStaked += amount;
 
         // Interaction: transfer the tokens from the `msg.sender` to this contract.
         campaign.stakingToken.safeTransferFrom({ from: msg.sender, to: address(this), value: amount });
@@ -449,8 +449,8 @@ contract SablierStaking is
             revert Errors.SablierStaking_LockupNotWhitelisted(lockup);
         }
 
-        // Retrieve the campaign from storage into memory.
-        StakingCampaign memory campaign = _stakingCampaign[campaignId];
+        // Retrieve the campaign from storage.
+        Campaign memory campaign = _campaign[campaignId];
 
         // Check: the campaign end time is in the future.
         if (campaign.endTime <= uint40(block.timestamp)) {
@@ -475,19 +475,19 @@ contract SablierStaking is
         _snapshotRewards(campaignId, msg.sender);
 
         // Effect: update total amount staked in the campaign.
-        _globalSnapshot[campaignId].totalAmountStaked += amountInStream;
+        _totalAmountStaked[campaignId] += amountInStream;
 
-        // Retrieve the user snapshot from storage into memory.
-        UserSnapshot memory userSnapshot = _userSnapshot[msg.sender][campaignId];
+        // Retrieve the user shares from storage.
+        UserShares memory userShares = _userShares[msg.sender][campaignId];
 
-        // Effect: update total amount staked by `msg.sender`.
-        _userSnapshot[msg.sender][campaignId].totalAmountStaked = userSnapshot.totalAmountStaked + amountInStream;
+        // Effect: update stream amount staked by `msg.sender`.
+        _userShares[msg.sender][campaignId].streamAmountStaked = userShares.streamAmountStaked + amountInStream;
 
         // Effect: update the number of streams staked by `msg.sender`.
-        _userSnapshot[msg.sender][campaignId].streamsCount = userSnapshot.streamsCount + 1;
+        _userShares[msg.sender][campaignId].streamsCount = userShares.streamsCount + 1;
 
-        // Effect: update the `StakedStream` mapping.
-        _stakedStream[lockup][streamId] = StakedStream({ campaignId: campaignId, owner: msg.sender });
+        // Effect: update the `StreamLookup` mapping.
+        _streamLookup[lockup][streamId] = StreamLookup({ campaignId: campaignId, owner: msg.sender });
 
         // Interaction: transfer the Lockup stream from the `msg.sender` to this contract.
         lockup.safeTransferFrom({ from: msg.sender, to: address(this), tokenId: streamId });
@@ -511,16 +511,16 @@ contract SablierStaking is
             revert Errors.SablierStaking_UnstakingZeroAmount(campaignId);
         }
 
-        // Retrieve the user snapshot from storage into memory.
-        UserSnapshot memory userSnapshot = _userSnapshot[msg.sender][campaignId];
+        // Retrieve the user shares from storage.
+        UserShares memory userShares = _userShares[msg.sender][campaignId];
 
         // Check: `amount` is not greater than the direct amount staked.
-        if (amount > userSnapshot.directAmountStaked) {
-            revert Errors.SablierStaking_AmountExceedsStakedAmount(campaignId, amount, userSnapshot.directAmountStaked);
+        if (amount > userShares.directAmountStaked) {
+            revert Errors.SablierStaking_AmountExceedsStakedAmount(campaignId, amount, userShares.directAmountStaked);
         }
 
         // Snapshot rewards if the campaign is not canceled.
-        if (!_stakingCampaign[campaignId].wasCanceled) {
+        if (!_campaign[campaignId].wasCanceled) {
             // Effect: update rewards.
             _snapshotRewards(campaignId, msg.sender);
         }
@@ -534,14 +534,11 @@ contract SablierStaking is
         // Effect: update the global last update time.
         _globalSnapshot[campaignId].lastUpdateTime = uint40(block.timestamp);
 
-        // Effect: reduce total amount staked by `msg.sender`.
-        _userSnapshot[msg.sender][campaignId].totalAmountStaked = userSnapshot.totalAmountStaked - amount;
-
         // Effect: reduce direct amount staked by `msg.sender`.
-        _userSnapshot[msg.sender][campaignId].directAmountStaked = userSnapshot.directAmountStaked - amount;
+        _userShares[msg.sender][campaignId].directAmountStaked = userShares.directAmountStaked - amount;
 
         // Interaction: transfer the tokens to `msg.sender`.
-        _stakingCampaign[campaignId].stakingToken.safeTransfer({ to: msg.sender, value: amount });
+        _campaign[campaignId].stakingToken.safeTransfer({ to: msg.sender, value: amount });
 
         // Log the event.
         emit UnstakeERC20Token(campaignId, msg.sender, amount);
@@ -549,24 +546,29 @@ contract SablierStaking is
 
     /// @inheritdoc ISablierStaking
     function unstakeLockupNFT(ISablierLockupNFT lockup, uint256 streamId) external override noDelegateCall {
-        StakedStream memory stakedStream = _stakedStream[lockup][streamId];
-        uint256 campaignId = stakedStream.campaignId;
+        StreamLookup memory streamLookup = _streamLookup[lockup][streamId];
 
-        // Check: stream ID associated with `lockup` is staked in a campaign.
+        // Get the campaign ID in which the stream ID is staked.
+        uint256 campaignId = streamLookup.campaignId;
+
+        // Check: the campaign ID is not zero.
         if (campaignId == 0) {
             revert Errors.SablierStaking_StreamNotStaked(lockup, streamId);
         }
 
+        // Get the owner of the stream.
+        address owner = streamLookup.owner;
+
         // Check: `msg.sender` is the original owner of the stream.
-        if (msg.sender != stakedStream.owner) {
-            revert Errors.SablierStaking_CallerNotStreamOwner(lockup, streamId, msg.sender, stakedStream.owner);
+        if (msg.sender != owner) {
+            revert Errors.SablierStaking_CallerNotStreamOwner(lockup, streamId, msg.sender, owner);
         }
 
         // Retrieves the amount of token available in the stream.
         uint128 amountInStream = Helpers.amountInStream(lockup, streamId);
 
         // Snapshot rewards if the campaign is not canceled.
-        if (!_stakingCampaign[campaignId].wasCanceled) {
+        if (!_campaign[campaignId].wasCanceled) {
             // Effect: update rewards.
             _snapshotRewards(campaignId, msg.sender);
         }
@@ -578,19 +580,19 @@ contract SablierStaking is
         }
 
         // Effect: reduce total amount staked in the campaign.
-        _globalSnapshot[campaignId].totalAmountStaked -= amountInStream;
+        _totalAmountStaked[campaignId] -= amountInStream;
 
-        // Retrieve the user snapshot from storage into memory.
-        UserSnapshot memory userSnapshot = _userSnapshot[msg.sender][campaignId];
+        // Retrieve the user shares from storage.
+        UserShares memory userShares = _userShares[msg.sender][campaignId];
 
-        // Effect: reduce total amount staked by `msg.sender`.
-        _userSnapshot[msg.sender][campaignId].totalAmountStaked = userSnapshot.totalAmountStaked - amountInStream;
+        // Effect: reduce stream amount staked by `msg.sender`.
+        _userShares[msg.sender][campaignId].streamAmountStaked = userShares.streamAmountStaked - amountInStream;
 
         // Effect: reduce the number of streams staked by `msg.sender`.
-        _userSnapshot[msg.sender][campaignId].streamsCount = userSnapshot.streamsCount - 1;
+        _userShares[msg.sender][campaignId].streamsCount = userShares.streamsCount - 1;
 
-        // Effect: delete the `StakedStream` mapping.
-        delete _stakedStream[lockup][streamId];
+        // Effect: delete the `StreamLookup` mapping.
+        delete _streamLookup[lockup][streamId];
 
         // Interaction: transfer the Lockup stream to `msg.sender`.
         lockup.safeTransferFrom({ from: address(this), to: msg.sender, tokenId: streamId });
@@ -653,7 +655,7 @@ contract SablierStaking is
         if (rewardsDistributedSinceLastSnapshot > 0) {
             // Get the rewards distributed per ERC20 token since the last snapshot, by scaling up.
             uint256 rewardsPerTokenSinceLastSnapshotScaled =
-                rewardsDistributedSinceLastSnapshot.scaleUp() / globalSnapshot.totalAmountStaked;
+                rewardsDistributedSinceLastSnapshot.scaleUp() / _totalAmountStaked[campaignId];
 
             // Calculate the cumulative rewards distributed per ERC20 token.
             rewardsPerTokenScaled += rewardsPerTokenSinceLastSnapshotScaled;
@@ -664,7 +666,7 @@ contract SablierStaking is
 
     /// @notice Calculates the reward distributed per second without checking if the campaign is active.
     function _rewardRate(uint256 campaignId) private view returns (uint128) {
-        StakingCampaign memory campaign = _stakingCampaign[campaignId];
+        Campaign memory campaign = _campaign[campaignId];
 
         // Calculate the reward duration.
         uint40 rewardDuration = campaign.endTime - campaign.startTime;
@@ -683,34 +685,34 @@ contract SablierStaking is
         view
         returns (uint128 rewardsDistributed)
     {
-        GlobalSnapshot memory globalSnapshot = _globalSnapshot[campaignId];
-
         // If the total amount staked is 0, return 0.
-        if (globalSnapshot.totalAmountStaked == 0) {
+        if (_totalAmountStaked[campaignId] == 0) {
             return 0;
         }
+
+        Campaign memory campaign = _campaign[campaignId];
 
         // If the campaign has not started, return 0.
-        if (uint40(block.timestamp) < _stakingCampaign[campaignId].startTime) {
+        if (uint40(block.timestamp) < campaign.startTime) {
             return 0;
         }
+
+        uint40 lastUpdateTime = _globalSnapshot[campaignId].lastUpdateTime;
 
         // If the last time update is greater than or equal to the campaign end time, return 0.
-        if (globalSnapshot.lastUpdateTime >= _stakingCampaign[campaignId].endTime) {
+        if (lastUpdateTime >= campaign.endTime) {
             return 0;
         }
-
-        StakingCampaign memory campaign = _stakingCampaign[campaignId];
 
         // Define variables to store time range for rewards calculation.
         uint40 endingTimestamp;
         uint40 startingTimestamp;
 
         // If the last update time is less than the start time, the starting timestamp is the campaign start time.
-        if (globalSnapshot.lastUpdateTime <= campaign.startTime) {
+        if (lastUpdateTime <= campaign.startTime) {
             startingTimestamp = campaign.startTime;
         } else {
-            startingTimestamp = globalSnapshot.lastUpdateTime;
+            startingTimestamp = lastUpdateTime;
         }
 
         // If the end time has passed, the ending timestamp is the campaign end time.
@@ -720,23 +722,17 @@ contract SablierStaking is
             endingTimestamp = uint40(block.timestamp);
         }
 
-        uint256 campaignDuration;
-        uint256 elapsedTime;
-
         // Safe to use `unchecked` because the calculations cannot overflow.
         unchecked {
             // Calculate the elapsed time and the total campaign duration.
-            elapsedTime = endingTimestamp - startingTimestamp;
-            campaignDuration = campaign.endTime - campaign.startTime;
-        }
+            uint256 elapsedTime = endingTimestamp - startingTimestamp;
+            uint256 campaignDuration = campaign.endTime - campaign.startTime;
 
-        // If elapsed time is equal to the campaign duration, return the total rewards.
-        if (elapsedTime == campaignDuration) {
-            return campaign.totalRewards;
-        }
+            // If elapsed time is equal to the campaign duration, return the total rewards.
+            if (elapsedTime == campaignDuration) {
+                return campaign.totalRewards;
+            }
 
-        // Safe to use `unchecked` because the calculations cannot overflow.
-        unchecked {
             // Calculate the total rewards distributed since the last snapshot.
             rewardsDistributed = ((campaign.totalRewards * elapsedTime) / campaignDuration).toUint128();
         }
@@ -746,10 +742,13 @@ contract SablierStaking is
 
     /// @dev Calculates the rewards earned by the user since the last snapshot.
     function _userRewardsSinceLastSnapshot(uint256 campaignId, address user) private view returns (uint128) {
-        UserSnapshot memory userSnapshot = _userSnapshot[user][campaignId];
+        UserShares memory userShares = _userShares[user][campaignId];
+
+        // Calculate the total amount staked by the user.
+        uint128 userTotalAmountStaked = userShares.directAmountStaked + userShares.streamAmountStaked;
 
         // If the user has no tokens staked, return 0.
-        if (userSnapshot.totalAmountStaked == 0) {
+        if (userTotalAmountStaked == 0) {
             return 0;
         }
 
@@ -758,10 +757,10 @@ contract SablierStaking is
 
         // Calculate the rewards earned per ERC20 token by the user since the last snapshot.
         uint256 userRewardsPerTokenSinceLastSnapshotScaled =
-            rewardsPerTokenScaled - userSnapshot.rewardsEarnedPerTokenScaled;
+            rewardsPerTokenScaled - _userSnapshot[user][campaignId].rewardsEarnedPerTokenScaled;
 
         // Calculate the rewards earned by the user since the last snapshot.
-        uint256 rewardsEarnedScaled = userRewardsPerTokenSinceLastSnapshotScaled * userSnapshot.totalAmountStaked;
+        uint256 rewardsEarnedScaled = userRewardsPerTokenSinceLastSnapshotScaled * userTotalAmountStaked;
 
         // Return the scaled down amount.
         return rewardsEarnedScaled.scaleDown().toUint128();
@@ -777,7 +776,7 @@ contract SablierStaking is
         uint256 rewardsPerTokenScaled = _updateGlobalSnapshot(campaignId);
 
         // Update the user snapshot.
-        (uint128 userRewards, uint128 userStakedTokens) = _updateUserSnapshot(campaignId, user, rewardsPerTokenScaled);
+        uint128 userRewards = _updateUserSnapshot(campaignId, user, rewardsPerTokenScaled);
 
         // Log the event.
         emit SnapshotRewards({
@@ -785,8 +784,7 @@ contract SablierStaking is
             lastUpdateTime: uint40(block.timestamp),
             rewardsDistributedPerTokenScaled: rewardsPerTokenScaled,
             user: user,
-            userRewards: userRewards,
-            userStakedTokens: userStakedTokens
+            userRewards: userRewards
         });
     }
 
@@ -809,23 +807,24 @@ contract SablierStaking is
         uint256 rewardsPerTokenScaled
     )
         private
-        returns (uint128 userRewards, uint128 userStakedTokens)
+        returns (uint128 userRewards)
     {
         UserSnapshot memory userSnapshot = _userSnapshot[user][campaignId];
+        UserShares memory userShares = _userShares[user][campaignId];
 
-        userStakedTokens = userSnapshot.totalAmountStaked;
+        uint128 userTotalAmountStaked = userShares.directAmountStaked + userShares.streamAmountStaked;
 
         // Update the user snapshot if the last time update is less than the campaign end time.
-        if (userSnapshot.lastUpdateTime < _stakingCampaign[campaignId].endTime) {
+        if (userSnapshot.lastUpdateTime < _campaign[campaignId].endTime) {
             // If the user has tokens staked, update the user rewards earned.
-            if (userStakedTokens > 0) {
+            if (userTotalAmountStaked > 0) {
                 // Compute the rewards earned per ERC20 token by the user since the previous snapshot.
                 uint256 userRewardsPerTokenSinceLastSnapshotScaled =
                     rewardsPerTokenScaled - userSnapshot.rewardsEarnedPerTokenScaled;
 
                 // Compute the new rewards earned by the user since the last snapshot.
                 uint256 userRewardsSinceLastSnapshotScaled =
-                    userRewardsPerTokenSinceLastSnapshotScaled * userStakedTokens;
+                    userRewardsPerTokenSinceLastSnapshotScaled * userTotalAmountStaked;
 
                 // Scale down the rewards earned by the user since the last snapshot.
                 uint128 userRewardsSinceLastSnapshot = userRewardsSinceLastSnapshotScaled.scaleDown().toUint128();

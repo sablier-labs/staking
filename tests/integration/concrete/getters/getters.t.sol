@@ -3,44 +3,10 @@ pragma solidity >=0.8.22;
 
 import { ISablierLockupNFT } from "src/interfaces/ISablierLockupNFT.sol";
 import { Errors } from "src/libraries/Errors.sol";
-import { Amounts } from "src/types/DataTypes.sol";
 
 import { Shared_Integration_Concrete_Test } from "../Concrete.t.sol";
 
 contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
-    /*//////////////////////////////////////////////////////////////////////////
-                               AMOUNT-STAKED-BY-USER
-    //////////////////////////////////////////////////////////////////////////*/
-
-    function test_AmountStakedByUserRevertWhen_Null() external {
-        expectRevert_Null({
-            callData: abi.encodeCall(staking.amountStakedByUser, (campaignIds.nullCampaign, users.staker))
-        });
-    }
-
-    function test_AmountStakedByUserRevertWhen_ZeroAddress() external whenNotNull {
-        vm.expectRevert(Errors.SablierStakingState_ZeroAddress.selector);
-        staking.amountStakedByUser(campaignIds.defaultCampaign, address(0));
-    }
-
-    function test_AmountStakedByUserWhenNotZeroAddress() external whenNotNull {
-        warpStateTo(END_TIME);
-
-        Amounts memory amounts = staking.amountStakedByUser(campaignIds.defaultCampaign, users.staker);
-        assertEq(amounts.streamsCount, 0, "staker: streamsCount");
-        assertEq(amounts.directAmountStaked, DIRECT_AMOUNT_STAKED_BY_STAKER_END_TIME, "staker: directAmountStaked");
-        assertEq(amounts.streamAmountStaked, 0, "staker: streamAmountStaked");
-        assertEq(amounts.totalAmountStaked, AMOUNT_STAKED_BY_STAKER_END_TIME, "staker: totalAmountStaked");
-
-        amounts = staking.amountStakedByUser(campaignIds.defaultCampaign, users.recipient);
-        assertEq(amounts.streamsCount, STREAMS_COUNT_FOR_RECIPIENT_END_TIME, "recipient: streamsCount");
-        assertEq(
-            amounts.directAmountStaked, DIRECT_AMOUNT_STAKED_BY_RECIPIENT_END_TIME, "recipient: directAmountStaked"
-        );
-        assertEq(amounts.streamAmountStaked, 2 * STREAM_AMOUNT_18D, "recipient: streamAmountStaked");
-        assertEq(amounts.totalAmountStaked, AMOUNT_STAKED_BY_RECIPIENT_END_TIME, "recipient: totalAmountStaked");
-    }
-
     /*//////////////////////////////////////////////////////////////////////////
                                      GET-ADMIN
     //////////////////////////////////////////////////////////////////////////*/
@@ -208,31 +174,31 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     }
 
     /*//////////////////////////////////////////////////////////////////////////
-                                   STAKED-STREAM
+                                   STREAM-LOOKUP
     //////////////////////////////////////////////////////////////////////////*/
 
-    function test_StakedStreamRevertWhen_ZeroAddress() external {
+    function test_StreamLookupRevertWhen_ZeroAddress() external {
         vm.expectRevert(Errors.SablierStakingState_ZeroAddress.selector);
-        staking.stakedStream(ISablierLockupNFT(address(0)), 0);
+        staking.streamLookup(ISablierLockupNFT(address(0)), 0);
     }
 
-    function test_StakedStreamRevertWhen_StreamNotStaked() external whenNotZeroAddress {
+    function test_StreamLookupRevertWhen_StreamNotStaked() external whenNotZeroAddress {
         // It should revert.
         vm.expectRevert(
             abi.encodeWithSelector(Errors.SablierStakingState_StreamNotStaked.selector, lockup, streamIds.defaultStream)
         );
-        staking.stakedStream(lockup, streamIds.defaultStream);
+        staking.streamLookup(lockup, streamIds.defaultStream);
     }
 
-    function test_StakedStreamWhenStreamStaked() external view whenNotZeroAddress {
+    function test_StreamLookupWhenStreamStaked() external view whenNotZeroAddress {
         // It should return the campaign ID and owner.
-        (uint256 actualCampaignId, address actualOwner) = staking.stakedStream(lockup, streamIds.defaultStakedStream);
+        (uint256 actualCampaignId, address actualOwner) = staking.streamLookup(lockup, streamIds.defaultStakedStream);
         assertEq(actualCampaignId, campaignIds.defaultCampaign, "campaignId");
         assertEq(actualOwner, users.recipient, "owner");
     }
 
     /*//////////////////////////////////////////////////////////////////////////
-                                TOTAL-STAKED-TOKENS
+                                TOTAL-AMOUNT-STAKED
     //////////////////////////////////////////////////////////////////////////*/
 
     function test_TotalAmountStakedRevertWhen_Null() external {
@@ -242,6 +208,58 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     function test_TotalAmountStakedWhenNotNull() external {
         warpStateTo(END_TIME);
         assertEq(staking.totalAmountStaked(campaignIds.defaultCampaign), TOTAL_STAKED_END_TIME, "totalAmountStaked");
+    }
+
+    /*//////////////////////////////////////////////////////////////////////////
+                            TOTAL-AMOUNT-STAKED-BY-USER
+    //////////////////////////////////////////////////////////////////////////*/
+
+    function test_TotalAmountStakedByUserRevertWhen_Null() external {
+        expectRevert_Null({
+            callData: abi.encodeCall(staking.totalAmountStakedByUser, (campaignIds.nullCampaign, users.recipient))
+        });
+    }
+
+    function test_TotalAmountStakedByUserRevertWhen_ZeroAddress() external whenNotNull {
+        vm.expectRevert(Errors.SablierStakingState_ZeroAddress.selector);
+        staking.totalAmountStakedByUser(campaignIds.defaultCampaign, address(0));
+    }
+
+    function test_TotalAmountStakedByUserWhenNotZeroAddress() external view whenNotNull {
+        assertEq(
+            staking.totalAmountStakedByUser(campaignIds.defaultCampaign, users.recipient),
+            AMOUNT_STAKED_BY_RECIPIENT,
+            "totalAmountStakedByUser"
+        );
+    }
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                    USER-SHARES
+    //////////////////////////////////////////////////////////////////////////*/
+
+    function test_UserSharesRevertWhen_Null() external {
+        expectRevert_Null({ callData: abi.encodeCall(staking.userShares, (campaignIds.nullCampaign, users.staker)) });
+    }
+
+    function test_UserSharesRevertWhen_ZeroAddress() external whenNotNull {
+        vm.expectRevert(Errors.SablierStakingState_ZeroAddress.selector);
+        staking.userShares(campaignIds.defaultCampaign, address(0));
+    }
+
+    function test_UserSharesWhenNotZeroAddress() external whenNotNull {
+        warpStateTo(END_TIME);
+
+        (uint128 streamsCount, uint128 streamAmountStaked, uint128 directAmountStaked) =
+            staking.userShares(campaignIds.defaultCampaign, users.staker);
+        assertEq(streamsCount, 0, "staker: streamsCount");
+        assertEq(streamAmountStaked, 0, "staker: streamAmountStaked");
+        assertEq(directAmountStaked, DIRECT_AMOUNT_STAKED_BY_STAKER_END_TIME, "staker: directAmountStaked");
+
+        (streamsCount, streamAmountStaked, directAmountStaked) =
+            staking.userShares(campaignIds.defaultCampaign, users.recipient);
+        assertEq(streamsCount, STREAMS_COUNT_FOR_RECIPIENT_END_TIME, "recipient: streamsCount");
+        assertEq(streamAmountStaked, 2 * STREAM_AMOUNT_18D, "recipient: streamAmountStaked");
+        assertEq(directAmountStaked, DIRECT_AMOUNT_STAKED_BY_RECIPIENT_END_TIME, "recipient: directAmountStaked");
     }
 
     /*//////////////////////////////////////////////////////////////////////////

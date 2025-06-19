@@ -66,11 +66,6 @@ abstract contract Integration_Test is Base_Test {
             return (0, 0);
         }
 
-        // Get total amount staked by user and globally.
-        uint128 totalAmountStaked = staking.totalAmountStaked(campaignIds.defaultCampaign);
-        uint128 totalAmountStakedByUser =
-            staking.amountStakedByUser(campaignIds.defaultCampaign, user).totalAmountStaked;
-
         (uint40 lastUpdateTime, uint256 rewardsDistributedPerTokenScaled) =
             staking.globalSnapshot(campaignIds.defaultCampaign);
 
@@ -85,7 +80,8 @@ abstract contract Integration_Test is Base_Test {
         uint128 rewardsDistributedSinceLastUpdate = REWARD_AMOUNT * timeElapsed / CAMPAIGN_DURATION;
 
         // Update global rewards distributed per token scaled.
-        rewardsDistributedPerTokenScaled += getScaledValue(rewardsDistributedSinceLastUpdate) / totalAmountStaked;
+        rewardsDistributedPerTokenScaled +=
+            getScaledValue(rewardsDistributedSinceLastUpdate) / staking.totalAmountStaked(campaignIds.defaultCampaign);
 
         // Get user rewards snapshot.
         (, rewardsEarnedPerTokenScaled, rewards) = staking.userSnapshot(campaignIds.defaultCampaign, user);
@@ -95,6 +91,7 @@ abstract contract Integration_Test is Base_Test {
         rewardsEarnedPerTokenScaled += rewardsEarnedPerTokenScaledDelta;
 
         // Calculate latest rewards for user.
+        uint128 totalAmountStakedByUser = staking.totalAmountStakedByUser(campaignIds.defaultCampaign, user);
         rewards += getDescaledValue(rewardsEarnedPerTokenScaledDelta * totalAmountStakedByUser);
     }
 

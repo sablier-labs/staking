@@ -3,7 +3,6 @@ pragma solidity >=0.8.22;
 
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { ISablierStaking } from "src/interfaces/ISablierStaking.sol";
-import { Amounts } from "src/types/DataTypes.sol";
 
 import { Shared_Integration_Fuzz_Test } from "./Fuzz.t.sol";
 
@@ -38,25 +37,19 @@ contract StakeLockupNFT_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         warpStateTo(timestamp);
 
         // Change caller and create a stream to stake.
+        uint256 streamId = defaultCreateWithDurationsLL({ amount: amount, recipient: caller });
+
         setMsgSender(caller);
-        deal({ token: address(stakingToken), to: caller, give: amount });
-        stakingToken.approve(address(lockup), amount);
-        uint256 streamId =
-            defaultCreateWithDurationsLL({ amount: amount, cancelable: true, recipient: caller, token: stakingToken });
         IERC721(address(lockup)).setApprovalForAll({ operator: address(staking), approved: true });
 
         (uint256 expectedRewardsPerTokenScaled, uint128 expectedUserRewards) = calculateLatestRewards(caller);
-        Amounts memory initialAmountStakedByUser = staking.amountStakedByUser(campaignIds.defaultCampaign, caller);
+        (uint128 initialStreamsCount, uint128 initialStreamAmountStaked,) =
+            staking.userShares(campaignIds.defaultCampaign, caller);
 
-        // It should emit {SnapshotRewards}, {Transfer} and {StakeERC20Token} events.
+        // It should emit {SnapshotRewards}, {Transfer} and {StakeLockupNFT} events.
         vm.expectEmit({ emitter: address(staking) });
         emit ISablierStaking.SnapshotRewards(
-            campaignIds.defaultCampaign,
-            timestamp,
-            expectedRewardsPerTokenScaled,
-            caller,
-            expectedUserRewards,
-            initialAmountStakedByUser.totalAmountStaked
+            campaignIds.defaultCampaign, timestamp, expectedRewardsPerTokenScaled, caller, expectedUserRewards
         );
         vm.expectEmit({ emitter: address(lockup) });
         emit IERC721.Transfer(caller, address(staking), streamId);
@@ -67,26 +60,10 @@ contract StakeLockupNFT_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         staking.stakeLockupNFT(campaignIds.defaultCampaign, lockup, streamId);
 
         // It should stake stream.
-        Amounts memory actualAmountStakedByUser = staking.amountStakedByUser(campaignIds.defaultCampaign, caller);
-        assertEq(
-            actualAmountStakedByUser.totalAmountStaked,
-            initialAmountStakedByUser.totalAmountStaked + amount,
-            "totalAmountStakedByUser"
-        );
-        assertEq(
-            actualAmountStakedByUser.streamAmountStaked,
-            initialAmountStakedByUser.streamAmountStaked + amount,
-            "streamAmountStakedByUser"
-        );
-        assertEq(actualAmountStakedByUser.streamsCount, initialAmountStakedByUser.streamsCount + 1, "streamsCount");
-
-        // It should update global rewards snapshot.
-        (uint40 actualGlobalLastUpdateTime, uint256 actualRewardsDistributedPerTokenScaled) =
-            staking.globalSnapshot(campaignIds.defaultCampaign);
-        assertEq(actualGlobalLastUpdateTime, timestamp, "globalLastUpdateTime");
-        assertEq(
-            actualRewardsDistributedPerTokenScaled, expectedRewardsPerTokenScaled, "rewardsDistributedPerTokenScaled"
-        );
+        (uint128 actualStreamsCount, uint128 actualStreamAmountStaked,) =
+            staking.userShares(campaignIds.defaultCampaign, caller);
+        assertEq(actualStreamsCount, initialStreamsCount + 1, "streamsCount");
+        assertEq(actualStreamAmountStaked, initialStreamAmountStaked + amount, "streamAmountStakedByUser");
 
         // It should update user rewards snapshot.
         (uint40 actualUserLastUpdateTime, uint256 actualRewardsEarnedPerTokenScaled, uint128 actualRewards) =

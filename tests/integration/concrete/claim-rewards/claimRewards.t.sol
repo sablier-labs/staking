@@ -84,8 +84,7 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
             WARP_40_PERCENT,
             REWARDS_DISTRIBUTED_PER_TOKEN_SCALED,
             users.recipient,
-            REWARDS_EARNED_BY_RECIPIENT,
-            AMOUNT_STAKED_BY_RECIPIENT
+            REWARDS_EARNED_BY_RECIPIENT
         );
         vm.expectEmit({ emitter: address(rewardToken) });
         emit IERC20.Transfer(address(staking), users.recipient, REWARDS_EARNED_BY_RECIPIENT);

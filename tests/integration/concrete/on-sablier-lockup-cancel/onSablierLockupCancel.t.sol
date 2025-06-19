@@ -4,7 +4,6 @@ pragma solidity >=0.8.22;
 import { ISablierLockup } from "@sablier/lockup/src/interfaces/ISablierLockup.sol";
 import { ISablierStaking } from "src/interfaces/ISablierStaking.sol";
 import { Errors } from "src/libraries/Errors.sol";
-import { Amounts } from "src/types/DataTypes.sol";
 
 import { Shared_Integration_Concrete_Test } from "../Concrete.t.sol";
 
@@ -55,12 +54,8 @@ contract OnSablierLockupCancel_Integration_Concrete_Test is Shared_Integration_C
     function test_GivenStreamStaked() external whenNoDelegateCall whenCallerLockup givenLockupWhitelisted {
         uint128 amountToRefund = ISablierLockup(address(lockup)).refundableAmountOf(streamIds.defaultStakedStream);
         uint128 expectedGlobalStakedAmount = staking.totalAmountStaked(campaignIds.defaultCampaign) - amountToRefund;
-        Amounts memory amountStakedByRecipient =
-            staking.amountStakedByUser(campaignIds.defaultCampaign, users.recipient);
-        uint128 expectedTotalAmountStakedByRecipient = amountStakedByRecipient.totalAmountStaked - amountToRefund;
-        uint128 expectedDirectAmountStakedByRecipient = amountStakedByRecipient.directAmountStaked;
-        uint128 expectedStreamAmountStakedByRecipient = amountStakedByRecipient.streamAmountStaked - amountToRefund;
-        uint128 expectedStreamsCountByRecipient = amountStakedByRecipient.streamsCount;
+        (uint128 previousStreamsCount, uint128 previousStreamAmount, uint128 previousDirectAmount) =
+            staking.userShares(campaignIds.defaultCampaign, users.recipient);
 
         // It should emit {SnapshotRewards} event.
         vm.expectEmit({ emitter: address(staking) });
@@ -69,8 +64,7 @@ contract OnSablierLockupCancel_Integration_Concrete_Test is Shared_Integration_C
             WARP_40_PERCENT,
             REWARDS_DISTRIBUTED_PER_TOKEN_SCALED,
             users.recipient,
-            REWARDS_EARNED_BY_RECIPIENT,
-            AMOUNT_STAKED_BY_RECIPIENT
+            REWARDS_EARNED_BY_RECIPIENT
         );
 
         // Cancel the stream to trigger the hook.
@@ -86,23 +80,11 @@ contract OnSablierLockupCancel_Integration_Concrete_Test is Shared_Integration_C
         );
 
         // It should adjust user staked amount.
-        Amounts memory actualAmountStakedByRecipient =
-            staking.amountStakedByUser(campaignIds.defaultCampaign, users.recipient);
-        assertEq(
-            actualAmountStakedByRecipient.totalAmountStaked,
-            expectedTotalAmountStakedByRecipient,
-            "user total staked amount"
-        );
-        assertEq(
-            actualAmountStakedByRecipient.directAmountStaked,
-            expectedDirectAmountStakedByRecipient,
-            "user direct staked amount"
-        );
-        assertEq(
-            actualAmountStakedByRecipient.streamAmountStaked,
-            expectedStreamAmountStakedByRecipient,
-            "user stream staked amount"
-        );
-        assertEq(actualAmountStakedByRecipient.streamsCount, expectedStreamsCountByRecipient, "user streams count");
+        (uint128 streamCount, uint128 streamAmountStaked, uint128 directAmountStaked) =
+            staking.userShares(campaignIds.defaultCampaign, users.recipient);
+
+        assertEq(streamCount, previousStreamsCount, "user streams count");
+        assertEq(directAmountStaked, previousDirectAmount, "user direct staked amount");
+        assertEq(streamAmountStaked, previousStreamAmount - amountToRefund, "user stream staked amount");
     }
 }

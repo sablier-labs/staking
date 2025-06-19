@@ -101,12 +101,7 @@ contract SnapshotRewards_Integration_Concrete_Test is Shared_Integration_Concret
         // It should emit {SnapshotRewards} event.
         vm.expectEmit({ emitter: address(staking) });
         emit ISablierStaking.SnapshotRewards(
-            campaignIds.defaultCampaign,
-            getBlockTimestamp(),
-            rewardsEarnedPerTokenScaled,
-            users.recipient,
-            rewards,
-            AMOUNT_STAKED_BY_RECIPIENT
+            campaignIds.defaultCampaign, getBlockTimestamp(), rewardsEarnedPerTokenScaled, users.recipient, rewards
         );
 
         // Snapshot user rewards.

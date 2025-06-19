@@ -4,7 +4,6 @@ pragma solidity >=0.8.22;
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { ISablierStaking } from "src/interfaces/ISablierStaking.sol";
 import { Errors } from "src/libraries/Errors.sol";
-import { Amounts } from "src/types/DataTypes.sol";
 
 import { Shared_Integration_Concrete_Test } from "../Concrete.t.sol";
 
@@ -44,10 +43,10 @@ contract UnstakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concre
         staking.unstakeLockupNFT(lockup, streamIds.defaultStakedStream);
 
         // It should unstake NFT.
-        Amounts memory amountStakedByUser = staking.amountStakedByUser(campaignIds.defaultCampaign, users.recipient);
-        assertEq(amountStakedByUser.totalAmountStaked, 0, "totalAmountStakedByUser");
-        assertEq(amountStakedByUser.streamAmountStaked, 0, "streamAmountStakedByUser");
-        assertEq(amountStakedByUser.streamsCount, 0, "streamsCount");
+        (uint128 actualStreamsCount, uint128 actualStreamAmountStaked,) =
+            staking.userShares(campaignIds.defaultCampaign, users.recipient);
+        assertEq(actualStreamsCount, 0, "streamsCount");
+        assertEq(actualStreamAmountStaked, 0, "streamAmountStakedByUser");
 
         // It should update global rewards snapshot.
         (uint40 globalLastUpdateTime, uint256 rewardsDistributedPerTokenScaled) =
@@ -86,8 +85,7 @@ contract UnstakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concre
             WARP_40_PERCENT,
             REWARDS_DISTRIBUTED_PER_TOKEN_SCALED,
             users.recipient,
-            REWARDS_EARNED_BY_RECIPIENT,
-            AMOUNT_STAKED_BY_RECIPIENT
+            REWARDS_EARNED_BY_RECIPIENT
         );
         vm.expectEmit({ emitter: address(lockup) });
         emit IERC721.Transfer(address(staking), users.recipient, streamIds.defaultStakedStream);
@@ -99,12 +97,10 @@ contract UnstakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concre
         staking.unstakeLockupNFT(lockup, streamIds.defaultStakedStream);
 
         // It should unstake NFT.
-        Amounts memory amountStakedByUser = staking.amountStakedByUser(campaignIds.defaultCampaign, users.recipient);
-        assertEq(
-            amountStakedByUser.totalAmountStaked, AMOUNT_STAKED_BY_RECIPIENT - DEFAULT_AMOUNT, "totalAmountStakedByUser"
-        );
-        assertEq(amountStakedByUser.streamAmountStaked, STREAM_AMOUNT_18D, "streamAmountStakedByUser");
-        assertEq(amountStakedByUser.streamsCount, 1, "streamsCount");
+        (uint128 actualStreamsCount, uint128 actualStreamAmountStaked,) =
+            staking.userShares(campaignIds.defaultCampaign, users.recipient);
+        assertEq(actualStreamsCount, 1, "streamsCount");
+        assertEq(actualStreamAmountStaked, STREAM_AMOUNT_18D, "streamAmountStakedByUser");
 
         // It should update global rewards snapshot.
         (uint40 globalLastUpdateTime, uint256 rewardsDistributedPerTokenScaled) =

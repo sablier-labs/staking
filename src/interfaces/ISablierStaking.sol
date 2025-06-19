@@ -47,8 +47,7 @@ interface ISablierStaking is
         uint40 lastUpdateTime,
         uint256 rewardsDistributedPerTokenScaled,
         address indexed user,
-        uint128 userRewards,
-        uint128 userStakedTokens
+        uint128 userRewards
     );
 
     /// @notice Emitted when a user stakes ERC20 tokens in a campaign.
@@ -302,7 +301,7 @@ interface ISablierStaking is
     /// Requirements:
     ///  - Must not be delegate called.
     ///  - The stream ID associated with `lockup` must be staked in a campaign.
-    ///  - `msg.sender` must be the original owner of the stream stored in {StakedStream} struct.
+    ///  - `msg.sender` must be the original owner of the stream stored in {StreamLookup} struct.
     ///
     /// @param lockup The Lockup contract associated with the stream ID.
     /// @param streamId The ID of the stream to unstake.

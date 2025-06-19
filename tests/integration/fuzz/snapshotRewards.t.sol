@@ -3,7 +3,6 @@ pragma solidity >=0.8.22;
 
 import { ISablierStaking } from "src/interfaces/ISablierStaking.sol";
 import { Errors } from "src/libraries/Errors.sol";
-import { Amounts } from "src/types/DataTypes.sol";
 
 import { Shared_Integration_Fuzz_Test } from "./Fuzz.t.sol";
 
@@ -66,17 +65,11 @@ contract SnapshotRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         warpStateTo(timestamp);
 
         (uint256 rewardsEarnedPerTokenScaled, uint128 rewards) = calculateLatestRewards(user);
-        Amounts memory previousAmounts = staking.amountStakedByUser(campaignIds.defaultCampaign, user);
 
         // It should emit {SnapshotRewards} event.
         vm.expectEmit({ emitter: address(staking) });
         emit ISablierStaking.SnapshotRewards(
-            campaignIds.defaultCampaign,
-            timestamp,
-            rewardsEarnedPerTokenScaled,
-            user,
-            rewards,
-            previousAmounts.totalAmountStaked
+            campaignIds.defaultCampaign, timestamp, rewardsEarnedPerTokenScaled, user, rewards
         );
 
         // Test snapshot rewards.

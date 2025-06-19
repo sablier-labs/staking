@@ -5,7 +5,6 @@ import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { ISablierLockup } from "@sablier/lockup/src/interfaces/ISablierLockup.sol";
 import { ISablierStaking } from "src/interfaces/ISablierStaking.sol";
 import { Errors } from "src/libraries/Errors.sol";
-import { Amounts } from "src/types/DataTypes.sol";
 
 import { Shared_Integration_Concrete_Test } from "../Concrete.t.sol";
 
@@ -166,10 +165,8 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
 
     /// @dev Helper function to test the staking of a lockup NFT.
     function _test_StakeLockupNFT(uint256 expectedRewardsPerTokenScaled, uint128 expectedUserRewards) private {
-        Amounts memory amountStakedByUser = staking.amountStakedByUser(campaignIds.defaultCampaign, users.recipient);
-        uint128 expectedAmountStakedByUser = amountStakedByUser.totalAmountStaked + DEFAULT_AMOUNT;
-        uint128 expectedStreamAmountStakedByUser = amountStakedByUser.streamAmountStaked + DEFAULT_AMOUNT;
-        uint128 expectedStreamsCount = amountStakedByUser.streamsCount + 1;
+        (uint128 initialStreamsCount, uint128 initialStreamAmountStaked,) =
+            staking.userShares(campaignIds.defaultCampaign, users.recipient);
 
         // It should emit {SnapshotRewards}, {Transfer} and {StakeLockupNFT} events.
         vm.expectEmit({ emitter: address(staking) });
@@ -178,8 +175,7 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
             getBlockTimestamp(),
             expectedRewardsPerTokenScaled,
             users.recipient,
-            expectedUserRewards,
-            amountStakedByUser.totalAmountStaked
+            expectedUserRewards
         );
         vm.expectEmit({ emitter: address(lockup) });
         emit IERC721.Transfer(users.recipient, address(staking), streamIds.defaultStream);
@@ -192,10 +188,10 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
         staking.stakeLockupNFT(campaignIds.defaultCampaign, lockup, streamIds.defaultStream);
 
         // It should stake stream.
-        amountStakedByUser = staking.amountStakedByUser(campaignIds.defaultCampaign, users.recipient);
-        assertEq(amountStakedByUser.totalAmountStaked, expectedAmountStakedByUser, "totalAmountStakedByUser");
-        assertEq(amountStakedByUser.streamAmountStaked, expectedStreamAmountStakedByUser, "streamAmountStakedByUser");
-        assertEq(amountStakedByUser.streamsCount, expectedStreamsCount, "streamsCount");
+        (uint128 actualStreamsCount, uint128 actualStreamAmountStaked,) =
+            staking.userShares(campaignIds.defaultCampaign, users.recipient);
+        assertEq(actualStreamsCount, initialStreamsCount + 1, "streamsCount");
+        assertEq(actualStreamAmountStaked, initialStreamAmountStaked + DEFAULT_AMOUNT, "streamAmountStakedByUser");
 
         // It should update global rewards snapshot.
         (uint40 globalLastUpdateTime, uint256 rewardsDistributedPerTokenScaled) =

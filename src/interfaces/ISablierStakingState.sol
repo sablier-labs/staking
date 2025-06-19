@@ -3,7 +3,6 @@ pragma solidity >=0.8.22;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import { Amounts } from "../types/DataTypes.sol";
 import { ISablierLockupNFT } from "./ISablierLockupNFT.sol";
 
 /// @title ISablierStakingState
@@ -13,10 +12,6 @@ interface ISablierStakingState {
     /*//////////////////////////////////////////////////////////////////////////
                                 READ-ONLY FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
-
-    /// @notice Returns the amounts staked by a user for the given campaign ID.
-    /// @dev Reverts if `campaignId` references a null campaign or `user` is the zero address.
-    function amountStakedByUser(uint256 campaignId, address user) external view returns (Amounts memory);
 
     /// @notice Returns the admin of the given campaign ID.
     /// @dev Reverts if `campaignId` references a null campaign.
@@ -63,13 +58,13 @@ interface ISablierStakingState {
     /// @notice Counter for the next campaign ID, used in launching new campaigns.
     function nextCampaignId() external view returns (uint256);
 
-    /// @notice Retrieves the details of a stream staked.
+    /// @notice Lookup from a Lockup stream ID to the campaign ID and original stream owner.
     /// @dev Reverts if the lockup is the zero address or the stream ID is not staked in any campaign.
     /// @param lockup The lockup contract for the query.
     /// @param streamId The stream ID for the query.
     /// @return campaignId The campaign ID of the campaign in which the stream is staked.
     /// @return owner The original owner of the stream.
-    function stakedStream(
+    function streamLookup(
         ISablierLockupNFT lockup,
         uint256 streamId
     )
@@ -81,6 +76,28 @@ interface ISablierStakingState {
     /// staking token's decimals.
     /// @dev Reverts if `campaignId` references a null campaign.
     function totalAmountStaked(uint256 campaignId) external view returns (uint128);
+
+    /// @notice Returns the total amount of tokens staked by a user (both direct staking and through Sablier streams) in
+    /// the given campaign, denoted in staking token's decimals.
+    /// @dev Reverts if `campaignId` references a null campaign or `user` is the zero address.
+    function totalAmountStakedByUser(uint256 campaignId, address user) external view returns (uint128);
+
+    /// @notice Returns the user's shares of tokens staked in a campaign.
+    /// @dev Reverts if `campaignId` references a null campaign or `user` is the zero address.
+    /// @param campaignId The campaign ID for the query.
+    /// @param user The user address for the query.
+    /// @return streamsCount The number of Sablier streams that the user has staked.
+    /// @return streamAmountStaked The total amount of ERC20 tokens staked through Sablier streams, denoted in staking
+    /// token's decimals.
+    /// @return directAmountStaked The total amount of ERC20 tokens staked directly by the user, denoted in staking
+    /// token's decimals.
+    function userShares(
+        uint256 campaignId,
+        address user
+    )
+        external
+        view
+        returns (uint128 streamsCount, uint128 streamAmountStaked, uint128 directAmountStaked);
 
     /// @notice Retrieves the rewards snapshot of a user for the given campaign ID.
     /// @dev Reverts if `campaignId` references a null campaign or `user` is the zero address.

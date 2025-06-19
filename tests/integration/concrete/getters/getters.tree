@@ -1,12 +1,3 @@
-Getters_Integration_Concrete_Test::amountStakedByUser
-├── when null
-│  └── it should revert
-└── when not null
-   ├── when zero address
-   │  └── it should revert
-   └── when not zero address
-      └── it should return correct amounts
-
 Getters_Integration_Concrete_Test::getAdmin
 ├── when null
 │  └── it should revert
@@ -66,7 +57,7 @@ Getters_Integration_Concrete_Test::isLockupWhitelisted
    └── given whitelisted
       └── it should return true
 
-Getters_Integration_Concrete_Test::stakedStream
+Getters_Integration_Concrete_Test::streamLookup
 ├── when zero address
 │  └── it should revert
 └── when not zero address
@@ -80,6 +71,24 @@ Getters_Integration_Concrete_Test::totalAmountStaked
 │  └── it should revert
 └── when not null
    └── it should return the total amount staked
+
+Getters_Integration_Concrete_Test::totalAmountStakedByUser
+├── when null
+│  └── it should revert
+└── when not null
+   ├── when zero address
+   │  └── it should revert
+   └── when not zero address
+      └── it should return the total amount staked by user
+
+Getters_Integration_Concrete_Test::userShares
+├── when null
+│  └── it should revert
+└── when not null
+   ├── when zero address
+   │  └── it should revert
+   └── when not zero address
+      └── it should return correct user shares
 
 Getters_Integration_Concrete_Test::userSnapshot
 ├── when null

@@ -116,11 +116,6 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
                                    LOCKUP-HELPERS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @dev Returns the amount available in the default staked stream.
-    function amountInDefaultStakedStream() private view returns (uint128 amount) {
-        return amountInStream(streamIds.defaultStakedStream);
-    }
-
     /// @dev Returns the amount available in the given stream.
     function amountInStream(uint256 streamId) private view returns (uint128 amount) {
         return lockup.getDepositedAmount(streamId) - lockup.getWithdrawnAmount(streamId)
@@ -177,6 +172,11 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
         return defaultCreateWithDurationsLL(true, users.recipient, token);
     }
 
+    /// @dev Create a stream with `createWithDurationsLL` function with amount and recipient.
+    function defaultCreateWithDurationsLL(uint128 amount, address recipient) internal returns (uint256 streamId) {
+        return defaultCreateWithDurationsLL(amount, true, recipient, stakingToken);
+    }
+
     /// @dev Create a stream with `createWithDurationsLL` function with cancelable, recipient and token parameters.
     function defaultCreateWithDurationsLL(
         bool cancelable,
@@ -202,6 +202,10 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
         internal
         returns (uint256 streamId)
     {
+        deal({ token: address(stakingToken), to: users.sender, give: amount });
+        setMsgSender(users.sender);
+        stakingToken.approve(address(lockup), amount);
+
         Lockup.CreateWithDurations memory params = Lockup.CreateWithDurations({
             sender: users.sender,
             recipient: recipient,

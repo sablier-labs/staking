@@ -25,9 +25,9 @@ for their streams to end.
 
 - **Permissionless**: Anyone can create and participate in staking campaigns without restrictions.
 - **Stream support**: Stake ERC20 tokens and Sablier Lockup streams in the same campaign.
-- **Immutability**: Campaign parameters cannot be changed after launch (except cancellation before start).
-- **No hidden opportunity cost**: Rewards are earned on the basis of the total underlying tokens in streams, and just
-  available liquidity.
+- **Immutability**: Campaign parameters cannot be changed once the campaign has been started.
+- **No hidden opportunity cost**: Rewards are earned on the basis of the total underlying tokens in the streams, and not
+  just available liquidity.
 - **Flexibility**: Stake and unstake multiple times without losing earned rewards.
 
 This unlocks new yield opportunities for the billions of dollars stuck in the illiquid vesting streams.

@@ -8,14 +8,10 @@ abstract contract Shared_Integration_Fuzz_Test is Integration_Test {
                                      VARIABLES
     //////////////////////////////////////////////////////////////////////////*/
 
-    address[2] internal excludedCallers = [address(0), address(staking)];
-
-    /*//////////////////////////////////////////////////////////////////////////
-                                     FIXTURES
-    //////////////////////////////////////////////////////////////////////////*/
+    address[2] internal excludedCallers;
 
     // 40% of fuzz tests will load input parameters from the below fixtures.
-    address[2] public fixtureCaller = [users.recipient, users.staker];
+    address[2] public fixtureCaller;
 
     /*//////////////////////////////////////////////////////////////////////////
                                        SET-UP
@@ -23,6 +19,9 @@ abstract contract Shared_Integration_Fuzz_Test is Integration_Test {
 
     function setUp() public override {
         Integration_Test.setUp();
+
+        excludedCallers = [address(0), address(staking)];
+        fixtureCaller = [users.recipient, users.staker];
     }
 
     /*//////////////////////////////////////////////////////////////////////////

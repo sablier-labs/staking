@@ -26,16 +26,12 @@ struct StreamIds {
 }
 
 /// @notice A struct to manage the test users.
-/// @param accountant The default user authorized for fee related actions.
-/// @param admin The default protocol admin.
 /// @param campaignCreator The default campaign creator.
 /// @param eve The malicious user.
 /// @param recipient The default stream recipient who will stake streams as well as direct tokens.
 /// @param sender The default stream sender.
 /// @param staker The default staker who will stake direct tokens.
 struct Users {
-    address payable accountant;
-    address payable admin;
     address payable campaignCreator;
     address payable eve;
     address payable recipient;

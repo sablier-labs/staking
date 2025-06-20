@@ -62,6 +62,9 @@ library Errors {
     /// @notice Thrown when creating a campaign with end time less than start time.
     error SablierStaking_EndTimeNotGreaterThanStartTime(uint40 startTime, uint40 endTime);
 
+    /// @notice Thrown when the fee paid is less than the minimum fee.
+    error SablierStaking_InsufficientFeePayment(uint256 feePaid, uint256 minFee);
+
     /// @notice Thrown when whitelisting a lockup contract that is already whitelisted.
     error SablierStaking_LockupAlreadyWhitelisted(uint256 index, ISablierLockupNFT lockup);
 

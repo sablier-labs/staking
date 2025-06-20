@@ -6,8 +6,8 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { ERC721Holder } from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import { ComptrollerManager } from "@sablier/evm-utils/src/ComptrollerManager.sol";
 import { NoDelegateCall } from "@sablier/evm-utils/src/NoDelegateCall.sol";
-import { RoleAdminable } from "@sablier/evm-utils/src/RoleAdminable.sol";
 import { ISablierLockupRecipient } from "@sablier/lockup/src/interfaces/ISablierLockupRecipient.sol";
 
 import { SablierStakingState } from "./abstracts/SablierStakingState.sol";
@@ -20,10 +20,10 @@ import { Campaign, GlobalSnapshot, StreamLookup, UserShares, UserSnapshot } from
 /// @title SablierStaking
 /// @notice See the documentation in {ISablierStaking}.
 contract SablierStaking is
+    ComptrollerManager, // 1 inherited component
     ERC721Holder, // 1 inherited component
-    ISablierStaking, // 5 inherited components
+    ISablierStaking, // 4 inherited components
     NoDelegateCall, // 0 inherited components
-    RoleAdminable, // 3 inherited components
     SablierStakingState // 1 inherited component
 {
     using Helpers for uint256;
@@ -34,7 +34,7 @@ contract SablierStaking is
                                     CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
 
-    constructor(address initialAdmin) RoleAdminable(initialAdmin) {
+    constructor(address initialComptroller) ComptrollerManager(initialComptroller) {
         // Effect: Set the next campaign ID to 1.
         nextCampaignId = 1;
     }
@@ -218,12 +218,21 @@ contract SablierStaking is
     /// @inheritdoc ISablierStaking
     function claimRewards(uint256 campaignId)
         external
+        payable
         override
         noDelegateCall
         notNull(campaignId)
         notCanceled(campaignId)
         returns (uint128 rewards)
     {
+        // TODO: change this to `calculateStakingMinFeeWeiFor` when it's implemented.
+        uint256 minFeeWei = comptroller.calculateAirdropsMinFeeWeiFor({ campaignCreator: _campaign[campaignId].admin });
+
+        // Check: fee paid is at least the minimum fee.
+        if (msg.value < minFeeWei) {
+            revert Errors.SablierStaking_InsufficientFeePayment(msg.value, minFeeWei);
+        }
+
         // Check: the current timestamp is greater than or equal to the campaign start time.
         if (block.timestamp < _campaign[campaignId].startTime) {
             revert Errors.SablierStaking_CampaignNotStarted(campaignId, _campaign[campaignId].startTime);
@@ -602,12 +611,7 @@ contract SablierStaking is
     }
 
     /// @inheritdoc ISablierStaking
-    function whitelistLockups(ISablierLockupNFT[] calldata lockups)
-        external
-        override
-        noDelegateCall
-        onlyRole(LOCKUP_WHITELIST_ROLE)
-    {
+    function whitelistLockups(ISablierLockupNFT[] calldata lockups) external override noDelegateCall onlyComptroller {
         uint256 length = lockups.length;
 
         for (uint256 i = 0; i < length; ++i) {
@@ -630,7 +634,7 @@ contract SablierStaking is
             _lockupWhitelist[lockups[i]] = true;
 
             // Log the event.
-            emit LockupWhitelisted(lockups[i]);
+            emit LockupWhitelisted(address(comptroller), lockups[i]);
         }
     }
 

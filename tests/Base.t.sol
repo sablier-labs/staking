@@ -52,13 +52,11 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
         stakingToken = new ERC20Mock("Staking Token", "STAKING_TOKEN", 18);
         tokens.push(stakingToken);
 
-        users.admin = payable(makeAddr("admin"));
-
         // Deploy the staking protocol.
         if (!isTestOptimizedProfile()) {
-            staking = new SablierStaking(users.admin);
+            staking = new SablierStaking(address(comptroller));
         } else {
-            staking = deployOptimizedSablierStaking(users.admin);
+            staking = deployOptimizedSablierStaking(address(comptroller));
         }
 
         // Deploy the Lockup contract for testing.
@@ -75,10 +73,6 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
         // Set the variables in Modifiers contract.
         setVariables(users);
 
-        // Assign lockup whitelist role to the accountant user.
-        setMsgSender(users.admin);
-        staking.grantRole(staking.LOCKUP_WHITELIST_ROLE(), users.accountant);
-
         // Warp to Feb 1, 2025 at 00:00 UTC to provide a more realistic testing environment.
         vm.warp({ newTimestamp: FEB_1_2025 });
 
@@ -86,7 +80,7 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
         createAndConfigureStreams();
 
         // Whitelist the Lockup contract for staking.
-        setMsgSender(users.admin);
+        setMsgSender(address(comptroller));
         ISablierLockupNFT[] memory lockups = new ISablierLockupNFT[](1);
         lockups[0] = lockup;
         staking.whitelistLockups(lockups);
@@ -104,7 +98,6 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
         spenders[1] = address(lockup);
 
         // Create test users and approve the staking contract to spend their ERC20 tokens.
-        users.accountant = createUser("Accountant", spenders);
         users.campaignCreator = createUser("Campaign Creator", spenders);
         users.eve = createUser("eve", spenders);
         users.recipient = createUser("Recipient", spenders);
@@ -130,6 +123,7 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
         SablierLockup lockupContract = SablierLockup(address(lockup));
 
         // Allow the Lockup contract to hook with the staking contract.
+        setMsgSender(address(comptroller));
         lockupContract.allowToHook(address(staking));
 
         // Change caller to the sender.
@@ -225,6 +219,6 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
     /// @dev Deploys a new Lockup contract for testing.
     function deployLockup() internal returns (ISablierLockupNFT) {
         LockupNFTDescriptor nftDescriptor = new LockupNFTDescriptor();
-        return ISablierLockupNFT(address(new SablierLockup(users.admin, nftDescriptor, 1000)));
+        return ISablierLockupNFT(address(new SablierLockup(address(comptroller), nftDescriptor, 1000)));
     }
 }

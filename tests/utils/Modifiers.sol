@@ -76,13 +76,13 @@ abstract contract Modifiers is EvmUtilsBase {
         _;
     }
 
-    modifier whenCallerAdmin() {
-        setMsgSender(users.admin);
+    modifier whenCallerCampaignAdmin() {
+        setMsgSender(users.campaignCreator);
         _;
     }
 
-    modifier whenCallerCampaignAdmin() {
-        setMsgSender(users.campaignCreator);
+    modifier whenCallerComptroller() {
+        setMsgSender(address(comptroller));
         _;
     }
 
@@ -115,6 +115,10 @@ abstract contract Modifiers is EvmUtilsBase {
     }
 
     modifier whenEndTimeNotInPast() {
+        _;
+    }
+
+    modifier whenFeePaid() {
         _;
     }
 

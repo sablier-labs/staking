@@ -8,12 +8,23 @@ import { Errors } from "src/libraries/Errors.sol";
 import { Shared_Integration_Fuzz_Test } from "./Fuzz.t.sol";
 
 contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
+    /// @dev It should revert since the fee does not meet the minimum fee.
+    function testFuzz_RevertWhen_FeeNotPaid(uint256 fee) external whenNoDelegateCall whenNotNull givenNotCanceled {
+        // Bound fee such that it does not meet the minimum fee.
+        fee = bound(fee, 0, FEE - 1);
+
+        // It should revert.
+        vm.expectRevert(abi.encodeWithSelector(Errors.SablierStaking_InsufficientFeePayment.selector, fee, FEE));
+        staking.claimRewards{ value: fee }(campaignIds.defaultCampaign);
+    }
+
     /// @dev It should revert since the campaign has not started yet.
     function testFuzz_RevertWhen_StartTimeInFuture(uint40 timestamp)
         external
         whenNoDelegateCall
         whenNotNull
         givenNotCanceled
+        whenFeePaid
     {
         // Bound timestamp such that the start time is in the future.
         timestamp = boundUint40(timestamp, 0, START_TIME - 1);
@@ -27,7 +38,7 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
                 Errors.SablierStaking_CampaignNotStarted.selector, campaignIds.defaultCampaign, START_TIME
             )
         );
-        staking.claimRewards(campaignIds.defaultCampaign);
+        staking.claimRewards{ value: FEE }(campaignIds.defaultCampaign);
     }
 
     /// @dev It should revert.
@@ -39,6 +50,7 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         whenNoDelegateCall
         whenNotNull
         givenNotCanceled
+        whenFeePaid
         whenStartTimeInPast
     {
         // Make sure caller is not a staker.
@@ -59,7 +71,7 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
                 Errors.SablierStaking_ZeroClaimableRewards.selector, campaignIds.defaultCampaign, caller
             )
         );
-        staking.claimRewards(campaignIds.defaultCampaign);
+        staking.claimRewards{ value: FEE }(campaignIds.defaultCampaign);
     }
 
     /// @dev It should run tests for a multiple callers when caller is staking for the first time.
@@ -70,15 +82,20 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
     function testFuzz_ClaimRewards_WhenNewCallerStakes(
         uint128 amountToStake,
         address caller,
+        uint256 fee,
         uint40 timestamp
     )
         external
         whenNoDelegateCall
         whenNotNull
         givenNotCanceled
+        whenFeePaid
         whenStartTimeInPast
         whenClaimableRewardsNotZero
     {
+        // Bound fee such that it meets the minimum fee.
+        fee = bound(fee, FEE, 1 ether);
+
         // Bound amount to stake such that there are always rewards to claim.
         amountToStake = boundUint128(amountToStake, 1e18, MAX_UINT128 - MAX_AMOUNT_STAKED);
 
@@ -113,18 +130,25 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         vm.warp(claimTimestamp);
 
         // Test claim rewards.
-        _test_ClaimRewards(caller, claimTimestamp);
+        _test_ClaimRewards(caller, fee, claimTimestamp);
     }
 
     /// @dev It should run tests for existing stakers at multiple values for timestamp.
-    function testFuzz_ClaimRewards(uint40 timestamp)
+    function testFuzz_ClaimRewards(
+        uint256 fee,
+        uint40 timestamp
+    )
         external
         whenNoDelegateCall
         whenNotNull
         givenNotCanceled
+        whenFeePaid
         whenStartTimeInPast
         whenClaimableRewardsNotZero
     {
+        // Bound fee such that it meets the minimum fee.
+        fee = bound(fee, FEE, 1 ether);
+
         // Change the caller.
         setMsgSender(users.recipient);
 
@@ -135,10 +159,10 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         warpStateTo(timestamp);
 
         // Test claim rewards.
-        _test_ClaimRewards(users.recipient, timestamp);
+        _test_ClaimRewards(users.recipient, fee, timestamp);
     }
 
-    function _test_ClaimRewards(address caller, uint40 timestamp) private {
+    function _test_ClaimRewards(address caller, uint256 fee, uint40 timestamp) private {
         (uint256 expectedRewardsPerTokenScaled, uint128 expectedUserRewards) = calculateLatestRewards(caller);
 
         // It should emit {SnapshotRewards}, {Transfer} and {ClaimRewards} events.
@@ -152,7 +176,7 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         emit ISablierStaking.ClaimRewards(campaignIds.defaultCampaign, caller, expectedUserRewards);
 
         // Claim the rewards.
-        uint128 actualRewards = staking.claimRewards(campaignIds.defaultCampaign);
+        uint128 actualRewards = staking.claimRewards{ value: fee }(campaignIds.defaultCampaign);
 
         // It should return the rewards.
         assertEq(actualRewards, expectedUserRewards, "return value");
@@ -168,5 +192,8 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
 
         // It should set the rewards earned per token.
         assertEq(actualRewardsPerTokenScaled, expectedRewardsPerTokenScaled, "rewardsEarnedPerTokenScaled");
+
+        // It should deposit fee into the staking contract.
+        assertEq(address(staking).balance, fee, "staking contract balance");
     }
 }

@@ -4,7 +4,7 @@ pragma solidity >=0.8.22;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IERC721Receiver } from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
-import { IRoleAdminable } from "@sablier/evm-utils/src/interfaces/IRoleAdminable.sol";
+import { IComptrollerManager } from "@sablier/evm-utils/src/interfaces/IComptrollerManager.sol";
 
 import { ISablierLockupNFT } from "./ISablierLockupNFT.sol";
 import { ISablierStakingState } from "./ISablierStakingState.sol";
@@ -12,9 +12,9 @@ import { ISablierStakingState } from "./ISablierStakingState.sol";
 /// @title ISablierStaking
 /// @notice Creates and manages staking campaigns allowing staking of both ERC20 tokens and Sablier Lockup NFTs.
 interface ISablierStaking is
+    IComptrollerManager, // 0 inherited components
     IERC165, // 0 inherited components
     IERC721Receiver, // 0 inherited components
-    IRoleAdminable, // 1 inherited component
     ISablierStakingState // 0 inherited components
 {
     /*//////////////////////////////////////////////////////////////////////////
@@ -39,7 +39,7 @@ interface ISablierStaking is
     );
 
     /// @notice Emitted when a Lockup contract is whitelisted.
-    event LockupWhitelisted(ISablierLockupNFT indexed lockup);
+    event LockupWhitelisted(address indexed comptroller, ISablierLockupNFT indexed lockup);
 
     /// @notice Emitted when the rewards snapshot is taken.
     event SnapshotRewards(
@@ -158,10 +158,11 @@ interface ISablierStaking is
     ///  - `campaignId` must not reference a null campaign or a canceled campaign.
     ///  - The block timestamp must be greater than or equal to the campaign start time.
     ///  - Claimable rewards must be greater than 0.
+    /// - `msg.value` must be greater than or equal to the minimum fee in wei for the campaign's admin.
     ///
     /// @param campaignId The campaign ID to claim rewards from.
     /// @return rewards The amount of rewards claimed, denoted in reward token's decimals.
-    function claimRewards(uint256 campaignId) external returns (uint128 rewards);
+    function claimRewards(uint256 campaignId) external payable returns (uint128 rewards);
 
     /// @notice Creates a new staking campaign and transfer the total reward amount from `msg.sender` to this contract.
     /// @dev Emits a {Transfer} and {CreateCampaign} events.
@@ -319,7 +320,7 @@ interface ISablierStaking is
     ///  - Each lockup contract must not be the zero address.
     ///  - Each lockup contract must not already be whitelisted.
     ///  - Each lockup contract must return `true` when `isAllowedToHook` is called with this contract's address.
-    ///  - `msg.sender` must either be the protocol admin or have the `LOCKUP_WHITELIST_ROLE`.
+    ///  - `msg.sender` must be the comptroller contract.
     ///
     /// @param lockups The address of the Lockup contract to whitelist.
     function whitelistLockups(ISablierLockupNFT[] calldata lockups) external;

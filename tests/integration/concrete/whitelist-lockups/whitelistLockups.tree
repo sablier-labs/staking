@@ -2,12 +2,9 @@ WhitelistLockups_Integration_Concrete_Test
 ├── when delegate call
 │  └── it should revert
 └── when no delegate call
-   ├── when caller not admin
-   │  ├── when caller without role
-   │  │  └── it should revert
-   │  └── when caller with role
-   │     └── it should whitelist lockup
-   └── when caller admin
+   ├── when caller not comptroller
+   │  └── it should revert
+   └── when caller comptroller
       ├── when zero address
       │  └── it should revert
       └── when not zero address

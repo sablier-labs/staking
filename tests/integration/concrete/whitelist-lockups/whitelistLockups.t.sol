@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.22;
 
-import { Errors as AdminErrors } from "@sablier/evm-utils/src/libraries/Errors.sol";
+import { Errors as ComptrollerErrors } from "@sablier/evm-utils/src/libraries/Errors.sol";
 import { ISablierLockup } from "@sablier/lockup/src/interfaces/ISablierLockup.sol";
 import { ISablierLockupNFT } from "src/interfaces/ISablierLockupNFT.sol";
 import { ISablierStaking } from "src/interfaces/ISablierStaking.sol";
@@ -20,7 +20,7 @@ contract WhitelistLockups_Integration_Concrete_Test is Shared_Integration_Concre
         lockups.push(deployLockup());
 
         // Set allow to hook.
-        setMsgSender(users.admin);
+        setMsgSender(address(comptroller));
         ISablierLockup(address(lockups[0])).allowToHook(address(staking));
         ISablierLockup(address(lockups[1])).allowToHook(address(staking));
     }
@@ -30,25 +30,18 @@ contract WhitelistLockups_Integration_Concrete_Test is Shared_Integration_Concre
         expectRevert_DelegateCall(callData);
     }
 
-    function test_RevertWhen_CallerWithoutRole() external whenNoDelegateCall whenCallerNotAdmin {
+    function test_RevertWhen_CallerNotComptroller() external whenNoDelegateCall {
         setMsgSender(users.eve);
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                AdminErrors.UnauthorizedAccess.selector, users.eve, keccak256("LOCKUP_WHITELIST_ROLE")
+                ComptrollerErrors.ComptrollerManager_CallerNotComptroller.selector, comptroller, users.eve
             )
         );
         staking.whitelistLockups(lockups);
     }
 
-    function test_WhenCallerWithRole() external whenNoDelegateCall whenCallerNotAdmin {
-        // Set the caller to the accountant user who has the role.
-        setMsgSender(users.accountant);
-
-        _test_WhitelistLockups();
-    }
-
-    function test_RevertWhen_ZeroAddress() external whenNoDelegateCall whenCallerAdmin {
+    function test_RevertWhen_ZeroAddress() external whenNoDelegateCall whenCallerComptroller {
         // Add a zero address to the list.
         lockups.push(ISablierLockupNFT(address(0)));
 
@@ -56,7 +49,12 @@ contract WhitelistLockups_Integration_Concrete_Test is Shared_Integration_Concre
         staking.whitelistLockups(lockups);
     }
 
-    function test_RevertGiven_AlreadyWhitelisted() external whenNoDelegateCall whenCallerAdmin whenNotZeroAddress {
+    function test_RevertGiven_AlreadyWhitelisted()
+        external
+        whenNoDelegateCall
+        whenCallerComptroller
+        whenNotZeroAddress
+    {
         lockups.push(lockup);
 
         vm.expectRevert(abi.encodeWithSelector(Errors.SablierStaking_LockupAlreadyWhitelisted.selector, 2, lockup));
@@ -66,7 +64,7 @@ contract WhitelistLockups_Integration_Concrete_Test is Shared_Integration_Concre
     function test_RevertWhen_IsAllowedToHookReturnsFalse()
         external
         whenNoDelegateCall
-        whenCallerAdmin
+        whenCallerComptroller
         whenNotZeroAddress
         givenNotWhitelisted
     {
@@ -83,7 +81,7 @@ contract WhitelistLockups_Integration_Concrete_Test is Shared_Integration_Concre
     function test_WhenIsAllowedToHookReturnsTrue()
         external
         whenNoDelegateCall
-        whenCallerAdmin
+        whenCallerComptroller
         whenNotZeroAddress
         givenNotWhitelisted
     {
@@ -94,9 +92,9 @@ contract WhitelistLockups_Integration_Concrete_Test is Shared_Integration_Concre
     function _test_WhitelistLockups() private {
         // It should emit {LockupWhitelisted} event.
         vm.expectEmit({ emitter: address(staking) });
-        emit ISablierStaking.LockupWhitelisted(lockups[0]);
+        emit ISablierStaking.LockupWhitelisted(address(comptroller), lockups[0]);
         vm.expectEmit({ emitter: address(staking) });
-        emit ISablierStaking.LockupWhitelisted(lockups[1]);
+        emit ISablierStaking.LockupWhitelisted(address(comptroller), lockups[1]);
 
         // Whitelist the lockups.
         staking.whitelistLockups(lockups);

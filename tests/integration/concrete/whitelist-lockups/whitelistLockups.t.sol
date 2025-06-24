@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.8.22;
+pragma solidity >=0.8.26;
 
 import { Errors as ComptrollerErrors } from "@sablier/evm-utils/src/libraries/Errors.sol";
 import { ISablierLockup } from "@sablier/lockup/src/interfaces/ISablierLockup.sol";

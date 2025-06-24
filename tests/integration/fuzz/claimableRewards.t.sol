@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.8.22;
+pragma solidity >=0.8.26;
 
 import { Shared_Integration_Fuzz_Test } from "./Fuzz.t.sol";
 
-contract GetClaimableRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
-    function testFuzz_GetClaimableRewards(
+contract ClaimableRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
+    function testFuzz_ClaimableRewards(
         bool isRecipient,
         uint40 timestamp
     )
@@ -25,7 +25,7 @@ contract GetClaimableRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Te
 
         (, uint128 expectedUserRewards) = calculateLatestRewards(caller);
 
-        uint128 actualRewards = staking.getClaimableRewards(campaignIds.defaultCampaign, caller);
+        uint128 actualRewards = staking.claimableRewards(campaignIds.defaultCampaign, caller);
         assertEq(actualRewards, expectedUserRewards, "rewards");
     }
 }

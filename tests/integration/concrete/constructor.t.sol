@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.8.22;
+pragma solidity >=0.8.26;
 
 import { IComptrollerManager } from "@sablier/evm-utils/src/interfaces/IComptrollerManager.sol";
 import { ISablierComptroller } from "@sablier/evm-utils/src/interfaces/ISablierComptroller.sol";

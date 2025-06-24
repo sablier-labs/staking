@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.8.22;
+pragma solidity >=0.8.26;
 
 import { Errors } from "src/libraries/Errors.sol";
 import { Shared_Integration_Concrete_Test } from "../Concrete.t.sol";
 
-contract GetClaimableRewards_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
+contract ClaimableRewards_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     function test_RevertWhen_Null() external {
-        bytes memory callData = abi.encodeCall(staking.getClaimableRewards, (campaignIds.nullCampaign, users.recipient));
+        bytes memory callData = abi.encodeCall(staking.claimableRewards, (campaignIds.nullCampaign, users.recipient));
         expectRevert_Null(callData);
     }
 
@@ -14,16 +14,16 @@ contract GetClaimableRewards_Integration_Concrete_Test is Shared_Integration_Con
         vm.expectRevert(
             abi.encodeWithSelector(Errors.SablierStakingState_CampaignCanceled.selector, campaignIds.canceledCampaign)
         );
-        staking.getClaimableRewards(campaignIds.canceledCampaign, users.recipient);
+        staking.claimableRewards(campaignIds.canceledCampaign, users.recipient);
     }
 
     function test_RevertWhen_UserZeroAddress() external whenNotNull givenNotCanceled {
         vm.expectRevert(Errors.SablierStaking_UserZeroAddress.selector);
-        staking.getClaimableRewards(campaignIds.defaultCampaign, address(0));
+        staking.claimableRewards(campaignIds.defaultCampaign, address(0));
     }
 
     function test_GivenStakedAmountZero() external view whenNotNull givenNotCanceled whenUserNotZeroAddress {
-        uint128 actualRewards = staking.getClaimableRewards(campaignIds.defaultCampaign, users.eve);
+        uint128 actualRewards = staking.claimableRewards(campaignIds.defaultCampaign, users.eve);
         assertEq(actualRewards, 0, "rewards");
     }
 
@@ -36,7 +36,7 @@ contract GetClaimableRewards_Integration_Concrete_Test is Shared_Integration_Con
     {
         warpStateTo(START_TIME);
 
-        uint128 actualRewards = staking.getClaimableRewards(campaignIds.defaultCampaign, users.recipient);
+        uint128 actualRewards = staking.claimableRewards(campaignIds.defaultCampaign, users.recipient);
         assertEq(actualRewards, 0, "rewards");
     }
 
@@ -49,7 +49,7 @@ contract GetClaimableRewards_Integration_Concrete_Test is Shared_Integration_Con
         givenStakedAmountNotZero
         whenClaimableRewardsNotZero
     {
-        uint128 actualRewards = staking.getClaimableRewards(campaignIds.defaultCampaign, users.recipient);
+        uint128 actualRewards = staking.claimableRewards(campaignIds.defaultCampaign, users.recipient);
         assertEq(actualRewards, REWARDS_EARNED_BY_RECIPIENT, "rewards");
     }
 
@@ -67,7 +67,7 @@ contract GetClaimableRewards_Integration_Concrete_Test is Shared_Integration_Con
         // Warp the time to 40% through the campaign so that last time update is in the past.
         vm.warp(WARP_40_PERCENT);
 
-        uint128 actualRewards = staking.getClaimableRewards(campaignIds.defaultCampaign, users.recipient);
+        uint128 actualRewards = staking.claimableRewards(campaignIds.defaultCampaign, users.recipient);
         assertEq(actualRewards, REWARDS_EARNED_BY_RECIPIENT, "rewards");
     }
 }

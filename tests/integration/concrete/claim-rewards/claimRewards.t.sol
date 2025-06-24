@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.8.22;
+pragma solidity >=0.8.26;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ISablierStaking } from "src/interfaces/ISablierStaking.sol";
@@ -111,7 +111,7 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
             staking.userSnapshot(campaignIds.defaultCampaign, users.recipient);
 
         // It should set rewards to zero.
-        assertEq(staking.getClaimableRewards(campaignIds.defaultCampaign, users.recipient), 0, "rewards");
+        assertEq(staking.claimableRewards(campaignIds.defaultCampaign, users.recipient), 0, "rewards");
 
         // It should set last time update to current timestamp.
         assertEq(lastUpdateTime, WARP_40_PERCENT, "lastUpdateTime");

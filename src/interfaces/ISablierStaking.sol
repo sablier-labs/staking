@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity >=0.8.22;
+pragma solidity >=0.8.26;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IERC721Receiver } from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
@@ -77,7 +77,7 @@ interface ISablierStaking is
     /// @notice Returns the amount of reward ERC20 tokens available to claim by the user.
     /// @dev Reverts if `campaignId` references a null campaign or a canceled campaign, or if `user` is the zero
     /// address.
-    function getClaimableRewards(uint256 campaignId, address user) external view returns (uint128);
+    function claimableRewards(uint256 campaignId, address user) external view returns (uint128);
 
     /// @notice Reverts on the hook call from the Lockup contract when a withdraw is called on a staked stream
     /// @dev This function reverts and does not permit withdrawing from a staked stream

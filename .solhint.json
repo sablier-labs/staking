@@ -3,7 +3,7 @@
   "rules": {
     "avoid-low-level-calls": "off",
     "code-complexity": ["error", 9],
-    "compiler-version": ["error", ">=0.8.22"],
+    "compiler-version": ["error", ">=0.8.26"],
     "const-name-snakecase": "off",
     "contract-name-capwords": "off",
     "func-name-mixedcase": "off",

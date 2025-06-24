@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.8.22;
+pragma solidity >=0.8.26;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ISablierStaking } from "src/interfaces/ISablierStaking.sol";
@@ -188,7 +188,7 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         assertEq(actualLastUpdateTime, timestamp, "lastUpdateTime");
 
         // It should set rewards to zero.
-        assertEq(staking.getClaimableRewards(campaignIds.defaultCampaign, caller), 0, "rewards");
+        assertEq(staking.claimableRewards(campaignIds.defaultCampaign, caller), 0, "rewards");
 
         // It should set the rewards earned per token.
         assertEq(actualRewardsPerTokenScaled, expectedRewardsPerTokenScaled, "rewardsEarnedPerTokenScaled");

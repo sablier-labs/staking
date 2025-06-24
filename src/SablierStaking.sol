@@ -543,8 +543,11 @@ contract SablierStaking is
         // Effect: update the global last update time.
         _globalSnapshot[campaignId].lastUpdateTime = uint40(block.timestamp);
 
-        // Effect: reduce direct amount staked by `msg.sender`.
-        _userShares[msg.sender][campaignId].directAmountStaked = userShares.directAmountStaked - amount;
+        // Safe to use `unchecked` because `amount` would not exceed `userShares.directAmountStaked`.
+        unchecked {
+            // Effect: reduce direct amount staked by `msg.sender`.
+            _userShares[msg.sender][campaignId].directAmountStaked = userShares.directAmountStaked - amount;
+        }
 
         // Interaction: transfer the tokens to `msg.sender`.
         _campaign[campaignId].stakingToken.safeTransfer({ to: msg.sender, value: amount });
@@ -672,11 +675,14 @@ contract SablierStaking is
     function _rewardRate(uint256 campaignId) private view returns (uint128) {
         Campaign memory campaign = _campaign[campaignId];
 
-        // Calculate the reward duration.
-        uint40 rewardDuration = campaign.endTime - campaign.startTime;
+        // Safe to use `unchecked` because the following calculations cannot overflow.
+        unchecked {
+            // Calculate the reward duration.
+            uint40 rewardDuration = campaign.endTime - campaign.startTime;
 
-        // Calculate the reward rate.
-        return campaign.totalRewards / rewardDuration;
+            // Calculate the reward rate.
+            return campaign.totalRewards / rewardDuration;
+        }
     }
 
     /// @notice Calculates cumulative rewards distributed since the last snapshot.
@@ -731,11 +737,6 @@ contract SablierStaking is
             // Calculate the elapsed time and the total campaign duration.
             uint256 elapsedTime = endingTimestamp - startingTimestamp;
             uint256 campaignDuration = campaign.endTime - campaign.startTime;
-
-            // If elapsed time is equal to the campaign duration, return the total rewards.
-            if (elapsedTime == campaignDuration) {
-                return campaign.totalRewards;
-            }
 
             // Calculate the total rewards distributed since the last snapshot.
             rewardsDistributed = ((campaign.totalRewards * elapsedTime) / campaignDuration).toUint128();
@@ -816,6 +817,7 @@ contract SablierStaking is
         UserSnapshot memory userSnapshot = _userSnapshot[user][campaignId];
         UserShares memory userShares = _userShares[user][campaignId];
 
+        // Calculate the total amount staked by the user.
         uint128 userTotalAmountStaked = userShares.directAmountStaked + userShares.streamAmountStaked;
 
         // Update the user snapshot if the last time update is less than the campaign end time.

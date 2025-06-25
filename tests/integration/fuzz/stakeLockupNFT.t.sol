@@ -40,34 +40,34 @@ contract StakeLockupNFT_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         uint256 streamId = defaultCreateWithDurationsLL({ amount: amount, recipient: caller });
 
         setMsgSender(caller);
-        IERC721(address(lockup)).setApprovalForAll({ operator: address(staking), approved: true });
+        IERC721(address(lockup)).setApprovalForAll({ operator: address(stakingPool), approved: true });
 
         (uint256 expectedRewardsPerTokenScaled, uint128 expectedUserRewards) = calculateLatestRewards(caller);
         (uint128 initialStreamsCount, uint128 initialStreamAmountStaked,) =
-            staking.userShares(campaignIds.defaultCampaign, caller);
+            stakingPool.userShares(campaignIds.defaultCampaign, caller);
 
         // It should emit {SnapshotRewards}, {Transfer} and {StakeLockupNFT} events.
-        vm.expectEmit({ emitter: address(staking) });
+        vm.expectEmit({ emitter: address(stakingPool) });
         emit ISablierStaking.SnapshotRewards(
             campaignIds.defaultCampaign, timestamp, expectedRewardsPerTokenScaled, caller, expectedUserRewards
         );
         vm.expectEmit({ emitter: address(lockup) });
-        emit IERC721.Transfer(caller, address(staking), streamId);
-        vm.expectEmit({ emitter: address(staking) });
+        emit IERC721.Transfer(caller, address(stakingPool), streamId);
+        vm.expectEmit({ emitter: address(stakingPool) });
         emit ISablierStaking.StakeLockupNFT(campaignIds.defaultCampaign, caller, lockup, streamId, amount);
 
         // Stake Lockup NFT.
-        staking.stakeLockupNFT(campaignIds.defaultCampaign, lockup, streamId);
+        stakingPool.stakeLockupNFT(campaignIds.defaultCampaign, lockup, streamId);
 
         // It should stake stream.
         (uint128 actualStreamsCount, uint128 actualStreamAmountStaked,) =
-            staking.userShares(campaignIds.defaultCampaign, caller);
+            stakingPool.userShares(campaignIds.defaultCampaign, caller);
         assertEq(actualStreamsCount, initialStreamsCount + 1, "streamsCount");
         assertEq(actualStreamAmountStaked, initialStreamAmountStaked + amount, "streamAmountStakedByUser");
 
         // It should update user rewards snapshot.
         (uint40 actualUserLastUpdateTime, uint256 actualRewardsEarnedPerTokenScaled, uint128 actualRewards) =
-            staking.userSnapshot(campaignIds.defaultCampaign, caller);
+            stakingPool.userSnapshot(campaignIds.defaultCampaign, caller);
         assertEq(actualUserLastUpdateTime, timestamp, "userLastUpdateTime");
         assertEq(actualRewardsEarnedPerTokenScaled, expectedRewardsPerTokenScaled, "rewardsEarnedPerTokenScaled");
         assertEq(actualRewards, expectedUserRewards, "rewards");

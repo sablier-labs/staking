@@ -7,7 +7,7 @@ import { Shared_Integration_Concrete_Test } from "../Concrete.t.sol";
 
 contract RewardRate_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     function test_RevertWhen_Null() external {
-        bytes memory callData = abi.encodeCall(staking.rewardRate, (campaignIds.nullCampaign));
+        bytes memory callData = abi.encodeCall(stakingPool.rewardRate, (campaignIds.nullCampaign));
         expectRevert_Null(callData);
     }
 
@@ -15,7 +15,7 @@ contract RewardRate_Integration_Concrete_Test is Shared_Integration_Concrete_Tes
         vm.expectRevert(
             abi.encodeWithSelector(Errors.SablierStakingState_CampaignCanceled.selector, campaignIds.canceledCampaign)
         );
-        staking.rewardRate(campaignIds.canceledCampaign);
+        stakingPool.rewardRate(campaignIds.canceledCampaign);
     }
 
     function test_RevertWhen_StartTimeInFuture() external whenNotNull givenNotCanceled {
@@ -26,7 +26,7 @@ contract RewardRate_Integration_Concrete_Test is Shared_Integration_Concrete_Tes
                 Errors.SablierStakingState_CampaignNotActive.selector, campaignIds.defaultCampaign, START_TIME, END_TIME
             )
         );
-        staking.rewardRate(campaignIds.defaultCampaign);
+        stakingPool.rewardRate(campaignIds.defaultCampaign);
     }
 
     function test_RevertWhen_EndTimeInPast() external whenNotNull givenNotCanceled whenStartTimeNotInFuture {
@@ -36,7 +36,7 @@ contract RewardRate_Integration_Concrete_Test is Shared_Integration_Concrete_Tes
                 Errors.SablierStakingState_CampaignNotActive.selector, campaignIds.defaultCampaign, START_TIME, END_TIME
             )
         );
-        staking.rewardRate(campaignIds.defaultCampaign);
+        stakingPool.rewardRate(campaignIds.defaultCampaign);
     }
 
     function test_GivenTotalStakedZero()
@@ -48,7 +48,7 @@ contract RewardRate_Integration_Concrete_Test is Shared_Integration_Concrete_Tes
         whenEndTimeNotInPast
     {
         // It should return zero.
-        uint128 actualRewardRate = staking.rewardRate(campaignIds.freshCampaign);
+        uint128 actualRewardRate = stakingPool.rewardRate(campaignIds.freshCampaign);
         assertEq(actualRewardRate, 0, "reward rate");
     }
 
@@ -61,7 +61,7 @@ contract RewardRate_Integration_Concrete_Test is Shared_Integration_Concrete_Tes
         whenEndTimeNotInPast
     {
         // It should return correct reward rate.
-        uint128 actualRewardRate = staking.rewardRate(campaignIds.defaultCampaign);
+        uint128 actualRewardRate = stakingPool.rewardRate(campaignIds.defaultCampaign);
         assertEq(actualRewardRate, REWARD_RATE, "reward rate");
     }
 }

@@ -35,7 +35,7 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
     //////////////////////////////////////////////////////////////////////////*/
 
     ISablierLockupNFT internal lockup;
-    ISablierStaking internal staking;
+    ISablierStaking internal stakingPool;
 
     /*//////////////////////////////////////////////////////////////////////////
                                   SET-UP FUNCTION
@@ -54,9 +54,9 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
 
         // Deploy the staking protocol.
         if (!isTestOptimizedProfile()) {
-            staking = new SablierStaking(address(comptroller));
+            stakingPool = new SablierStaking(address(comptroller));
         } else {
-            staking = deployOptimizedSablierStaking(address(comptroller));
+            stakingPool = deployOptimizedSablierStaking(address(comptroller));
         }
 
         // Deploy the Lockup contract for testing.
@@ -65,7 +65,7 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
         // Label the contracts.
         vm.label({ account: address(lockup), newLabel: "Lockup" });
         vm.label({ account: address(rewardToken), newLabel: "Reward Token" });
-        vm.label({ account: address(staking), newLabel: "Staking Protocol" });
+        vm.label({ account: address(stakingPool), newLabel: "Staking Protocol" });
 
         // Create users for testing.
         createTestUsers();
@@ -83,7 +83,7 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
         setMsgSender(address(comptroller));
         ISablierLockupNFT[] memory lockups = new ISablierLockupNFT[](1);
         lockups[0] = lockup;
-        staking.whitelistLockups(lockups);
+        stakingPool.whitelistLockups(lockups);
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -94,10 +94,10 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
     function createTestUsers() internal {
         // Create users for testing.
         address[] memory spenders = new address[](2);
-        spenders[0] = address(staking);
+        spenders[0] = address(stakingPool);
         spenders[1] = address(lockup);
 
-        // Create test users and approve the staking contract to spend their ERC20 tokens.
+        // Create test users and approve the staking pool to spend their ERC20 tokens.
         users.campaignCreator = createUser("Campaign Creator", spenders);
         users.eve = createUser("eve", spenders);
         users.recipient = createUser("Recipient", spenders);
@@ -122,9 +122,9 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
     function createAndConfigureStreams() internal {
         SablierLockup lockupContract = SablierLockup(address(lockup));
 
-        // Allow the Lockup contract to hook with the staking contract.
+        // Allow the Lockup contract to hook with the staking pool.
         setMsgSender(address(comptroller));
-        lockupContract.allowToHook(address(staking));
+        lockupContract.allowToHook(address(stakingPool));
 
         // Change caller to the sender.
         setMsgSender(users.sender);
@@ -141,9 +141,9 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
         // A USDC stream that is cancelable.
         streamIds.differentTokenStream = defaultCreateWithDurationsLL(usdc);
 
-        // Approve the staking contract to spend the Lockup NFTs.
+        // Approve the staking pool to spend the Lockup NFTs.
         setMsgSender(users.recipient);
-        lockupContract.setApprovalForAll({ operator: address(staking), approved: true });
+        lockupContract.setApprovalForAll({ operator: address(stakingPool), approved: true });
     }
 
     /// @dev Create a stream with `createWithDurationsLL` function using the default parameters.

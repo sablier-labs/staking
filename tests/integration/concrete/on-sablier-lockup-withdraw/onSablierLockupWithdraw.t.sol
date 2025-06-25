@@ -9,7 +9,7 @@ import { Shared_Integration_Concrete_Test } from "../Concrete.t.sol";
 contract OnSablierLockupWithdraw_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     function test_RevertWhen_DelegateCall() external {
         bytes memory callData = abi.encodeCall(
-            staking.onSablierLockupWithdraw, (streamIds.defaultStream, users.recipient, users.recipient, 0)
+            stakingPool.onSablierLockupWithdraw, (streamIds.defaultStream, users.recipient, users.recipient, 0)
         );
         expectRevert_DelegateCall(callData);
     }
@@ -20,7 +20,7 @@ contract OnSablierLockupWithdraw_Integration_Concrete_Test is Shared_Integration
                 Errors.SablierStaking_StreamNotStaked.selector, users.recipient, streamIds.defaultStream
             )
         );
-        staking.onSablierLockupWithdraw(streamIds.defaultStream, users.recipient, users.recipient, 0);
+        stakingPool.onSablierLockupWithdraw(streamIds.defaultStream, users.recipient, users.recipient, 0);
     }
 
     function test_RevertGiven_LockupNotWhitelisted() external whenNoDelegateCall whenCallerLockup {
@@ -32,19 +32,19 @@ contract OnSablierLockupWithdraw_Integration_Concrete_Test is Shared_Integration
         vm.expectRevert(
             abi.encodeWithSelector(Errors.SablierStaking_StreamNotStaked.selector, lockup, streamIds.defaultStream)
         );
-        staking.onSablierLockupWithdraw(streamIds.defaultStream, users.recipient, users.recipient, 0);
+        stakingPool.onSablierLockupWithdraw(streamIds.defaultStream, users.recipient, users.recipient, 0);
     }
 
     function test_RevertGiven_StreamNotStaked() external whenNoDelegateCall whenCallerLockup givenLockupWhitelisted {
         // Transfer a stream directly to the Staking contract so that its not technically staked.
-        lockup.transferFrom(users.recipient, address(staking), streamIds.defaultStream);
+        lockup.transferFrom(users.recipient, address(stakingPool), streamIds.defaultStream);
 
         vm.expectRevert(
             abi.encodeWithSelector(Errors.SablierStaking_StreamNotStaked.selector, lockup, streamIds.defaultStream)
         );
 
         // Withdraw from the stream to trigger the hook.
-        ISablierLockup(address(lockup)).withdrawMax(streamIds.defaultStream, address(staking));
+        ISablierLockup(address(lockup)).withdrawMax(streamIds.defaultStream, address(stakingPool));
     }
 
     function test_RevertGiven_StreamStaked() external whenNoDelegateCall whenCallerLockup givenLockupWhitelisted {
@@ -58,6 +58,6 @@ contract OnSablierLockupWithdraw_Integration_Concrete_Test is Shared_Integration
         );
 
         // Withdraw from the stream to trigger the hook.
-        ISablierLockup(address(lockup)).withdrawMax(streamIds.defaultStakedStream, address(staking));
+        ISablierLockup(address(lockup)).withdrawMax(streamIds.defaultStakedStream, address(stakingPool));
     }
 }

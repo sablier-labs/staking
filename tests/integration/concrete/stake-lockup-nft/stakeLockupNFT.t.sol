@@ -11,13 +11,13 @@ import { Shared_Integration_Concrete_Test } from "../Concrete.t.sol";
 contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     function test_RevertWhen_DelegateCall() external {
         bytes memory callData =
-            abi.encodeCall(staking.stakeLockupNFT, (campaignIds.defaultCampaign, lockup, streamIds.defaultStream));
+            abi.encodeCall(stakingPool.stakeLockupNFT, (campaignIds.defaultCampaign, lockup, streamIds.defaultStream));
         expectRevert_DelegateCall(callData);
     }
 
     function test_RevertWhen_Null() external whenNoDelegateCall {
         bytes memory callData =
-            abi.encodeCall(staking.stakeLockupNFT, (campaignIds.nullCampaign, lockup, streamIds.defaultStream));
+            abi.encodeCall(stakingPool.stakeLockupNFT, (campaignIds.nullCampaign, lockup, streamIds.defaultStream));
         expectRevert_Null(callData);
     }
 
@@ -25,7 +25,7 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
         vm.expectRevert(
             abi.encodeWithSelector(Errors.SablierStakingState_CampaignCanceled.selector, campaignIds.canceledCampaign)
         );
-        staking.stakeLockupNFT(campaignIds.canceledCampaign, lockup, streamIds.defaultStream);
+        stakingPool.stakeLockupNFT(campaignIds.canceledCampaign, lockup, streamIds.defaultStream);
     }
 
     function test_RevertWhen_EndTimeInPast() external whenNoDelegateCall whenNotNull givenNotCanceled {
@@ -36,7 +36,7 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
                 Errors.SablierStaking_CampaignHasEnded.selector, campaignIds.defaultCampaign, END_TIME
             )
         );
-        staking.stakeLockupNFT(campaignIds.defaultCampaign, lockup, streamIds.defaultStream);
+        stakingPool.stakeLockupNFT(campaignIds.defaultCampaign, lockup, streamIds.defaultStream);
     }
 
     function test_RevertWhen_EndTimeInPresent() external whenNoDelegateCall whenNotNull givenNotCanceled {
@@ -47,7 +47,7 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
                 Errors.SablierStaking_CampaignHasEnded.selector, campaignIds.defaultCampaign, END_TIME
             )
         );
-        staking.stakeLockupNFT(campaignIds.defaultCampaign, lockup, streamIds.defaultStream);
+        stakingPool.stakeLockupNFT(campaignIds.defaultCampaign, lockup, streamIds.defaultStream);
     }
 
     function test_RevertGiven_LockupNotWhitelisted()
@@ -62,7 +62,7 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
 
         // It should revert.
         vm.expectRevert(abi.encodeWithSelector(Errors.SablierStaking_LockupNotWhitelisted.selector, lockup));
-        staking.stakeLockupNFT(campaignIds.defaultCampaign, lockup, streamIds.defaultStream);
+        stakingPool.stakeLockupNFT(campaignIds.defaultCampaign, lockup, streamIds.defaultStream);
     }
 
     function test_RevertWhen_StreamTokenNotMatchStakingToken()
@@ -76,7 +76,7 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
         vm.expectRevert(
             abi.encodeWithSelector(Errors.SablierStaking_UnderlyingTokenDifferent.selector, usdc, stakingToken)
         );
-        staking.stakeLockupNFT(campaignIds.defaultCampaign, lockup, streamIds.differentTokenStream);
+        stakingPool.stakeLockupNFT(campaignIds.defaultCampaign, lockup, streamIds.differentTokenStream);
     }
 
     function test_RevertGiven_StreamStaked()
@@ -89,7 +89,7 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
         whenStreamTokenMatchesStakingToken
     {
         vm.expectRevert();
-        staking.stakeLockupNFT(campaignIds.defaultCampaign, lockup, streamIds.defaultStakedStream);
+        stakingPool.stakeLockupNFT(campaignIds.defaultCampaign, lockup, streamIds.defaultStakedStream);
     }
 
     function test_RevertGiven_AmountInStreamZero()
@@ -111,7 +111,7 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
         vm.expectRevert(
             abi.encodeWithSelector(Errors.SablierStaking_DepletedStream.selector, lockup, streamIds.defaultStream)
         );
-        staking.stakeLockupNFT(campaignIds.defaultCampaign, lockup, streamIds.defaultStream);
+        stakingPool.stakeLockupNFT(campaignIds.defaultCampaign, lockup, streamIds.defaultStream);
     }
 
     function test_WhenStartTimeInFuture()
@@ -166,10 +166,10 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
     /// @dev Helper function to test the staking of a lockup NFT.
     function _test_StakeLockupNFT(uint256 expectedRewardsPerTokenScaled, uint128 expectedUserRewards) private {
         (uint128 initialStreamsCount, uint128 initialStreamAmountStaked,) =
-            staking.userShares(campaignIds.defaultCampaign, users.recipient);
+            stakingPool.userShares(campaignIds.defaultCampaign, users.recipient);
 
         // It should emit {SnapshotRewards}, {Transfer} and {StakeLockupNFT} events.
-        vm.expectEmit({ emitter: address(staking) });
+        vm.expectEmit({ emitter: address(stakingPool) });
         emit ISablierStaking.SnapshotRewards(
             campaignIds.defaultCampaign,
             getBlockTimestamp(),
@@ -178,30 +178,30 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
             expectedUserRewards
         );
         vm.expectEmit({ emitter: address(lockup) });
-        emit IERC721.Transfer(users.recipient, address(staking), streamIds.defaultStream);
-        vm.expectEmit({ emitter: address(staking) });
+        emit IERC721.Transfer(users.recipient, address(stakingPool), streamIds.defaultStream);
+        vm.expectEmit({ emitter: address(stakingPool) });
         emit ISablierStaking.StakeLockupNFT(
             campaignIds.defaultCampaign, users.recipient, lockup, streamIds.defaultStream, DEFAULT_AMOUNT
         );
 
         // Stake Lockup NFT.
-        staking.stakeLockupNFT(campaignIds.defaultCampaign, lockup, streamIds.defaultStream);
+        stakingPool.stakeLockupNFT(campaignIds.defaultCampaign, lockup, streamIds.defaultStream);
 
         // It should stake stream.
         (uint128 actualStreamsCount, uint128 actualStreamAmountStaked,) =
-            staking.userShares(campaignIds.defaultCampaign, users.recipient);
+            stakingPool.userShares(campaignIds.defaultCampaign, users.recipient);
         assertEq(actualStreamsCount, initialStreamsCount + 1, "streamsCount");
         assertEq(actualStreamAmountStaked, initialStreamAmountStaked + DEFAULT_AMOUNT, "streamAmountStakedByUser");
 
         // It should update global rewards snapshot.
         (uint40 globalLastUpdateTime, uint256 rewardsDistributedPerTokenScaled) =
-            staking.globalSnapshot(campaignIds.defaultCampaign);
+            stakingPool.globalSnapshot(campaignIds.defaultCampaign);
         assertEq(globalLastUpdateTime, getBlockTimestamp(), "globalLastUpdateTime");
         assertEq(rewardsDistributedPerTokenScaled, expectedRewardsPerTokenScaled, "rewardsDistributedPerTokenScaled");
 
         // It should update user rewards snapshot.
         (uint40 userLastUpdateTime, uint256 rewardsEarnedPerTokenScaled, uint128 rewards) =
-            staking.userSnapshot(campaignIds.defaultCampaign, users.recipient);
+            stakingPool.userSnapshot(campaignIds.defaultCampaign, users.recipient);
         assertEq(userLastUpdateTime, getBlockTimestamp(), "userLastUpdateTime");
         assertEq(rewardsEarnedPerTokenScaled, expectedRewardsPerTokenScaled, "rewardsEarnedPerTokenScaled");
         assertEq(rewards, expectedUserRewards, "rewards");

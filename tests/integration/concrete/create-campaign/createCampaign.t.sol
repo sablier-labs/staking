@@ -19,7 +19,7 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
 
     function test_RevertWhen_DelegateCall() external {
         bytes memory callData = abi.encodeCall(
-            staking.createCampaign,
+            stakingPool.createCampaign,
             (users.campaignCreator, stakingToken, START_TIME, END_TIME, rewardToken, REWARD_AMOUNT)
         );
         expectRevert_DelegateCall(callData);
@@ -27,7 +27,7 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
 
     function test_RevertWhen_AdminZeroAddress() external whenNoDelegateCall {
         vm.expectRevert(Errors.SablierStaking_AdminZeroAddress.selector);
-        staking.createCampaign({
+        stakingPool.createCampaign({
             admin: address(0),
             stakingToken: stakingToken,
             startTime: START_TIME,
@@ -39,7 +39,7 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
 
     function test_RevertWhen_StartTimeInPast() external whenNoDelegateCall whenAdminNotZeroAddress {
         vm.expectRevert(abi.encodeWithSelector(Errors.SablierStaking_StartTimeInPast.selector, FEB_1_2025 - 1));
-        staking.createCampaign({
+        stakingPool.createCampaign({
             admin: users.campaignCreator,
             stakingToken: stakingToken,
             startTime: FEB_1_2025 - 1,
@@ -52,18 +52,18 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
     function test_WhenStartTimeInPresent() external whenNoDelegateCall whenAdminNotZeroAddress {
         uint40 currentTime = getBlockTimestamp();
 
-        uint256 expectedCampaignId = staking.nextCampaignId();
+        uint256 expectedCampaignId = stakingPool.nextCampaignId();
 
         // It should emit {Transfer} and {CreateCampaign} events.
         vm.expectEmit({ emitter: address(rewardToken) });
-        emit IERC20.Transfer(users.campaignCreator, address(staking), REWARD_AMOUNT);
-        vm.expectEmit({ emitter: address(staking) });
+        emit IERC20.Transfer(users.campaignCreator, address(stakingPool), REWARD_AMOUNT);
+        vm.expectEmit({ emitter: address(stakingPool) });
         emit ISablierStaking.CreateCampaign(
             expectedCampaignId, users.campaignCreator, stakingToken, rewardToken, currentTime, END_TIME, REWARD_AMOUNT
         );
 
         // It should create the campaign.
-        uint256 actualCampaignId = staking.createCampaign({
+        uint256 actualCampaignId = stakingPool.createCampaign({
             admin: users.campaignCreator,
             stakingToken: stakingToken,
             startTime: currentTime,
@@ -76,7 +76,7 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
         assertEq(actualCampaignId, expectedCampaignId, "campaignId");
 
         // It should bump the next campaign ID.
-        assertEq(staking.nextCampaignId(), expectedCampaignId + 1, "nextCampaignId");
+        assertEq(stakingPool.nextCampaignId(), expectedCampaignId + 1, "nextCampaignId");
     }
 
     function test_RevertWhen_EndTimeLessThanStartTime()
@@ -90,7 +90,7 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
                 Errors.SablierStaking_EndTimeNotGreaterThanStartTime.selector, START_TIME, START_TIME - 1
             )
         );
-        staking.createCampaign({
+        stakingPool.createCampaign({
             admin: users.campaignCreator,
             stakingToken: stakingToken,
             startTime: START_TIME,
@@ -111,7 +111,7 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
                 Errors.SablierStaking_EndTimeNotGreaterThanStartTime.selector, START_TIME, START_TIME
             )
         );
-        staking.createCampaign({
+        stakingPool.createCampaign({
             admin: users.campaignCreator,
             stakingToken: stakingToken,
             startTime: START_TIME,
@@ -129,7 +129,7 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
         whenEndTimeGreaterThanStartTime
     {
         vm.expectRevert(Errors.SablierStaking_StakingTokenZeroAddress.selector);
-        staking.createCampaign({
+        stakingPool.createCampaign({
             admin: users.campaignCreator,
             stakingToken: IERC20(address(0)),
             startTime: START_TIME,
@@ -148,7 +148,7 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
         whenStakingTokenNotZeroAddress
     {
         vm.expectRevert(Errors.SablierStaking_RewardTokenZeroAddress.selector);
-        staking.createCampaign({
+        stakingPool.createCampaign({
             admin: users.campaignCreator,
             stakingToken: stakingToken,
             startTime: START_TIME,
@@ -168,7 +168,7 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
         whenRewardTokenNotZeroAddress
     {
         vm.expectRevert(Errors.SablierStaking_RewardAmountZero.selector);
-        staking.createCampaign({
+        stakingPool.createCampaign({
             admin: users.campaignCreator,
             stakingToken: stakingToken,
             startTime: START_TIME,
@@ -187,18 +187,18 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
         whenStakingTokenNotZeroAddress
         whenRewardTokenNotZeroAddress
     {
-        uint256 expectedCampaignId = staking.nextCampaignId();
+        uint256 expectedCampaignId = stakingPool.nextCampaignId();
 
         // It should emit {Transfer} and {CreateCampaign} events.
         vm.expectEmit({ emitter: address(rewardToken) });
-        emit IERC20.Transfer(users.campaignCreator, address(staking), REWARD_AMOUNT);
-        vm.expectEmit({ emitter: address(staking) });
+        emit IERC20.Transfer(users.campaignCreator, address(stakingPool), REWARD_AMOUNT);
+        vm.expectEmit({ emitter: address(stakingPool) });
         emit ISablierStaking.CreateCampaign(
             expectedCampaignId, users.campaignCreator, stakingToken, rewardToken, START_TIME, END_TIME, REWARD_AMOUNT
         );
 
         // It should create the campaign.
-        uint256 actualCampaignId = staking.createCampaign({
+        uint256 actualCampaignId = stakingPool.createCampaign({
             admin: users.campaignCreator,
             stakingToken: stakingToken,
             startTime: START_TIME,
@@ -211,15 +211,14 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
         assertEq(actualCampaignId, expectedCampaignId, "campaignId");
 
         // It should bump the next campaign ID.
-        assertEq(staking.nextCampaignId(), expectedCampaignId + 1, "nextCampaignId");
+        assertEq(stakingPool.nextCampaignId(), expectedCampaignId + 1, "nextCampaignId");
 
         // It should set the correct campaign state.
-        assertEq(staking.getAdmin(actualCampaignId), users.campaignCreator, "admin");
-        assertEq(staking.getStakingToken(actualCampaignId), stakingToken, "stakingToken");
-        assertEq(staking.getStartTime(actualCampaignId), START_TIME, "startTime");
-        assertEq(staking.getEndTime(actualCampaignId), END_TIME, "endTime");
-        assertEq(staking.getRewardToken(actualCampaignId), rewardToken, "rewardToken");
-        assertEq(staking.getTotalRewards(actualCampaignId), REWARD_AMOUNT, "totalRewards");
-        assertEq(staking.wasCanceled(actualCampaignId), false, "wasCanceled");
+        assertEq(stakingPool.getAdmin(actualCampaignId), users.campaignCreator, "admin");
+        assertEq(stakingPool.getStakingToken(actualCampaignId), stakingToken, "stakingToken");
+        assertEq(stakingPool.getStartTime(actualCampaignId), START_TIME, "startTime");
+        assertEq(stakingPool.getEndTime(actualCampaignId), END_TIME, "endTime");
+        assertEq(stakingPool.getTotalRewards(actualCampaignId), REWARD_AMOUNT, "totalRewards");
+        assertEq(stakingPool.wasCanceled(actualCampaignId), false, "wasCanceled");
     }
 }

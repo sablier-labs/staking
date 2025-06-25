@@ -9,12 +9,13 @@ import { Shared_Integration_Concrete_Test } from "../Concrete.t.sol";
 
 contract StakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     function test_RevertWhen_DelegateCall() external {
-        bytes memory callData = abi.encodeCall(staking.stakeERC20Token, (campaignIds.defaultCampaign, DEFAULT_AMOUNT));
+        bytes memory callData =
+            abi.encodeCall(stakingPool.stakeERC20Token, (campaignIds.defaultCampaign, DEFAULT_AMOUNT));
         expectRevert_DelegateCall(callData);
     }
 
     function test_RevertWhen_Null() external whenNoDelegateCall {
-        bytes memory callData = abi.encodeCall(staking.stakeERC20Token, (campaignIds.nullCampaign, DEFAULT_AMOUNT));
+        bytes memory callData = abi.encodeCall(stakingPool.stakeERC20Token, (campaignIds.nullCampaign, DEFAULT_AMOUNT));
         expectRevert_Null(callData);
     }
 
@@ -22,14 +23,14 @@ contract StakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concret
         vm.expectRevert(
             abi.encodeWithSelector(Errors.SablierStakingState_CampaignCanceled.selector, campaignIds.canceledCampaign)
         );
-        staking.stakeERC20Token(campaignIds.canceledCampaign, DEFAULT_AMOUNT);
+        stakingPool.stakeERC20Token(campaignIds.canceledCampaign, DEFAULT_AMOUNT);
     }
 
     function test_RevertWhen_AmountZero() external whenNoDelegateCall whenNotNull givenNotCanceled {
         vm.expectRevert(
             abi.encodeWithSelector(Errors.SablierStaking_StakingZeroAmount.selector, campaignIds.defaultCampaign)
         );
-        staking.stakeERC20Token(campaignIds.defaultCampaign, 0);
+        stakingPool.stakeERC20Token(campaignIds.defaultCampaign, 0);
     }
 
     function test_RevertWhen_EndTimeInPast()
@@ -46,7 +47,7 @@ contract StakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concret
                 Errors.SablierStaking_CampaignHasEnded.selector, campaignIds.defaultCampaign, END_TIME
             )
         );
-        staking.stakeERC20Token(campaignIds.defaultCampaign, DEFAULT_AMOUNT);
+        stakingPool.stakeERC20Token(campaignIds.defaultCampaign, DEFAULT_AMOUNT);
     }
 
     function test_RevertWhen_EndTimeInPresent()
@@ -63,7 +64,7 @@ contract StakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concret
                 Errors.SablierStaking_CampaignHasEnded.selector, campaignIds.defaultCampaign, END_TIME
             )
         );
-        staking.stakeERC20Token(campaignIds.defaultCampaign, DEFAULT_AMOUNT);
+        stakingPool.stakeERC20Token(campaignIds.defaultCampaign, DEFAULT_AMOUNT);
     }
 
     function test_WhenStartTimeInFuture()
@@ -111,10 +112,10 @@ contract StakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concret
 
     /// @dev Helper function to test the staking of ERC20 tokens.
     function _test_StakeERC20Token(uint256 expectedRewardsPerTokenScaled, uint128 expectedUserRewards) private {
-        (,, uint128 initialDirectAmountStaked) = staking.userShares(campaignIds.defaultCampaign, users.recipient);
+        (,, uint128 initialDirectAmountStaked) = stakingPool.userShares(campaignIds.defaultCampaign, users.recipient);
 
         // It should emit {SnapshotRewards}, {Transfer} and {StakeERC20Token} events.
-        vm.expectEmit({ emitter: address(staking) });
+        vm.expectEmit({ emitter: address(stakingPool) });
         emit ISablierStaking.SnapshotRewards(
             campaignIds.defaultCampaign,
             getBlockTimestamp(),
@@ -123,25 +124,25 @@ contract StakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concret
             expectedUserRewards
         );
         vm.expectEmit({ emitter: address(stakingToken) });
-        emit IERC20.Transfer(users.recipient, address(staking), DEFAULT_AMOUNT);
-        vm.expectEmit({ emitter: address(staking) });
+        emit IERC20.Transfer(users.recipient, address(stakingPool), DEFAULT_AMOUNT);
+        vm.expectEmit({ emitter: address(stakingPool) });
         emit ISablierStaking.StakeERC20Token(campaignIds.defaultCampaign, users.recipient, DEFAULT_AMOUNT);
 
-        staking.stakeERC20Token(campaignIds.defaultCampaign, DEFAULT_AMOUNT);
+        stakingPool.stakeERC20Token(campaignIds.defaultCampaign, DEFAULT_AMOUNT);
 
         // It should stake tokens.
-        (,, uint128 actualDirectAmountStaked) = staking.userShares(campaignIds.defaultCampaign, users.recipient);
+        (,, uint128 actualDirectAmountStaked) = stakingPool.userShares(campaignIds.defaultCampaign, users.recipient);
         assertEq(actualDirectAmountStaked, initialDirectAmountStaked + DEFAULT_AMOUNT, "directAmountStakedByUser");
 
         // It should update global rewards snapshot.
         (uint40 globalLastUpdateTime, uint256 rewardsDistributedPerTokenScaled) =
-            staking.globalSnapshot(campaignIds.defaultCampaign);
+            stakingPool.globalSnapshot(campaignIds.defaultCampaign);
         assertEq(globalLastUpdateTime, getBlockTimestamp(), "globalLastUpdateTime");
         assertEq(rewardsDistributedPerTokenScaled, expectedRewardsPerTokenScaled, "rewardsDistributedPerTokenScaled");
 
         // It should update user rewards snapshot.
         (uint40 userLastUpdateTime, uint256 rewardsEarnedPerTokenScaled, uint128 rewards) =
-            staking.userSnapshot(campaignIds.defaultCampaign, users.recipient);
+            stakingPool.userSnapshot(campaignIds.defaultCampaign, users.recipient);
         assertEq(userLastUpdateTime, getBlockTimestamp(), "userLastUpdateTime");
         assertEq(rewardsEarnedPerTokenScaled, expectedRewardsPerTokenScaled, "rewardsEarnedPerTokenScaled");
         assertEq(rewards, expectedUserRewards, "rewards");

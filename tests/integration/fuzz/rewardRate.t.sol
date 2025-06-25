@@ -19,7 +19,7 @@ contract RewardRate_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
                 Errors.SablierStakingState_CampaignNotActive.selector, campaignIds.defaultCampaign, START_TIME, END_TIME
             )
         );
-        staking.rewardRate(campaignIds.defaultCampaign);
+        stakingPool.rewardRate(campaignIds.defaultCampaign);
     }
 
     function testFuzz_RevertWhen_EndTimeInPast(uint40 timestamp) external whenNotNull givenNotCanceled {
@@ -35,7 +35,7 @@ contract RewardRate_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
                 Errors.SablierStakingState_CampaignNotActive.selector, campaignIds.defaultCampaign, START_TIME, END_TIME
             )
         );
-        staking.rewardRate(campaignIds.defaultCampaign);
+        stakingPool.rewardRate(campaignIds.defaultCampaign);
     }
 
     function testFuzz_RewardRate(uint40 timestamp)
@@ -52,7 +52,7 @@ contract RewardRate_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         warpStateTo(timestamp);
 
         // It should return the correct reward rate.
-        uint128 actualRewardRate = staking.rewardRate(campaignIds.defaultCampaign);
+        uint128 actualRewardRate = stakingPool.rewardRate(campaignIds.defaultCampaign);
         assertEq(actualRewardRate, REWARD_RATE, "reward rate");
     }
 }

@@ -22,7 +22,7 @@ contract SnapshotRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
 
         // Warp EVM state to the end time and take a snapshot so that last update time equals the end time.
         warpStateTo(END_TIME);
-        staking.snapshotRewards(campaignIds.defaultCampaign, user);
+        stakingPool.snapshotRewards(campaignIds.defaultCampaign, user);
 
         // Bound timestamp so that it is greater than or equal to the campaign end time.
         timestamp = boundUint40(timestamp, END_TIME, END_TIME + 365 days);
@@ -37,7 +37,7 @@ contract SnapshotRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
             )
         );
 
-        staking.snapshotRewards(campaignIds.defaultCampaign, user);
+        stakingPool.snapshotRewards(campaignIds.defaultCampaign, user);
     }
 
     function testFuzz_SnapshotRewards(
@@ -67,23 +67,24 @@ contract SnapshotRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         (uint256 rewardsEarnedPerTokenScaled, uint128 rewards) = calculateLatestRewards(user);
 
         // It should emit {SnapshotRewards} event.
-        vm.expectEmit({ emitter: address(staking) });
+        vm.expectEmit({ emitter: address(stakingPool) });
         emit ISablierStaking.SnapshotRewards(
             campaignIds.defaultCampaign, timestamp, rewardsEarnedPerTokenScaled, user, rewards
         );
 
         // Test snapshot rewards.
         setMsgSender(caller);
-        staking.snapshotRewards(campaignIds.defaultCampaign, user);
+        stakingPool.snapshotRewards(campaignIds.defaultCampaign, user);
 
         // It should update global rewards snapshot.
         (uint40 lastUpdateTime, uint256 rewardsDistributedPerTokenScaled) =
-            staking.globalSnapshot(campaignIds.defaultCampaign);
+            stakingPool.globalSnapshot(campaignIds.defaultCampaign);
         assertEq(lastUpdateTime, timestamp, "globalLastUpdateTime");
         assertEq(rewardsDistributedPerTokenScaled, rewardsEarnedPerTokenScaled, "rewardsDistributedPerTokenScaled");
 
         // It should update user rewards snapshot.
-        (lastUpdateTime, rewardsEarnedPerTokenScaled, rewards) = staking.userSnapshot(campaignIds.defaultCampaign, user);
+        (lastUpdateTime, rewardsEarnedPerTokenScaled, rewards) =
+            stakingPool.userSnapshot(campaignIds.defaultCampaign, user);
         assertEq(lastUpdateTime, timestamp, "userLastUpdateTime");
         assertEq(rewardsEarnedPerTokenScaled, rewardsEarnedPerTokenScaled, "rewardsEarnedPerTokenScaled");
         assertEq(rewards, rewards, "rewards");

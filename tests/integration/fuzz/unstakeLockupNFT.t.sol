@@ -25,7 +25,7 @@ contract UnstakeLockupNFT_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test 
                 users.recipient
             )
         );
-        staking.unstakeLockupNFT(lockup, streamIds.defaultStakedStream);
+        stakingPool.unstakeLockupNFT(lockup, streamIds.defaultStakedStream);
     }
 
     /// @dev Given enough fuzz runs, all of the following scenarios will be fuzzed:
@@ -52,7 +52,7 @@ contract UnstakeLockupNFT_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test 
         setMsgSender(users.sender);
         ISablierLockup(address(lockup)).cancel(streamIds.defaultStakedStream);
 
-        // Forward timestamp by 1 month in the future before unstaking.
+        // Forward timestamp by 1 month in the future before unstakingPool.
         timestamp += 30 days;
         vm.warp(timestamp);
 
@@ -86,35 +86,35 @@ contract UnstakeLockupNFT_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test 
     /// @dev A shared private function to test the unstaking of a Lockup NFT.
     function _test_UnstakeLockupNFT(uint40 timestamp, uint128 amountUnstaked) private {
         (uint128 previousStreamsCount, uint128 previousStreamAmountStaked,) =
-            staking.userShares(campaignIds.defaultCampaign, users.recipient);
+            stakingPool.userShares(campaignIds.defaultCampaign, users.recipient);
 
         (uint256 rewardsEarnedPerTokenScaled, uint128 rewards) = calculateLatestRewards(users.recipient);
 
         // It should emit {SnapshotRewards}, {Transfer} and {UnstakeERC20Token} events.
-        vm.expectEmit({ emitter: address(staking) });
+        vm.expectEmit({ emitter: address(stakingPool) });
         emit ISablierStaking.SnapshotRewards(
             campaignIds.defaultCampaign, timestamp, rewardsEarnedPerTokenScaled, users.recipient, rewards
         );
         vm.expectEmit({ emitter: address(lockup) });
-        emit IERC721.Transfer(address(staking), users.recipient, streamIds.defaultStakedStream);
-        vm.expectEmit({ emitter: address(staking) });
+        emit IERC721.Transfer(address(stakingPool), users.recipient, streamIds.defaultStakedStream);
+        vm.expectEmit({ emitter: address(stakingPool) });
         emit ISablierStaking.UnstakeLockupNFT(
             campaignIds.defaultCampaign, users.recipient, lockup, streamIds.defaultStakedStream
         );
 
         // Unstake Lockup NFT.
         setMsgSender(users.recipient);
-        staking.unstakeLockupNFT(lockup, streamIds.defaultStakedStream);
+        stakingPool.unstakeLockupNFT(lockup, streamIds.defaultStakedStream);
 
         // It should unstake NFT.
         (uint128 actualStreamsCount, uint128 actualStreamAmountStaked,) =
-            staking.userShares(campaignIds.defaultCampaign, users.recipient);
+            stakingPool.userShares(campaignIds.defaultCampaign, users.recipient);
         assertEq(actualStreamsCount, previousStreamsCount - 1, "streamsCount");
         assertEq(actualStreamAmountStaked, previousStreamAmountStaked - amountUnstaked, "streamAmountStakedByUser");
 
         // It should update global rewards snapshot.
         (uint40 actualLastUpdateTime, uint256 actualRewardsDistributedPerTokenScaled) =
-            staking.globalSnapshot(campaignIds.defaultCampaign);
+            stakingPool.globalSnapshot(campaignIds.defaultCampaign);
         assertEq(actualLastUpdateTime, timestamp, "actualLastUpdateTime");
         assertEq(
             actualRewardsDistributedPerTokenScaled, rewardsEarnedPerTokenScaled, "rewardsDistributedPerTokenScaled"
@@ -122,7 +122,7 @@ contract UnstakeLockupNFT_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test 
 
         // It should update user rewards snapshot.
         (actualLastUpdateTime, rewardsEarnedPerTokenScaled, rewards) =
-            staking.userSnapshot(campaignIds.defaultCampaign, users.recipient);
+            stakingPool.userSnapshot(campaignIds.defaultCampaign, users.recipient);
         assertEq(actualLastUpdateTime, timestamp, "userLastUpdateTime");
         assertEq(rewardsEarnedPerTokenScaled, rewardsEarnedPerTokenScaled, "rewardsEarnedPerTokenScaled");
         assertEq(rewards, rewards, "rewards");

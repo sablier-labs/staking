@@ -32,11 +32,11 @@ contract UnstakeERC20Token_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test
         // Stake into the campaign using a Lockup NFT.
         uint256 streamId = defaultCreateWithDurationsLL(caller);
         setMsgSender(caller);
-        lockup.setApprovalForAll({ operator: address(staking), approved: true });
-        staking.stakeLockupNFT(campaignIds.defaultCampaign, lockup, streamId);
+        lockup.setApprovalForAll({ operator: address(stakingPool), approved: true });
+        stakingPool.stakeLockupNFT(campaignIds.defaultCampaign, lockup, streamId);
 
         // Check that caller has total staked amount.
-        uint128 totalAmountStaked = staking.totalAmountStakedByUser(campaignIds.defaultCampaign, caller);
+        uint128 totalAmountStaked = stakingPool.totalAmountStakedByUser(campaignIds.defaultCampaign, caller);
         assertEq(totalAmountStaked, STREAM_AMOUNT_18D, "totalAmountStaked");
 
         // Warp EVM state to the given timestamp.
@@ -50,7 +50,7 @@ contract UnstakeERC20Token_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test
         );
 
         // Try to unstake ERC20 tokens from the campaign.
-        staking.unstakeERC20Token(campaignIds.defaultCampaign, amount);
+        stakingPool.unstakeERC20Token(campaignIds.defaultCampaign, amount);
     }
 
     /// @dev Given enough fuzz runs, all of the following scenarios will be fuzzed:
@@ -81,15 +81,15 @@ contract UnstakeERC20Token_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test
 
         // It should emit {Transfer} and {UnstakeERC20Token} events.
         vm.expectEmit({ emitter: address(stakingToken) });
-        emit IERC20.Transfer(address(staking), users.staker, amount);
-        vm.expectEmit({ emitter: address(staking) });
+        emit IERC20.Transfer(address(stakingPool), users.staker, amount);
+        vm.expectEmit({ emitter: address(stakingPool) });
         emit ISablierStaking.UnstakeERC20Token(campaignIds.canceledCampaign, users.staker, amount);
 
         // Unstake from the canceled campaign.
-        staking.unstakeERC20Token(campaignIds.canceledCampaign, amount);
+        stakingPool.unstakeERC20Token(campaignIds.canceledCampaign, amount);
 
         // It should unstake.
-        (,, uint128 directAmountStaked) = staking.userShares(campaignIds.canceledCampaign, users.staker);
+        (,, uint128 directAmountStaked) = stakingPool.userShares(campaignIds.canceledCampaign, users.staker);
         assertEq(directAmountStaked, DEFAULT_AMOUNT - amount, "directAmountStakedByUser");
     }
 
@@ -121,11 +121,11 @@ contract UnstakeERC20Token_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test
         warpStateTo(timestamp);
 
         // If direct amount staked is 0, forward time to 20% through the campaign.
-        (,, uint128 previousDirectAmountStaked) = staking.userShares(campaignIds.defaultCampaign, caller);
+        (,, uint128 previousDirectAmountStaked) = stakingPool.userShares(campaignIds.defaultCampaign, caller);
         if (previousDirectAmountStaked == 0) {
             timestamp = boundUint40(timestamp, WARP_20_PERCENT, END_TIME + 365 days);
             warpStateTo(timestamp);
-            (,, previousDirectAmountStaked) = staking.userShares(campaignIds.defaultCampaign, caller);
+            (,, previousDirectAmountStaked) = stakingPool.userShares(campaignIds.defaultCampaign, caller);
         }
 
         // Warp amount so that it does not exceed direct staked amount.
@@ -136,25 +136,25 @@ contract UnstakeERC20Token_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test
         (uint256 rewardsEarnedPerTokenScaled, uint128 rewards) = calculateLatestRewards(caller);
 
         // It should emit {SnapshotRewards}, {Transfer} and {UnstakeERC20Token} events.
-        vm.expectEmit({ emitter: address(staking) });
+        vm.expectEmit({ emitter: address(stakingPool) });
         emit ISablierStaking.SnapshotRewards(
             campaignIds.defaultCampaign, timestamp, rewardsEarnedPerTokenScaled, caller, rewards
         );
         vm.expectEmit({ emitter: address(stakingToken) });
-        emit IERC20.Transfer(address(staking), caller, amount);
-        vm.expectEmit({ emitter: address(staking) });
+        emit IERC20.Transfer(address(stakingPool), caller, amount);
+        vm.expectEmit({ emitter: address(stakingPool) });
         emit ISablierStaking.UnstakeERC20Token(campaignIds.defaultCampaign, caller, amount);
 
         // Unstake from the default campaign.
-        staking.unstakeERC20Token(campaignIds.defaultCampaign, amount);
+        stakingPool.unstakeERC20Token(campaignIds.defaultCampaign, amount);
 
         // It should unstake.
-        (,, uint128 actualDirectAmountStaked) = staking.userShares(campaignIds.defaultCampaign, caller);
+        (,, uint128 actualDirectAmountStaked) = stakingPool.userShares(campaignIds.defaultCampaign, caller);
         assertEq(actualDirectAmountStaked, previousDirectAmountStaked - amount, "directAmountStakedByUser");
 
         // It should update global rewards snapshot.
         (uint40 actualLastUpdateTime, uint256 actualRewardsDistributedPerTokenScaled) =
-            staking.globalSnapshot(campaignIds.defaultCampaign);
+            stakingPool.globalSnapshot(campaignIds.defaultCampaign);
         assertEq(actualLastUpdateTime, timestamp, "globalLastUpdateTime");
         assertEq(
             actualRewardsDistributedPerTokenScaled, rewardsEarnedPerTokenScaled, "rewardsDistributedPerTokenScaled"
@@ -162,7 +162,7 @@ contract UnstakeERC20Token_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test
 
         // It should update user rewards snapshot.
         (actualLastUpdateTime, rewardsEarnedPerTokenScaled, rewards) =
-            staking.userSnapshot(campaignIds.defaultCampaign, caller);
+            stakingPool.userSnapshot(campaignIds.defaultCampaign, caller);
         assertEq(actualLastUpdateTime, timestamp, "userLastUpdateTime");
         assertEq(rewardsEarnedPerTokenScaled, rewardsEarnedPerTokenScaled, "rewardsEarnedPerTokenScaled");
         assertEq(rewards, rewards, "rewards");

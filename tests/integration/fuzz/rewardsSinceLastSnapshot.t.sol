@@ -16,7 +16,7 @@ contract RewardsSinceLastSnapshot_Integration_Fuzz_Test is Shared_Integration_Fu
 
         // Warp the EVM state to the given timestamp and take snapshot.
         warpStateTo(timestamp);
-        staking.snapshotRewards(campaignIds.defaultCampaign, users.recipient);
+        stakingPool.snapshotRewards(campaignIds.defaultCampaign, users.recipient);
 
         // Bound timestamp to a new value which is greater than the current block time.
         timestamp = boundUint40(timestamp, getBlockTimestamp() + 1, END_TIME + 365 days);
@@ -24,7 +24,7 @@ contract RewardsSinceLastSnapshot_Integration_Fuzz_Test is Shared_Integration_Fu
         vm.warp(timestamp);
 
         // It should return zero.
-        uint128 actualRewardsSinceLastSnapshot = staking.rewardsSinceLastSnapshot(campaignIds.defaultCampaign);
+        uint128 actualRewardsSinceLastSnapshot = stakingPool.rewardsSinceLastSnapshot(campaignIds.defaultCampaign);
         assertEq(actualRewardsSinceLastSnapshot, 0, "rewardsSinceLastSnapshot");
     }
 
@@ -41,7 +41,7 @@ contract RewardsSinceLastSnapshot_Integration_Fuzz_Test is Shared_Integration_Fu
 
         // Warp the EVM state to the given timestamp and snapshot rewards.
         warpStateTo(timestamp);
-        staking.snapshotRewards(campaignIds.defaultCampaign, users.recipient);
+        stakingPool.snapshotRewards(campaignIds.defaultCampaign, users.recipient);
 
         // Bound timestamp to a new value which is greater than the current block time.
         timestamp = boundUint40(timestamp, getBlockTimestamp() + 1, END_TIME + 365 days);
@@ -56,7 +56,7 @@ contract RewardsSinceLastSnapshot_Integration_Fuzz_Test is Shared_Integration_Fu
         vm.warp(timestamp);
 
         // It should return correct rewards per token since last snapshot.
-        uint128 actualRewardsSinceLastSnapshot = staking.rewardsSinceLastSnapshot(campaignIds.defaultCampaign);
+        uint128 actualRewardsSinceLastSnapshot = stakingPool.rewardsSinceLastSnapshot(campaignIds.defaultCampaign);
         assertEq(actualRewardsSinceLastSnapshot, expectedRewardsSinceLastSnapshot, "rewardsSinceLastSnapshot");
     }
 }

@@ -8,9 +8,9 @@ import { SablierStaking } from "../../src/SablierStaking.sol";
 /// @notice Deploys {SablierStaking} at a deterministic address across chains.
 /// @dev Reverts if the contract has already been deployed.
 contract DeployDeterministicProtocol is BaseScript {
-    function run(address initialAdmin) public broadcast returns (SablierStaking staking) {
+    function run(address initialAdmin) public broadcast returns (SablierStaking stakingPool) {
         bytes32 salt = constructCreate2Salt();
 
-        staking = new SablierStaking{ salt: salt }(initialAdmin);
+        stakingPool = new SablierStaking{ salt: salt }(initialAdmin);
     }
 }

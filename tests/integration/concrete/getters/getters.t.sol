@@ -12,11 +12,11 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     //////////////////////////////////////////////////////////////////////////*/
 
     function test_GetAdminRevertWhen_Null() external {
-        expectRevert_Null({ callData: abi.encodeCall(staking.getAdmin, campaignIds.nullCampaign) });
+        expectRevert_Null({ callData: abi.encodeCall(stakingPool.getAdmin, campaignIds.nullCampaign) });
     }
 
     function test_GetAdminWhenNotNull() external view {
-        assertEq(staking.getAdmin(campaignIds.defaultCampaign), users.campaignCreator, "admin");
+        assertEq(stakingPool.getAdmin(campaignIds.defaultCampaign), users.campaignCreator, "admin");
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -24,11 +24,11 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     //////////////////////////////////////////////////////////////////////////*/
 
     function test_GetEndTimeRevertWhen_Null() external {
-        expectRevert_Null({ callData: abi.encodeCall(staking.getEndTime, campaignIds.nullCampaign) });
+        expectRevert_Null({ callData: abi.encodeCall(stakingPool.getEndTime, campaignIds.nullCampaign) });
     }
 
     function test_GetEndTimeWhenNotNull() external view {
-        assertEq(staking.getEndTime(campaignIds.defaultCampaign), END_TIME, "getEndTime");
+        assertEq(stakingPool.getEndTime(campaignIds.defaultCampaign), END_TIME, "getEndTime");
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -36,11 +36,13 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     //////////////////////////////////////////////////////////////////////////*/
 
     function test_GetRewardTokenRevertWhen_Null() external {
-        expectRevert_Null({ callData: abi.encodeCall(staking.getRewardToken, campaignIds.nullCampaign) });
+        expectRevert_Null({ callData: abi.encodeCall(stakingPool.getRewardToken, campaignIds.nullCampaign) });
     }
 
     function test_GetRewardTokenWhenNotNull() external view {
-        assertEq(address(staking.getRewardToken(campaignIds.defaultCampaign)), address(rewardToken), "getRewardToken");
+        assertEq(
+            address(stakingPool.getRewardToken(campaignIds.defaultCampaign)), address(rewardToken), "getRewardToken"
+        );
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -48,12 +50,12 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     //////////////////////////////////////////////////////////////////////////*/
 
     function test_GetStakingTokenRevertWhen_Null() external {
-        expectRevert_Null({ callData: abi.encodeCall(staking.getStakingToken, campaignIds.nullCampaign) });
+        expectRevert_Null({ callData: abi.encodeCall(stakingPool.getStakingToken, campaignIds.nullCampaign) });
     }
 
     function test_GetStakingTokenWhenNotNull() external view {
         assertEq(
-            address(staking.getStakingToken(campaignIds.defaultCampaign)), address(stakingToken), "getStakingToken"
+            address(stakingPool.getStakingToken(campaignIds.defaultCampaign)), address(stakingToken), "getStakingToken"
         );
     }
 
@@ -62,11 +64,11 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     //////////////////////////////////////////////////////////////////////////*/
 
     function test_GetStartTimeRevertWhen_Null() external {
-        expectRevert_Null({ callData: abi.encodeCall(staking.getStartTime, campaignIds.nullCampaign) });
+        expectRevert_Null({ callData: abi.encodeCall(stakingPool.getStartTime, campaignIds.nullCampaign) });
     }
 
     function test_GetStartTimeWhenNotNull() external view {
-        assertEq(staking.getStartTime(campaignIds.defaultCampaign), START_TIME, "getStartTime");
+        assertEq(stakingPool.getStartTime(campaignIds.defaultCampaign), START_TIME, "getStartTime");
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -74,11 +76,11 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     //////////////////////////////////////////////////////////////////////////*/
 
     function test_GetTotalRewardsRevertWhen_Null() external {
-        expectRevert_Null({ callData: abi.encodeCall(staking.getTotalRewards, campaignIds.nullCampaign) });
+        expectRevert_Null({ callData: abi.encodeCall(stakingPool.getTotalRewards, campaignIds.nullCampaign) });
     }
 
     function test_GetTotalRewardsWhenNotNull() external view {
-        assertEq(staking.getTotalRewards(campaignIds.defaultCampaign), REWARD_AMOUNT, "getTotalRewards");
+        assertEq(stakingPool.getTotalRewards(campaignIds.defaultCampaign), REWARD_AMOUNT, "getTotalRewards");
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -86,13 +88,13 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     //////////////////////////////////////////////////////////////////////////*/
 
     function test_GlobalSnapshotRevertWhen_Null() external {
-        expectRevert_Null({ callData: abi.encodeCall(staking.globalSnapshot, campaignIds.nullCampaign) });
+        expectRevert_Null({ callData: abi.encodeCall(stakingPool.globalSnapshot, campaignIds.nullCampaign) });
     }
 
     function test_GlobalSnapshotWhenStartTimeInFuture() external whenNotNull {
         warpStateTo(START_TIME - 1);
 
-        (uint40 lastUpdateTime, uint256 rewardsPerTokenScaled) = staking.globalSnapshot(campaignIds.defaultCampaign);
+        (uint40 lastUpdateTime, uint256 rewardsPerTokenScaled) = stakingPool.globalSnapshot(campaignIds.defaultCampaign);
 
         // It should return zero last update time.
         assertEq(lastUpdateTime, FEB_1_2025, "lastUpdateTime");
@@ -101,13 +103,15 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         assertEq(rewardsPerTokenScaled, 0, "rewardsPerTokenScaled");
 
         // It should return correct total amount staked.
-        assertEq(staking.totalAmountStaked(campaignIds.defaultCampaign), TOTAL_STAKED_PRE_START, "totalAmountStaked");
+        assertEq(
+            stakingPool.totalAmountStaked(campaignIds.defaultCampaign), TOTAL_STAKED_PRE_START, "totalAmountStaked"
+        );
     }
 
     function test_GlobalSnapshotWhenStartTimeInPresent() external whenNotNull {
         warpStateTo(START_TIME);
 
-        (uint40 lastUpdateTime, uint256 rewardsPerTokenScaled) = staking.globalSnapshot(campaignIds.defaultCampaign);
+        (uint40 lastUpdateTime, uint256 rewardsPerTokenScaled) = stakingPool.globalSnapshot(campaignIds.defaultCampaign);
 
         // It should return correct last update time.
         assertEq(lastUpdateTime, START_TIME, "lastUpdateTime");
@@ -116,11 +120,13 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         assertEq(rewardsPerTokenScaled, 0, "rewardsPerTokenScaled");
 
         // It should return correct total amount staked.
-        assertEq(staking.totalAmountStaked(campaignIds.defaultCampaign), TOTAL_STAKED_START_TIME, "totalAmountStaked");
+        assertEq(
+            stakingPool.totalAmountStaked(campaignIds.defaultCampaign), TOTAL_STAKED_START_TIME, "totalAmountStaked"
+        );
     }
 
     function test_GlobalSnapshotWhenEndTimeInFuture() external view whenNotNull whenStartTimeInPast {
-        (uint40 lastUpdateTime, uint256 rewardsPerTokenScaled) = staking.globalSnapshot(campaignIds.defaultCampaign);
+        (uint40 lastUpdateTime, uint256 rewardsPerTokenScaled) = stakingPool.globalSnapshot(campaignIds.defaultCampaign);
 
         // It should return correct last update time.
         assertEq(lastUpdateTime, WARP_40_PERCENT, "lastUpdateTime");
@@ -130,16 +136,16 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         assertEq(rewardsPerTokenScaled, expectedRewardsPerTokenScaled, "rewardsPerTokenScaled");
 
         // It should return correct total amount staked.
-        assertEq(staking.totalAmountStaked(campaignIds.defaultCampaign), TOTAL_STAKED, "totalAmountStaked");
+        assertEq(stakingPool.totalAmountStaked(campaignIds.defaultCampaign), TOTAL_STAKED, "totalAmountStaked");
     }
 
     function test_GlobalSnapshotWhenEndTimeNotInFuture() external whenNotNull whenStartTimeInPast {
         warpStateTo(END_TIME);
 
         // Take global snapshot of the rewards.
-        staking.snapshotRewards(campaignIds.defaultCampaign, users.staker);
+        stakingPool.snapshotRewards(campaignIds.defaultCampaign, users.staker);
 
-        (uint40 lastUpdateTime, uint256 rewardsPerTokenScaled) = staking.globalSnapshot(campaignIds.defaultCampaign);
+        (uint40 lastUpdateTime, uint256 rewardsPerTokenScaled) = stakingPool.globalSnapshot(campaignIds.defaultCampaign);
 
         // It should return correct last update time.
         assertEq(lastUpdateTime, END_TIME, "lastUpdateTime");
@@ -149,7 +155,7 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         assertEq(rewardsPerTokenScaled, expectedRewardsPerTokenScaled, "rewardsPerTokenScaled");
 
         // It should return correct total amount staked.
-        assertEq(staking.totalAmountStaked(campaignIds.defaultCampaign), TOTAL_STAKED_END_TIME, "totalAmountStaked");
+        assertEq(stakingPool.totalAmountStaked(campaignIds.defaultCampaign), TOTAL_STAKED_END_TIME, "totalAmountStaked");
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -158,18 +164,18 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
 
     function test_IsLockupWhitelistedRevertWhen_ZeroAddress() external {
         vm.expectRevert(Errors.SablierStakingState_ZeroAddress.selector);
-        staking.isLockupWhitelisted(ISablierLockupNFT(address(0)));
+        stakingPool.isLockupWhitelisted(ISablierLockupNFT(address(0)));
     }
 
     function test_IsLockupWhitelistedGivenNotWhitelisted() external view whenNotZeroAddress {
         // It should return false.
-        bool actualIsLockupWhitelisted = staking.isLockupWhitelisted(ISablierLockupNFT(address(0x1234)));
+        bool actualIsLockupWhitelisted = stakingPool.isLockupWhitelisted(ISablierLockupNFT(address(0x1234)));
         assertFalse(actualIsLockupWhitelisted, "whitelisted");
     }
 
     function test_IsLockupWhitelistedGivenWhitelisted() external view whenNotZeroAddress {
         // It should return true.
-        bool actualIsLockupWhitelisted = staking.isLockupWhitelisted(lockup);
+        bool actualIsLockupWhitelisted = stakingPool.isLockupWhitelisted(lockup);
         assertTrue(actualIsLockupWhitelisted, "not whitelisted");
     }
 
@@ -179,7 +185,7 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
 
     function test_StreamLookupRevertWhen_ZeroAddress() external {
         vm.expectRevert(Errors.SablierStakingState_ZeroAddress.selector);
-        staking.streamLookup(ISablierLockupNFT(address(0)), 0);
+        stakingPool.streamLookup(ISablierLockupNFT(address(0)), 0);
     }
 
     function test_StreamLookupRevertWhen_StreamNotStaked() external whenNotZeroAddress {
@@ -187,12 +193,13 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         vm.expectRevert(
             abi.encodeWithSelector(Errors.SablierStakingState_StreamNotStaked.selector, lockup, streamIds.defaultStream)
         );
-        staking.streamLookup(lockup, streamIds.defaultStream);
+        stakingPool.streamLookup(lockup, streamIds.defaultStream);
     }
 
     function test_StreamLookupWhenStreamStaked() external view whenNotZeroAddress {
         // It should return the campaign ID and owner.
-        (uint256 actualCampaignId, address actualOwner) = staking.streamLookup(lockup, streamIds.defaultStakedStream);
+        (uint256 actualCampaignId, address actualOwner) =
+            stakingPool.streamLookup(lockup, streamIds.defaultStakedStream);
         assertEq(actualCampaignId, campaignIds.defaultCampaign, "campaignId");
         assertEq(actualOwner, users.recipient, "owner");
     }
@@ -202,12 +209,12 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     //////////////////////////////////////////////////////////////////////////*/
 
     function test_TotalAmountStakedRevertWhen_Null() external {
-        expectRevert_Null({ callData: abi.encodeCall(staking.totalAmountStaked, campaignIds.nullCampaign) });
+        expectRevert_Null({ callData: abi.encodeCall(stakingPool.totalAmountStaked, campaignIds.nullCampaign) });
     }
 
     function test_TotalAmountStakedWhenNotNull() external {
         warpStateTo(END_TIME);
-        assertEq(staking.totalAmountStaked(campaignIds.defaultCampaign), TOTAL_STAKED_END_TIME, "totalAmountStaked");
+        assertEq(stakingPool.totalAmountStaked(campaignIds.defaultCampaign), TOTAL_STAKED_END_TIME, "totalAmountStaked");
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -216,18 +223,18 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
 
     function test_TotalAmountStakedByUserRevertWhen_Null() external {
         expectRevert_Null({
-            callData: abi.encodeCall(staking.totalAmountStakedByUser, (campaignIds.nullCampaign, users.recipient))
+            callData: abi.encodeCall(stakingPool.totalAmountStakedByUser, (campaignIds.nullCampaign, users.recipient))
         });
     }
 
     function test_TotalAmountStakedByUserRevertWhen_ZeroAddress() external whenNotNull {
         vm.expectRevert(Errors.SablierStakingState_ZeroAddress.selector);
-        staking.totalAmountStakedByUser(campaignIds.defaultCampaign, address(0));
+        stakingPool.totalAmountStakedByUser(campaignIds.defaultCampaign, address(0));
     }
 
     function test_TotalAmountStakedByUserWhenNotZeroAddress() external view whenNotNull {
         assertEq(
-            staking.totalAmountStakedByUser(campaignIds.defaultCampaign, users.recipient),
+            stakingPool.totalAmountStakedByUser(campaignIds.defaultCampaign, users.recipient),
             AMOUNT_STAKED_BY_RECIPIENT,
             "totalAmountStakedByUser"
         );
@@ -238,25 +245,25 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     //////////////////////////////////////////////////////////////////////////*/
 
     function test_UserSharesRevertWhen_Null() external {
-        expectRevert_Null({ callData: abi.encodeCall(staking.userShares, (campaignIds.nullCampaign, users.staker)) });
+        expectRevert_Null({ callData: abi.encodeCall(stakingPool.userShares, (campaignIds.nullCampaign, users.staker)) });
     }
 
     function test_UserSharesRevertWhen_ZeroAddress() external whenNotNull {
         vm.expectRevert(Errors.SablierStakingState_ZeroAddress.selector);
-        staking.userShares(campaignIds.defaultCampaign, address(0));
+        stakingPool.userShares(campaignIds.defaultCampaign, address(0));
     }
 
     function test_UserSharesWhenNotZeroAddress() external whenNotNull {
         warpStateTo(END_TIME);
 
         (uint128 streamsCount, uint128 streamAmountStaked, uint128 directAmountStaked) =
-            staking.userShares(campaignIds.defaultCampaign, users.staker);
+            stakingPool.userShares(campaignIds.defaultCampaign, users.staker);
         assertEq(streamsCount, 0, "staker: streamsCount");
         assertEq(streamAmountStaked, 0, "staker: streamAmountStaked");
         assertEq(directAmountStaked, DIRECT_AMOUNT_STAKED_BY_STAKER_END_TIME, "staker: directAmountStaked");
 
         (streamsCount, streamAmountStaked, directAmountStaked) =
-            staking.userShares(campaignIds.defaultCampaign, users.recipient);
+            stakingPool.userShares(campaignIds.defaultCampaign, users.recipient);
         assertEq(streamsCount, STREAMS_COUNT_FOR_RECIPIENT_END_TIME, "recipient: streamsCount");
         assertEq(streamAmountStaked, 2 * STREAM_AMOUNT_18D, "recipient: streamAmountStaked");
         assertEq(directAmountStaked, DIRECT_AMOUNT_STAKED_BY_RECIPIENT_END_TIME, "recipient: directAmountStaked");
@@ -267,26 +274,28 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     //////////////////////////////////////////////////////////////////////////*/
 
     function test_UserSnapshotRevertWhen_Null() external {
-        expectRevert_Null({ callData: abi.encodeCall(staking.userSnapshot, (campaignIds.nullCampaign, users.staker)) });
+        expectRevert_Null({
+            callData: abi.encodeCall(stakingPool.userSnapshot, (campaignIds.nullCampaign, users.staker))
+        });
     }
 
     function test_UserSnapshotRevertWhen_ZeroAddress() external whenNotNull {
         vm.expectRevert(Errors.SablierStakingState_ZeroAddress.selector);
-        staking.userSnapshot(campaignIds.defaultCampaign, address(0));
+        stakingPool.userSnapshot(campaignIds.defaultCampaign, address(0));
     }
 
     function test_UserSnapshotWhenStartTimeInFuture() external whenNotNull whenNotZeroAddress {
         warpStateTo(START_TIME - 1);
 
         (uint40 lastUpdateTime, uint256 rewardsPerTokenScaled, uint128 rewards) =
-            staking.userSnapshot(campaignIds.defaultCampaign, users.staker);
+            stakingPool.userSnapshot(campaignIds.defaultCampaign, users.staker);
 
         assertEq(lastUpdateTime, FEB_1_2025, "staker: lastUpdateTime");
         assertEq(rewardsPerTokenScaled, 0, "staker: rewardsPerTokenScaled");
         assertEq(rewards, 0, "staker: rewards");
 
         (lastUpdateTime, rewardsPerTokenScaled, rewards) =
-            staking.userSnapshot(campaignIds.defaultCampaign, users.recipient);
+            stakingPool.userSnapshot(campaignIds.defaultCampaign, users.recipient);
 
         assertEq(lastUpdateTime, 0, "recipient: lastUpdateTime");
         assertEq(rewardsPerTokenScaled, 0, "recipient: rewardsPerTokenScaled");
@@ -297,18 +306,18 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         warpStateTo(START_TIME);
 
         // Take snapshots of the rewards.
-        staking.snapshotRewards(campaignIds.defaultCampaign, users.staker);
-        staking.snapshotRewards(campaignIds.defaultCampaign, users.recipient);
+        stakingPool.snapshotRewards(campaignIds.defaultCampaign, users.staker);
+        stakingPool.snapshotRewards(campaignIds.defaultCampaign, users.recipient);
 
         (uint40 lastUpdateTime, uint256 rewardsPerTokenScaled, uint128 rewards) =
-            staking.userSnapshot(campaignIds.defaultCampaign, users.staker);
+            stakingPool.userSnapshot(campaignIds.defaultCampaign, users.staker);
 
         assertEq(lastUpdateTime, START_TIME, "staker: lastUpdateTime");
         assertEq(rewardsPerTokenScaled, 0, "staker: rewardsPerTokenScaled");
         assertEq(rewards, 0, "staker: rewards");
 
         (lastUpdateTime, rewardsPerTokenScaled, rewards) =
-            staking.userSnapshot(campaignIds.defaultCampaign, users.recipient);
+            stakingPool.userSnapshot(campaignIds.defaultCampaign, users.recipient);
 
         assertEq(lastUpdateTime, START_TIME, "recipient: lastUpdateTime");
         assertEq(rewardsPerTokenScaled, 0, "recipient: rewardsPerTokenScaled");
@@ -317,18 +326,18 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
 
     function test_UserSnapshotWhenEndTimeInFuture() external whenNotNull whenNotZeroAddress whenStartTimeInPast {
         // Take snapshots of the rewards.
-        staking.snapshotRewards(campaignIds.defaultCampaign, users.staker);
-        staking.snapshotRewards(campaignIds.defaultCampaign, users.recipient);
+        stakingPool.snapshotRewards(campaignIds.defaultCampaign, users.staker);
+        stakingPool.snapshotRewards(campaignIds.defaultCampaign, users.recipient);
 
         (uint40 lastUpdateTime, uint256 rewardsPerTokenScaled, uint128 rewards) =
-            staking.userSnapshot(campaignIds.defaultCampaign, users.staker);
+            stakingPool.userSnapshot(campaignIds.defaultCampaign, users.staker);
 
         assertEq(lastUpdateTime, WARP_40_PERCENT, "staker: lastUpdateTime");
         assertEq(rewardsPerTokenScaled, REWARDS_DISTRIBUTED_PER_TOKEN_SCALED, "staker: rewardsPerTokenScaled");
         assertEq(rewards, REWARDS_EARNED_BY_STAKER, "staker: rewards");
 
         (lastUpdateTime, rewardsPerTokenScaled, rewards) =
-            staking.userSnapshot(campaignIds.defaultCampaign, users.recipient);
+            stakingPool.userSnapshot(campaignIds.defaultCampaign, users.recipient);
 
         assertEq(lastUpdateTime, WARP_40_PERCENT, "recipient: lastUpdateTime");
         assertEq(rewardsPerTokenScaled, REWARDS_DISTRIBUTED_PER_TOKEN_SCALED, "recipient: rewardsPerTokenScaled");
@@ -339,11 +348,11 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         warpStateTo(END_TIME);
 
         // Take snapshots of the rewards.
-        staking.snapshotRewards(campaignIds.defaultCampaign, users.staker);
-        staking.snapshotRewards(campaignIds.defaultCampaign, users.recipient);
+        stakingPool.snapshotRewards(campaignIds.defaultCampaign, users.staker);
+        stakingPool.snapshotRewards(campaignIds.defaultCampaign, users.recipient);
 
         (uint40 lastUpdateTime, uint256 rewardsPerTokenScaled, uint128 rewards) =
-            staking.userSnapshot(campaignIds.defaultCampaign, users.staker);
+            stakingPool.userSnapshot(campaignIds.defaultCampaign, users.staker);
 
         assertEq(lastUpdateTime, END_TIME, "staker: lastUpdateTime");
         assertEq(
@@ -354,7 +363,7 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         assertEq(rewards, REWARDS_EARNED_BY_STAKER_END_TIME, "staker: rewards");
 
         (lastUpdateTime, rewardsPerTokenScaled, rewards) =
-            staking.userSnapshot(campaignIds.defaultCampaign, users.recipient);
+            stakingPool.userSnapshot(campaignIds.defaultCampaign, users.recipient);
 
         assertEq(lastUpdateTime, END_TIME, "recipient: lastUpdateTime");
         assertEq(
@@ -370,18 +379,18 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     //////////////////////////////////////////////////////////////////////////*/
 
     function test_WasCanceledRevertWhen_Null() external {
-        expectRevert_Null({ callData: abi.encodeCall(staking.wasCanceled, campaignIds.nullCampaign) });
+        expectRevert_Null({ callData: abi.encodeCall(stakingPool.wasCanceled, campaignIds.nullCampaign) });
     }
 
     function test_WasCanceledGivenNotCanceled() external view whenNotNull {
         // It should return false.
-        bool actualWasCanceled = staking.wasCanceled(campaignIds.defaultCampaign);
+        bool actualWasCanceled = stakingPool.wasCanceled(campaignIds.defaultCampaign);
         assertFalse(actualWasCanceled, "not canceled");
     }
 
     function test_WasCanceledGivenCanceled() external view whenNotNull {
         // It should return true.
-        bool actualWasCanceled = staking.wasCanceled(campaignIds.canceledCampaign);
+        bool actualWasCanceled = stakingPool.wasCanceled(campaignIds.canceledCampaign);
         assertTrue(actualWasCanceled, "canceled");
     }
 }

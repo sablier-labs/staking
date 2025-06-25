@@ -9,12 +9,12 @@ import { Shared_Integration_Concrete_Test } from "../Concrete.t.sol";
 
 contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     function test_RevertWhen_DelegateCall() external {
-        bytes memory callData = abi.encodeCall(staking.claimRewards, (campaignIds.defaultCampaign));
+        bytes memory callData = abi.encodeCall(stakingPool.claimRewards, (campaignIds.defaultCampaign));
         expectRevert_DelegateCall(callData);
     }
 
     function test_RevertWhen_Null() external whenNoDelegateCall {
-        bytes memory callData = abi.encodeCall(staking.claimRewards, (campaignIds.nullCampaign));
+        bytes memory callData = abi.encodeCall(stakingPool.claimRewards, (campaignIds.nullCampaign));
         expectRevert_Null(callData);
     }
 
@@ -22,12 +22,12 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
         vm.expectRevert(
             abi.encodeWithSelector(Errors.SablierStakingState_CampaignCanceled.selector, campaignIds.canceledCampaign)
         );
-        staking.claimRewards{ value: FEE }(campaignIds.canceledCampaign);
+        stakingPool.claimRewards{ value: FEE }(campaignIds.canceledCampaign);
     }
 
     function test_RevertWhen_FeeNotPaid() external whenNoDelegateCall whenNotNull givenNotCanceled {
         vm.expectRevert(abi.encodeWithSelector(Errors.SablierStaking_InsufficientFeePayment.selector, 0, FEE));
-        staking.claimRewards(campaignIds.defaultCampaign);
+        stakingPool.claimRewards(campaignIds.defaultCampaign);
     }
 
     function test_RevertWhen_StartTimeInFuture() external whenNoDelegateCall whenNotNull givenNotCanceled whenFeePaid {
@@ -38,7 +38,7 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
                 Errors.SablierStaking_CampaignNotStarted.selector, campaignIds.defaultCampaign, START_TIME
             )
         );
-        staking.claimRewards{ value: FEE }(campaignIds.defaultCampaign);
+        stakingPool.claimRewards{ value: FEE }(campaignIds.defaultCampaign);
     }
 
     function test_RevertWhen_StartTimeInPresent()
@@ -56,7 +56,7 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
                 Errors.SablierStaking_ZeroClaimableRewards.selector, campaignIds.defaultCampaign, users.recipient
             )
         );
-        staking.claimRewards{ value: FEE }(campaignIds.defaultCampaign);
+        stakingPool.claimRewards{ value: FEE }(campaignIds.defaultCampaign);
     }
 
     function test_RevertWhen_ClaimableRewardsZero()
@@ -76,7 +76,7 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
                 Errors.SablierStaking_ZeroClaimableRewards.selector, campaignIds.defaultCampaign, users.eve
             )
         );
-        staking.claimRewards{ value: FEE }(campaignIds.defaultCampaign);
+        stakingPool.claimRewards{ value: FEE }(campaignIds.defaultCampaign);
     }
 
     function test_WhenClaimableRewardsNotZero()
@@ -88,10 +88,10 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
         whenStartTimeInPast
     {
         uint256 initialCallerBalance = rewardToken.balanceOf(users.recipient);
-        uint256 initialContractBalance = rewardToken.balanceOf(address(staking));
+        uint256 initialContractBalance = rewardToken.balanceOf(address(stakingPool));
 
         // It should emit {SnapshotRewards}, {Transfer} and {ClaimRewards} events.
-        vm.expectEmit({ emitter: address(staking) });
+        vm.expectEmit({ emitter: address(stakingPool) });
         emit ISablierStaking.SnapshotRewards(
             campaignIds.defaultCampaign,
             WARP_40_PERCENT,
@@ -100,18 +100,18 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
             REWARDS_EARNED_BY_RECIPIENT
         );
         vm.expectEmit({ emitter: address(rewardToken) });
-        emit IERC20.Transfer(address(staking), users.recipient, REWARDS_EARNED_BY_RECIPIENT);
-        vm.expectEmit({ emitter: address(staking) });
+        emit IERC20.Transfer(address(stakingPool), users.recipient, REWARDS_EARNED_BY_RECIPIENT);
+        vm.expectEmit({ emitter: address(stakingPool) });
         emit ISablierStaking.ClaimRewards(campaignIds.defaultCampaign, users.recipient, REWARDS_EARNED_BY_RECIPIENT);
 
         // Claim the rewards.
-        uint128 actualRewards = staking.claimRewards{ value: FEE }(campaignIds.defaultCampaign);
+        uint128 actualRewards = stakingPool.claimRewards{ value: FEE }(campaignIds.defaultCampaign);
 
         (uint40 lastUpdateTime, uint256 rewardsEarnedPerTokenScaled,) =
-            staking.userSnapshot(campaignIds.defaultCampaign, users.recipient);
+            stakingPool.userSnapshot(campaignIds.defaultCampaign, users.recipient);
 
         // It should set rewards to zero.
-        assertEq(staking.claimableRewards(campaignIds.defaultCampaign, users.recipient), 0, "rewards");
+        assertEq(stakingPool.claimableRewards(campaignIds.defaultCampaign, users.recipient), 0, "rewards");
 
         // It should set last time update to current timestamp.
         assertEq(lastUpdateTime, WARP_40_PERCENT, "lastUpdateTime");
@@ -123,7 +123,7 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
             "recipient balance"
         );
         assertEq(
-            rewardToken.balanceOf(address(staking)),
+            rewardToken.balanceOf(address(stakingPool)),
             initialContractBalance - REWARDS_EARNED_BY_RECIPIENT,
             "contract balance"
         );
@@ -134,7 +134,7 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
         // It should update the user snapshot correctly.
         assertEq(rewardsEarnedPerTokenScaled, REWARDS_DISTRIBUTED_PER_TOKEN_SCALED, "rewardsEarnedPerTokenScaled");
 
-        // It should deposit fee into the staking contract.
-        assertEq(address(staking).balance, FEE, "staking contract balance");
+        // It should deposit fee into the staking pool.
+        assertEq(address(stakingPool).balance, FEE, "staking pool balance");
     }
 }

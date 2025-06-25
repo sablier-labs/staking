@@ -36,31 +36,31 @@ contract StakeERC20Token_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         // Change caller and deal tokens.
         setMsgSender(caller);
         deal({ token: address(stakingToken), to: caller, give: amount });
-        stakingToken.approve(address(staking), amount);
+        stakingToken.approve(address(stakingPool), amount);
 
         (uint256 expectedRewardsPerTokenScaled, uint128 expectedUserRewards) = calculateLatestRewards(caller);
-        (,, uint128 initialDirectAmountStaked) = staking.userShares(campaignIds.defaultCampaign, caller);
+        (,, uint128 initialDirectAmountStaked) = stakingPool.userShares(campaignIds.defaultCampaign, caller);
 
         // It should emit {SnapshotRewards}, {Transfer} and {StakeERC20Token} events.
-        vm.expectEmit({ emitter: address(staking) });
+        vm.expectEmit({ emitter: address(stakingPool) });
         emit ISablierStaking.SnapshotRewards(
             campaignIds.defaultCampaign, timestamp, expectedRewardsPerTokenScaled, caller, expectedUserRewards
         );
         vm.expectEmit({ emitter: address(stakingToken) });
-        emit IERC20.Transfer(caller, address(staking), amount);
-        vm.expectEmit({ emitter: address(staking) });
+        emit IERC20.Transfer(caller, address(stakingPool), amount);
+        vm.expectEmit({ emitter: address(stakingPool) });
         emit ISablierStaking.StakeERC20Token(campaignIds.defaultCampaign, caller, amount);
 
         // Stake ERC20 tokens into the default campaign.
-        staking.stakeERC20Token(campaignIds.defaultCampaign, amount);
+        stakingPool.stakeERC20Token(campaignIds.defaultCampaign, amount);
 
         // It should stake tokens.
-        (,, uint128 actualDirectAmountStaked) = staking.userShares(campaignIds.defaultCampaign, caller);
+        (,, uint128 actualDirectAmountStaked) = stakingPool.userShares(campaignIds.defaultCampaign, caller);
         assertEq(actualDirectAmountStaked, initialDirectAmountStaked + amount, "directAmountStakedByUser");
 
         // It should update global rewards snapshot.
         (uint40 actualGlobalLastUpdateTime, uint256 actualRewardsDistributedPerTokenScaled) =
-            staking.globalSnapshot(campaignIds.defaultCampaign);
+            stakingPool.globalSnapshot(campaignIds.defaultCampaign);
         assertEq(actualGlobalLastUpdateTime, timestamp, "globalLastUpdateTime");
         assertEq(
             actualRewardsDistributedPerTokenScaled, expectedRewardsPerTokenScaled, "rewardsDistributedPerTokenScaled"
@@ -68,7 +68,7 @@ contract StakeERC20Token_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
 
         // It should update user rewards snapshot.
         (uint40 actualUserLastUpdateTime, uint256 actualRewardsEarnedPerTokenScaled, uint128 actualRewards) =
-            staking.userSnapshot(campaignIds.defaultCampaign, caller);
+            stakingPool.userSnapshot(campaignIds.defaultCampaign, caller);
         assertEq(actualUserLastUpdateTime, timestamp, "userLastUpdateTime");
         assertEq(actualRewardsEarnedPerTokenScaled, expectedRewardsPerTokenScaled, "rewardsEarnedPerTokenScaled");
         assertEq(actualRewards, expectedUserRewards, "rewards");

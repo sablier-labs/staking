@@ -16,12 +16,12 @@ contract CancelCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
     }
 
     function test_RevertWhen_DelegateCall() external {
-        bytes memory callData = abi.encodeCall(staking.cancelCampaign, (campaignIds.defaultCampaign));
+        bytes memory callData = abi.encodeCall(stakingPool.cancelCampaign, (campaignIds.defaultCampaign));
         expectRevert_DelegateCall(callData);
     }
 
     function test_RevertWhen_Null() external whenNoDelegateCall {
-        bytes memory callData = abi.encodeCall(staking.cancelCampaign, (campaignIds.nullCampaign));
+        bytes memory callData = abi.encodeCall(stakingPool.cancelCampaign, (campaignIds.nullCampaign));
         expectRevert_Null(callData);
     }
 
@@ -29,7 +29,7 @@ contract CancelCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
         vm.expectRevert(
             abi.encodeWithSelector(Errors.SablierStakingState_CampaignCanceled.selector, campaignIds.canceledCampaign)
         );
-        staking.cancelCampaign(campaignIds.canceledCampaign);
+        stakingPool.cancelCampaign(campaignIds.canceledCampaign);
     }
 
     function test_RevertWhen_CallerNotCampaignAdmin() external whenNoDelegateCall whenNotNull givenNotCanceled {
@@ -44,7 +44,7 @@ contract CancelCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
                 users.campaignCreator
             )
         );
-        staking.cancelCampaign(campaignIds.defaultCampaign);
+        stakingPool.cancelCampaign(campaignIds.defaultCampaign);
     }
 
     function test_RevertWhen_StartTimeInPast()
@@ -60,7 +60,7 @@ contract CancelCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
                 Errors.SablierStaking_CampaignAlreadyStarted.selector, campaignIds.defaultCampaign, START_TIME
             )
         );
-        staking.cancelCampaign(campaignIds.defaultCampaign);
+        stakingPool.cancelCampaign(campaignIds.defaultCampaign);
     }
 
     function test_RevertWhen_StartTimeInPresent()
@@ -77,7 +77,7 @@ contract CancelCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
                 Errors.SablierStaking_CampaignAlreadyStarted.selector, campaignIds.defaultCampaign, START_TIME
             )
         );
-        staking.cancelCampaign(campaignIds.defaultCampaign);
+        stakingPool.cancelCampaign(campaignIds.defaultCampaign);
     }
 
     function test_WhenStartTimeInFuture()
@@ -91,15 +91,15 @@ contract CancelCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
 
         // It should emit {Transfer} and {CancelCampaign} events.
         vm.expectEmit({ emitter: address(rewardToken) });
-        emit IERC20.Transfer(address(staking), users.campaignCreator, REWARD_AMOUNT);
-        vm.expectEmit({ emitter: address(staking) });
+        emit IERC20.Transfer(address(stakingPool), users.campaignCreator, REWARD_AMOUNT);
+        vm.expectEmit({ emitter: address(stakingPool) });
         emit ISablierStaking.CancelCampaign(campaignIds.defaultCampaign);
 
         // Cancel the campaign.
-        uint256 expectedAmountRefunded = staking.cancelCampaign(campaignIds.defaultCampaign);
+        uint256 expectedAmountRefunded = stakingPool.cancelCampaign(campaignIds.defaultCampaign);
 
         // It should cancel the campaign.
-        assertEq(staking.wasCanceled(campaignIds.defaultCampaign), true, "wasCanceled");
+        assertEq(stakingPool.wasCanceled(campaignIds.defaultCampaign), true, "wasCanceled");
 
         // It should return the amount refunded.
         assertEq(expectedAmountRefunded, REWARD_AMOUNT, "return value");

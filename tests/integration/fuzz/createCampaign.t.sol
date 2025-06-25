@@ -34,23 +34,23 @@ contract CreateCampaign_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
 
         // Deal reward token to the campaign creator.
         deal({ token: address(rewardToken), to: campaignCreator, give: totalRewards });
-        approveContract(address(rewardToken), campaignCreator, address(staking));
+        approveContract(address(rewardToken), campaignCreator, address(stakingPool));
 
         // Set the campaign creator as the caller.
         setMsgSender(campaignCreator);
 
-        uint256 expectedCampaignId = staking.nextCampaignId();
+        uint256 expectedCampaignId = stakingPool.nextCampaignId();
 
         // It should emit {Transfer} and {CreateCampaign} events.
         vm.expectEmit({ emitter: address(rewardToken) });
-        emit IERC20.Transfer(campaignCreator, address(staking), totalRewards);
-        vm.expectEmit({ emitter: address(staking) });
+        emit IERC20.Transfer(campaignCreator, address(stakingPool), totalRewards);
+        vm.expectEmit({ emitter: address(stakingPool) });
         emit ISablierStaking.CreateCampaign(
             expectedCampaignId, campaignCreator, stakingToken, rewardToken, startTime, endTime, totalRewards
         );
 
         // Create the campaign.
-        uint256 actualCampaignId = staking.createCampaign({
+        uint256 actualCampaignId = stakingPool.createCampaign({
             admin: campaignCreator,
             stakingToken: stakingToken,
             startTime: startTime,
@@ -63,15 +63,15 @@ contract CreateCampaign_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         assertEq(actualCampaignId, expectedCampaignId, "campaignId");
 
         // It should bump the next campaign ID.
-        assertEq(staking.nextCampaignId(), expectedCampaignId + 1, "nextCampaignId");
+        assertEq(stakingPool.nextCampaignId(), expectedCampaignId + 1, "nextCampaignId");
 
         // It should set the correct campaign state.
-        assertEq(staking.getAdmin(actualCampaignId), campaignCreator, "admin");
-        assertEq(staking.getStakingToken(actualCampaignId), stakingToken, "stakingToken");
-        assertEq(staking.getStartTime(actualCampaignId), startTime, "startTime");
-        assertEq(staking.getEndTime(actualCampaignId), endTime, "endTime");
-        assertEq(staking.getRewardToken(actualCampaignId), rewardToken, "rewardToken");
-        assertEq(staking.getTotalRewards(actualCampaignId), totalRewards, "totalRewards");
-        assertEq(staking.wasCanceled(actualCampaignId), false, "wasCanceled");
+        assertEq(stakingPool.getAdmin(actualCampaignId), campaignCreator, "admin");
+        assertEq(stakingPool.getStakingToken(actualCampaignId), stakingToken, "stakingToken");
+        assertEq(stakingPool.getStartTime(actualCampaignId), startTime, "startTime");
+        assertEq(stakingPool.getEndTime(actualCampaignId), endTime, "endTime");
+        assertEq(stakingPool.getRewardToken(actualCampaignId), rewardToken, "rewardToken");
+        assertEq(stakingPool.getTotalRewards(actualCampaignId), totalRewards, "totalRewards");
+        assertEq(stakingPool.wasCanceled(actualCampaignId), false, "wasCanceled");
     }
 }

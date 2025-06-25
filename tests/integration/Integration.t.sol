@@ -37,13 +37,13 @@ abstract contract Integration_Test is Base_Test {
     //////////////////////////////////////////////////////////////////////////*/
 
     function expectRevert_DelegateCall(bytes memory callData) internal {
-        (bool success, bytes memory returnData) = address(staking).delegatecall(callData);
+        (bool success, bytes memory returnData) = address(stakingPool).delegatecall(callData);
         assertFalse(success, "delegatecall success");
         assertEq(returnData, abi.encodeWithSelector(EvmUtilsErrors.DelegateCall.selector), "delegatecall error");
     }
 
     function expectRevert_Null(bytes memory callData) internal {
-        (bool success, bytes memory returnData) = address(staking).call(callData);
+        (bool success, bytes memory returnData) = address(stakingPool).call(callData);
         assertFalse(success, "null call success");
         assertEq(
             returnData,
@@ -67,7 +67,7 @@ abstract contract Integration_Test is Base_Test {
         }
 
         (uint40 lastUpdateTime, uint256 rewardsDistributedPerTokenScaled) =
-            staking.globalSnapshot(campaignIds.defaultCampaign);
+            stakingPool.globalSnapshot(campaignIds.defaultCampaign);
 
         // Calculate starting point in time for rewards calculation.
         uint40 startingPointInTime = lastUpdateTime >= START_TIME ? lastUpdateTime : START_TIME;
@@ -80,24 +80,24 @@ abstract contract Integration_Test is Base_Test {
         uint128 rewardsDistributedSinceLastUpdate = REWARD_AMOUNT * timeElapsed / CAMPAIGN_DURATION;
 
         // Update global rewards distributed per token scaled.
-        rewardsDistributedPerTokenScaled +=
-            getScaledValue(rewardsDistributedSinceLastUpdate) / staking.totalAmountStaked(campaignIds.defaultCampaign);
+        rewardsDistributedPerTokenScaled += getScaledValue(rewardsDistributedSinceLastUpdate)
+            / stakingPool.totalAmountStaked(campaignIds.defaultCampaign);
 
         // Get user rewards snapshot.
-        (, rewardsEarnedPerTokenScaled, rewards) = staking.userSnapshot(campaignIds.defaultCampaign, user);
+        (, rewardsEarnedPerTokenScaled, rewards) = stakingPool.userSnapshot(campaignIds.defaultCampaign, user);
 
         // Calculate latest rewards earned per token scaled.
         uint256 rewardsEarnedPerTokenScaledDelta = rewardsDistributedPerTokenScaled - rewardsEarnedPerTokenScaled;
         rewardsEarnedPerTokenScaled += rewardsEarnedPerTokenScaledDelta;
 
         // Calculate latest rewards for user.
-        uint128 totalAmountStakedByUser = staking.totalAmountStakedByUser(campaignIds.defaultCampaign, user);
+        uint128 totalAmountStakedByUser = stakingPool.totalAmountStakedByUser(campaignIds.defaultCampaign, user);
         rewards += getDescaledValue(rewardsEarnedPerTokenScaledDelta * totalAmountStakedByUser);
     }
 
     /// @notice Creates a default campaign.
     function createDefaultCampaign() internal returns (uint256 campaignId) {
-        return staking.createCampaign({
+        return stakingPool.createCampaign({
             admin: users.campaignCreator,
             stakingToken: stakingToken,
             startTime: START_TIME,
@@ -129,31 +129,31 @@ abstract contract Integration_Test is Base_Test {
     function simulateAndSnapshotStakingBehavior() internal {
         // First snapshot after the campaigns are created and the staker stakes direct tokens immediately.
         setMsgSender(users.staker);
-        staking.stakeERC20Token(campaignIds.defaultCampaign, DEFAULT_AMOUNT);
-        staking.stakeERC20Token(campaignIds.canceledCampaign, DEFAULT_AMOUNT);
+        stakingPool.stakeERC20Token(campaignIds.defaultCampaign, DEFAULT_AMOUNT);
+        stakingPool.stakeERC20Token(campaignIds.canceledCampaign, DEFAULT_AMOUNT);
 
         // Cancel the canceledCampaign before snapshot.
         setMsgSender(users.campaignCreator);
-        staking.cancelCampaign(campaignIds.canceledCampaign);
+        stakingPool.cancelCampaign(campaignIds.canceledCampaign);
 
         snapshotState(); // snapshot ID = 0
 
         // Second snapshot when the campaign starts: Recipient stakes a stream.
         vm.warp(START_TIME);
         setMsgSender(users.recipient);
-        staking.stakeLockupNFT(campaignIds.defaultCampaign, lockup, streamIds.defaultStakedStream);
+        stakingPool.stakeLockupNFT(campaignIds.defaultCampaign, lockup, streamIds.defaultStakedStream);
         snapshotState(); // snapshot ID = 1
 
         // Third snapshot when 20% through the campaign: Recipient stakes a stream and direct tokens.
         vm.warp(WARP_20_PERCENT);
-        staking.stakeERC20Token(campaignIds.defaultCampaign, DEFAULT_AMOUNT);
-        staking.stakeLockupNFT(campaignIds.defaultCampaign, lockup, streamIds.defaultStakedStreamNonCancelable);
+        stakingPool.stakeERC20Token(campaignIds.defaultCampaign, DEFAULT_AMOUNT);
+        stakingPool.stakeLockupNFT(campaignIds.defaultCampaign, lockup, streamIds.defaultStakedStreamNonCancelable);
         snapshotState(); // snapshot ID = 2
 
         // Fourth snapshot when 40% through the campaign: Staker stakes direct tokens.
         vm.warp(WARP_40_PERCENT);
         setMsgSender(users.staker);
-        staking.stakeERC20Token(campaignIds.defaultCampaign, DEFAULT_AMOUNT);
+        stakingPool.stakeERC20Token(campaignIds.defaultCampaign, DEFAULT_AMOUNT);
         snapshotState(); // snapshot ID = 3
     }
 }

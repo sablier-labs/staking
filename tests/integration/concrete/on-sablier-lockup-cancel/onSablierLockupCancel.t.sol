@@ -10,7 +10,7 @@ import { Shared_Integration_Concrete_Test } from "../Concrete.t.sol";
 contract OnSablierLockupCancel_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     function test_RevertWhen_DelegateCall() external {
         bytes memory callData =
-            abi.encodeCall(staking.onSablierLockupCancel, (streamIds.defaultStream, users.sender, 0, 0));
+            abi.encodeCall(stakingPool.onSablierLockupCancel, (streamIds.defaultStream, users.sender, 0, 0));
         expectRevert_DelegateCall(callData);
     }
 
@@ -22,7 +22,7 @@ contract OnSablierLockupCancel_Integration_Concrete_Test is Shared_Integration_C
                 Errors.SablierStaking_StreamNotStaked.selector, users.sender, streamIds.defaultStream
             )
         );
-        staking.onSablierLockupCancel(streamIds.defaultStream, users.sender, 0, 0);
+        stakingPool.onSablierLockupCancel(streamIds.defaultStream, users.sender, 0, 0);
     }
 
     function test_RevertGiven_LockupNotWhitelisted() external whenNoDelegateCall whenCallerLockup {
@@ -34,13 +34,13 @@ contract OnSablierLockupCancel_Integration_Concrete_Test is Shared_Integration_C
         vm.expectRevert(
             abi.encodeWithSelector(Errors.SablierStaking_StreamNotStaked.selector, lockup, streamIds.defaultStream)
         );
-        staking.onSablierLockupCancel(streamIds.defaultStream, users.sender, 0, 0);
+        stakingPool.onSablierLockupCancel(streamIds.defaultStream, users.sender, 0, 0);
     }
 
     function test_RevertGiven_StreamNotStaked() external whenNoDelegateCall whenCallerLockup givenLockupWhitelisted {
         // Transfer a stream directly to the Staking contract so that its not technically staked.
         setMsgSender(users.recipient);
-        lockup.transferFrom(users.recipient, address(staking), streamIds.defaultStream);
+        lockup.transferFrom(users.recipient, address(stakingPool), streamIds.defaultStream);
 
         vm.expectRevert(
             abi.encodeWithSelector(Errors.SablierStaking_StreamNotStaked.selector, lockup, streamIds.defaultStream)
@@ -53,12 +53,12 @@ contract OnSablierLockupCancel_Integration_Concrete_Test is Shared_Integration_C
 
     function test_GivenStreamStaked() external whenNoDelegateCall whenCallerLockup givenLockupWhitelisted {
         uint128 amountToRefund = ISablierLockup(address(lockup)).refundableAmountOf(streamIds.defaultStakedStream);
-        uint128 expectedGlobalStakedAmount = staking.totalAmountStaked(campaignIds.defaultCampaign) - amountToRefund;
+        uint128 expectedGlobalStakedAmount = stakingPool.totalAmountStaked(campaignIds.defaultCampaign) - amountToRefund;
         (uint128 previousStreamsCount, uint128 previousStreamAmount, uint128 previousDirectAmount) =
-            staking.userShares(campaignIds.defaultCampaign, users.recipient);
+            stakingPool.userShares(campaignIds.defaultCampaign, users.recipient);
 
         // It should emit {SnapshotRewards} event.
-        vm.expectEmit({ emitter: address(staking) });
+        vm.expectEmit({ emitter: address(stakingPool) });
         emit ISablierStaking.SnapshotRewards(
             campaignIds.defaultCampaign,
             WARP_40_PERCENT,
@@ -76,12 +76,14 @@ contract OnSablierLockupCancel_Integration_Concrete_Test is Shared_Integration_C
 
         // It should adjust global staked amount.
         assertEq(
-            staking.totalAmountStaked(campaignIds.defaultCampaign), expectedGlobalStakedAmount, "global staked amount"
+            stakingPool.totalAmountStaked(campaignIds.defaultCampaign),
+            expectedGlobalStakedAmount,
+            "global staked amount"
         );
 
         // It should adjust user staked amount.
         (uint128 streamCount, uint128 streamAmountStaked, uint128 directAmountStaked) =
-            staking.userShares(campaignIds.defaultCampaign, users.recipient);
+            stakingPool.userShares(campaignIds.defaultCampaign, users.recipient);
 
         assertEq(streamCount, previousStreamsCount, "user streams count");
         assertEq(directAmountStaked, previousDirectAmount, "user direct staked amount");

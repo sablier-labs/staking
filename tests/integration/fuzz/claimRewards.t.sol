@@ -15,7 +15,7 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
 
         // It should revert.
         vm.expectRevert(abi.encodeWithSelector(Errors.SablierStaking_InsufficientFeePayment.selector, fee, FEE));
-        staking.claimRewards{ value: fee }(campaignIds.defaultCampaign);
+        stakingPool.claimRewards{ value: fee }(campaignIds.defaultCampaign);
     }
 
     /// @dev It should revert since the campaign has not started yet.
@@ -38,7 +38,7 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
                 Errors.SablierStaking_CampaignNotStarted.selector, campaignIds.defaultCampaign, START_TIME
             )
         );
-        staking.claimRewards{ value: FEE }(campaignIds.defaultCampaign);
+        stakingPool.claimRewards{ value: FEE }(campaignIds.defaultCampaign);
     }
 
     /// @dev It should revert.
@@ -71,7 +71,7 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
                 Errors.SablierStaking_ZeroClaimableRewards.selector, campaignIds.defaultCampaign, caller
             )
         );
-        staking.claimRewards{ value: FEE }(campaignIds.defaultCampaign);
+        stakingPool.claimRewards{ value: FEE }(campaignIds.defaultCampaign);
     }
 
     /// @dev It should run tests for a multiple callers when caller is staking for the first time.
@@ -110,15 +110,15 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         // Warp EVM state to the given timestamp.
         warpStateTo(stakingTimestamp);
 
-        // Change the caller and approve the staking contract.
+        // Change the caller and approve the staking pool.
         setMsgSender(caller);
         deal({ token: address(stakingToken), to: caller, give: amountToStake });
-        stakingToken.approve(address(staking), amountToStake);
+        stakingToken.approve(address(stakingPool), amountToStake);
 
         // Caller stakes first and then warp to a new randomized timestamp.
-        staking.stakeERC20Token(campaignIds.defaultCampaign, amountToStake);
+        stakingPool.stakeERC20Token(campaignIds.defaultCampaign, amountToStake);
 
-        uint128 totalAmountStakedAtStake = staking.totalAmountStaked(campaignIds.defaultCampaign);
+        uint128 totalAmountStakedAtStake = stakingPool.totalAmountStaked(campaignIds.defaultCampaign);
 
         // Randomly select a timestamp to claim rewards.
         uint40 claimTimestamp = randomUint40({
@@ -166,34 +166,34 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         (uint256 expectedRewardsPerTokenScaled, uint128 expectedUserRewards) = calculateLatestRewards(caller);
 
         // It should emit {SnapshotRewards}, {Transfer} and {ClaimRewards} events.
-        vm.expectEmit({ emitter: address(staking) });
+        vm.expectEmit({ emitter: address(stakingPool) });
         emit ISablierStaking.SnapshotRewards(
             campaignIds.defaultCampaign, timestamp, expectedRewardsPerTokenScaled, caller, expectedUserRewards
         );
         vm.expectEmit({ emitter: address(rewardToken) });
-        emit IERC20.Transfer(address(staking), caller, expectedUserRewards);
-        vm.expectEmit({ emitter: address(staking) });
+        emit IERC20.Transfer(address(stakingPool), caller, expectedUserRewards);
+        vm.expectEmit({ emitter: address(stakingPool) });
         emit ISablierStaking.ClaimRewards(campaignIds.defaultCampaign, caller, expectedUserRewards);
 
         // Claim the rewards.
-        uint128 actualRewards = staking.claimRewards{ value: fee }(campaignIds.defaultCampaign);
+        uint128 actualRewards = stakingPool.claimRewards{ value: fee }(campaignIds.defaultCampaign);
 
         // It should return the rewards.
         assertEq(actualRewards, expectedUserRewards, "return value");
 
         (uint40 actualLastUpdateTime, uint256 actualRewardsPerTokenScaled,) =
-            staking.userSnapshot(campaignIds.defaultCampaign, caller);
+            stakingPool.userSnapshot(campaignIds.defaultCampaign, caller);
 
         // It should set last time update to current timestamp.
         assertEq(actualLastUpdateTime, timestamp, "lastUpdateTime");
 
         // It should set rewards to zero.
-        assertEq(staking.claimableRewards(campaignIds.defaultCampaign, caller), 0, "rewards");
+        assertEq(stakingPool.claimableRewards(campaignIds.defaultCampaign, caller), 0, "rewards");
 
         // It should set the rewards earned per token.
         assertEq(actualRewardsPerTokenScaled, expectedRewardsPerTokenScaled, "rewardsEarnedPerTokenScaled");
 
-        // It should deposit fee into the staking contract.
-        assertEq(address(staking).balance, fee, "staking contract balance");
+        // It should deposit fee into the staking pool.
+        assertEq(address(stakingPool).balance, fee, "staking pool balance");
     }
 }

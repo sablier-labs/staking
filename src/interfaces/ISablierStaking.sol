@@ -101,9 +101,8 @@ interface ISablierStaking is
         view
         returns (bytes4 selector);
 
-    /// @notice Returns the amount of reward ERC20 tokens that total staked ERC20 tokens are earning every second.
-    /// Returns 0 if total staked tokens are 0.
-    /// @dev Reverts if `poolId` references a non-existent pool, or is inactive (including closed).
+    /// @notice Returns the amount of reward ERC20 tokens distributed every second.
+    /// @dev Reverts if `poolId` references a non-existent pool.
     function rewardRate(uint256 poolId) external view returns (uint128);
 
     /// @notice Returns the amount of reward ERC20 token that each staked ERC20 token is earning every second. Returns 0

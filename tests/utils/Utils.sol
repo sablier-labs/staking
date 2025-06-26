@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity >=0.8.26;
 
+import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { BaseTest as EvmUtilsBase } from "@sablier/evm-utils/src/tests/BaseTest.sol";
 import { SablierStaking } from "src/SablierStaking.sol";
 
 import { Constants } from "./Constants.sol";
 
 abstract contract Utils is Constants, EvmUtilsBase {
+    using SafeCast for uint256;
+
     /// @dev Deploys {SablierStaking} from an optimized source compiled with `--via-ir`.
     function deployOptimizedSablierStaking(address admin) internal returns (SablierStaking) {
         return SablierStaking(deployCode("out-optimized/SablierStaking.sol/SablierStaking.json", abi.encode(admin)));
@@ -16,7 +19,7 @@ abstract contract Utils is Constants, EvmUtilsBase {
     function getDescaledValue(uint256 value) internal pure returns (uint128) {
         require(value <= MAX_UINT128 * SCALE_FACTOR, "exceeds MAX_UINT128");
 
-        return uint128(value / SCALE_FACTOR);
+        return (value / SCALE_FACTOR).toUint128();
     }
 
     /// @dev Scales the value by multiplying it by `SCALE_FACTOR`.
@@ -26,12 +29,12 @@ abstract contract Utils is Constants, EvmUtilsBase {
 
     /// @dev Returns the minimum duration, in seconds, it takes to earn one reward token with `amount` staked.
     function minDurationToEarnOneToken(uint128 amount, uint128 totalAmountStaked) internal pure returns (uint40) {
-        return uint40(totalAmountStaked / (uint256(amount) * REWARD_RATE)) + 1 seconds;
+        return (totalAmountStaked / (uint256(amount) * REWARD_RATE)).toUint40() + 1 seconds;
     }
 
     /// @dev Returns a random uint40 between `min` and `max`.
     function randomUint40(uint40 min, uint40 max) internal returns (uint40) {
-        return uint40(vm.randomUint({ min: min, max: max }));
+        return (vm.randomUint({ min: min, max: max })).toUint40();
     }
 
     /// @notice Creates an EVM snapshot at the current block timestamp.

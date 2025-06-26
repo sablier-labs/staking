@@ -235,8 +235,8 @@ abstract contract SablierStakingState is ISablierStakingState {
 
     /// @dev Reverts if the current timestamp is not between the start and end times.
     function _revertIfOutsideRewardsPeriod(uint256 poolId) private view {
-        uint40 currentTimestamp = uint40(block.timestamp);
         Pool memory pool = _pool[poolId];
+        uint40 currentTimestamp = uint40(block.timestamp);
 
         // Check: the timestamp is between the start and end times.
         bool isRewardsPeriodActive = pool.startTime <= currentTimestamp && currentTimestamp <= pool.endTime;

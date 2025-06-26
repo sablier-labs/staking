@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.26;
 
-import { Errors } from "src/libraries/Errors.sol";
-
 import { Shared_Integration_Concrete_Test } from "../Concrete.t.sol";
 
 contract RewardRate_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
@@ -11,53 +9,23 @@ contract RewardRate_Integration_Concrete_Test is Shared_Integration_Concrete_Tes
         expectRevert_Null(callData);
     }
 
-    function test_RevertGiven_Closed() external whenNotNull {
-        vm.expectRevert(abi.encodeWithSelector(Errors.SablierStakingState_PoolClosed.selector, poolIds.closedPool));
-        sablierStaking.rewardRate(poolIds.closedPool);
-    }
-
-    function test_RevertWhen_StartTimeInFuture() external whenNotNull givenNotClosed {
+    function test_WhenStartTimeInFuture() external whenNotNull {
         warpStateTo(START_TIME - 1);
 
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.SablierStakingState_OutsideRewardsPeriod.selector, poolIds.defaultPool, START_TIME, END_TIME
-            )
-        );
-        sablierStaking.rewardRate(poolIds.defaultPool);
+        // It should return correct reward rate.
+        uint128 actualRewardRate = sablierStaking.rewardRate(poolIds.defaultPool);
+        assertEq(actualRewardRate, REWARD_RATE, "reward rate");
     }
 
-    function test_RevertWhen_EndTimeInPast() external whenNotNull givenNotClosed whenStartTimeNotInFuture {
+    function test_WhenEndTimeInPast() external whenNotNull whenStartTimeNotInFuture {
         warpStateTo(END_TIME + 1);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.SablierStakingState_OutsideRewardsPeriod.selector, poolIds.defaultPool, START_TIME, END_TIME
-            )
-        );
-        sablierStaking.rewardRate(poolIds.defaultPool);
+
+        // It should return correct reward rate.
+        uint128 actualRewardRate = sablierStaking.rewardRate(poolIds.defaultPool);
+        assertEq(actualRewardRate, REWARD_RATE, "reward rate");
     }
 
-    function test_GivenTotalStakedZero()
-        external
-        view
-        whenNotNull
-        givenNotClosed
-        whenStartTimeNotInFuture
-        whenEndTimeNotInPast
-    {
-        // It should return zero.
-        uint128 actualRewardRate = sablierStaking.rewardRate(poolIds.freshPool);
-        assertEq(actualRewardRate, 0, "reward rate");
-    }
-
-    function test_GivenTotalStakedNotZero()
-        external
-        view
-        whenNotNull
-        givenNotClosed
-        whenStartTimeNotInFuture
-        whenEndTimeNotInPast
-    {
+    function test_WhenEndTimeNotInPast() external view whenNotNull whenStartTimeNotInFuture {
         // It should return correct reward rate.
         uint128 actualRewardRate = sablierStaking.rewardRate(poolIds.defaultPool);
         assertEq(actualRewardRate, REWARD_RATE, "reward rate");

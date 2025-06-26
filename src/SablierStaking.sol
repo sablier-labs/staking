@@ -92,12 +92,7 @@ contract SablierStaking is
     }
 
     /// @inheritdoc ISablierStaking
-    function rewardRate(uint256 poolId) external view override notNull(poolId) isActive(poolId) returns (uint128) {
-        // If the total amount staked is zero, return 0.
-        if (_totalAmountStaked[poolId] == 0) {
-            return 0;
-        }
-
+    function rewardRate(uint256 poolId) external view override notNull(poolId) returns (uint128) {
         return _rewardRate(poolId);
     }
 
@@ -513,6 +508,8 @@ contract SablierStaking is
             revert Errors.SablierStaking_AmountExceedsStakedAmount(poolId, amount, userShares.directAmountStaked);
         }
 
+        uint40 blockTimestamp = uint40(block.timestamp);
+
         // Snapshot rewards if the pool has not been closed.
         if (!_pool[poolId].wasClosed) {
             // Effect: update rewards.
@@ -521,12 +518,12 @@ contract SablierStaking is
         // Otherwise, update the last update time only.
         else {
             // Effect: update the last update time.
-            _globalSnapshot[poolId].lastUpdateTime = uint40(block.timestamp);
-            _userSnapshot[msg.sender][poolId].lastUpdateTime = uint40(block.timestamp);
+            _globalSnapshot[poolId].lastUpdateTime = blockTimestamp;
+            _userSnapshot[msg.sender][poolId].lastUpdateTime = blockTimestamp;
         }
 
         // Effect: update the global last update time.
-        _globalSnapshot[poolId].lastUpdateTime = uint40(block.timestamp);
+        _globalSnapshot[poolId].lastUpdateTime = blockTimestamp;
 
         // Safe to use `unchecked` because `amount` would not exceed `userShares.directAmountStaked`.
         unchecked {
@@ -564,6 +561,8 @@ contract SablierStaking is
         // Retrieves the amount of token available in the stream.
         uint128 amountInStream = Helpers.amountInStream(lockup, streamId);
 
+        uint40 blockTimestamp = uint40(block.timestamp);
+
         // Snapshot rewards if the pool has not been closed.
         if (!_pool[poolId].wasClosed) {
             // Effect: update rewards.
@@ -572,8 +571,8 @@ contract SablierStaking is
         // Otherwise, update the last update time only.
         else {
             // Effect: update the last update time.
-            _globalSnapshot[poolId].lastUpdateTime = uint40(block.timestamp);
-            _userSnapshot[msg.sender][poolId].lastUpdateTime = uint40(block.timestamp);
+            _globalSnapshot[poolId].lastUpdateTime = blockTimestamp;
+            _userSnapshot[msg.sender][poolId].lastUpdateTime = blockTimestamp;
         }
 
         // Effect: reduce total amount staked in the pool.
@@ -683,8 +682,10 @@ contract SablierStaking is
 
         Pool memory pool = _pool[poolId];
 
+        uint40 blockTimestamp = uint40(block.timestamp);
+
         // If the start time is in the future, return 0.
-        if (uint40(block.timestamp) < pool.startTime) {
+        if (blockTimestamp < pool.startTime) {
             return 0;
         }
 
@@ -707,10 +708,10 @@ contract SablierStaking is
         }
 
         // If the end time has passed, the ending timestamp is the pool end time.
-        if (pool.endTime <= uint40(block.timestamp)) {
+        if (pool.endTime <= blockTimestamp) {
             endingTimestamp = pool.endTime;
         } else {
-            endingTimestamp = uint40(block.timestamp);
+            endingTimestamp = blockTimestamp;
         }
 
         // Safe to use `unchecked` because the calculations cannot overflow.

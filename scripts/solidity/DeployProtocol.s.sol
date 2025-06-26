@@ -7,7 +7,7 @@ import { SablierStaking } from "../../src/SablierStaking.sol";
 
 /// @notice Deploys {SablierStaking}.
 contract DeployProtocol is BaseScript {
-    function run(address initialAdmin) public broadcast returns (SablierStaking stakingPool) {
-        stakingPool = new SablierStaking(initialAdmin);
+    function run(address initialAdmin) public broadcast returns (SablierStaking sablierStaking) {
+        sablierStaking = new SablierStaking(initialAdmin);
     }
 }

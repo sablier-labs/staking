@@ -9,30 +9,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  * data types together so that they fit in a single 32-byte slot.
  */
 
-/// @notice A data structure to store the campaign parameters.
-/// @param admin The admin of the campaign. This may be different from the campaign creator.
-/// @param rewardToken The address of the ERC20 token to used as staking rewards.
-/// @param stakingToken The address of the ERC20 token that can be staked either directly or through Sablier stream.
-/// @param wasCanceled Boolean indicating if the stream was canceled.
-/// @param endTime The end time of the campaign, denoted in UNIX timestamp.
-/// @param startTime The start time of the campaign, denoted in UNIX timestamp.
-/// @param totalRewards The amount of total rewards to be distributed during the campaign's duration, denoted in reward
-/// token's decimals.
-struct Campaign {
-    // Slot 0
-    address admin;
-    // Slot 1
-    IERC20 rewardToken;
-    // Slot 2
-    IERC20 stakingToken;
-    // Slot 3
-    bool wasCanceled;
-    uint40 endTime;
-    uint40 startTime;
-    uint128 totalRewards;
-}
-
-/// @notice A data structure to store the total rewards snapshot data for each campaign.
+/// @notice A data structure to store the total rewards snapshot data for each pool.
 /// @param lastUpdateTime The last time this snapshot was updated, denoted in UNIX timestamp.
 /// @param rewardsDistributedPerTokenScaled The amount of rewards distributed per staking token (includes both direct
 /// staking and through Sablier streams), scaled by {Helpers.SCALE_FACTOR} to minimize precision loss.
@@ -43,17 +20,40 @@ struct GlobalSnapshot {
     uint256 rewardsDistributedPerTokenScaled;
 }
 
-/// @notice A data structure to reverse lookup from a Lockup stream ID to the campaign ID and original stream owner.
-/// @param campaignId The ID of the campaign in which the stream was staked.
-/// @param owner The original owner of the stream.
-struct StreamLookup {
+/// @notice A data structure to store the pool parameters.
+/// @param admin The admin of the staking pool. This may be different from the pool creator.
+/// @param rewardToken The address of the ERC20 token to used as staking rewards.
+/// @param stakingToken The address of the ERC20 token that can be staked either directly or through Sablier stream.
+/// @param wasClosed Boolean indicating if the pool was closed.
+/// @param endTime The end time of the rewards period, denoted in UNIX timestamp.
+/// @param startTime The start time of the rewards period, denoted in UNIX timestamp.
+/// @param totalRewards The amount of total rewards to be distributed during the rewards period, denoted in reward
+/// token's decimals.
+struct Pool {
     // Slot 0
-    uint256 campaignId;
+    address admin;
     // Slot 1
-    address owner;
+    IERC20 rewardToken;
+    // Slot 2
+    IERC20 stakingToken;
+    // Slot 3
+    bool wasClosed;
+    uint40 endTime;
+    uint40 startTime;
+    uint128 totalRewards;
 }
 
-/// @notice A data structure to store a user's shares of tokens staked in a campaign.
+/// @notice A data structure to reverse lookup from a Lockup stream ID to the pool ID and original stream owner.
+/// @param owner The original owner of the stream.
+/// @param poolId The ID of the staking pool in which the stream was staked.
+struct StreamLookup {
+    // Slot 0
+    address owner;
+    // Slot 1
+    uint256 poolId;
+}
+
+/// @notice A data structure to store a user's shares of tokens staked in a pool.
 /// @param streamsCount The number of Sablier streams that the user has staked.
 /// @param directAmountStaked The total amount of ERC20 tokens staked directly by the user, denoted in staking token's
 /// decimals.
@@ -67,7 +67,7 @@ struct UserShares {
     uint128 directAmountStaked;
 }
 
-/// @notice A data structure to store a user's rewards and staking data for a given campaign.
+/// @notice A data structure to store a user's rewards and staking data for a given pool.
 /// @param lastUpdateTime The last time this snapshot was updated, denoted in UNIX timestamp.
 /// @param rewards The amount of reward tokens available to be claimed by the user, denoted in reward token's decimals.
 /// @param rewardsEarnedPerTokenScaled The amount of rewards earned per staking token (includes both direct staking and

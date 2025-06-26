@@ -7,7 +7,7 @@ contract RewardsSinceLastSnapshot_Integration_Fuzz_Test is Shared_Integration_Fu
     function testFuzz_RewardsSinceLastSnapshot_GivenLastTimeUpdateNotLessThanEndTime(uint40 timestamp)
         external
         whenNotNull
-        givenNotCanceled
+        givenNotClosed
         whenStartTimeNotInFuture
         givenTotalStakedNotZero
     {
@@ -16,7 +16,7 @@ contract RewardsSinceLastSnapshot_Integration_Fuzz_Test is Shared_Integration_Fu
 
         // Warp the EVM state to the given timestamp and take snapshot.
         warpStateTo(timestamp);
-        stakingPool.snapshotRewards(campaignIds.defaultCampaign, users.recipient);
+        sablierStaking.snapshotRewards(poolIds.defaultPool, users.recipient);
 
         // Bound timestamp to a new value which is greater than the current block time.
         timestamp = boundUint40(timestamp, getBlockTimestamp() + 1, END_TIME + 365 days);
@@ -24,14 +24,14 @@ contract RewardsSinceLastSnapshot_Integration_Fuzz_Test is Shared_Integration_Fu
         vm.warp(timestamp);
 
         // It should return zero.
-        uint128 actualRewardsSinceLastSnapshot = stakingPool.rewardsSinceLastSnapshot(campaignIds.defaultCampaign);
+        uint128 actualRewardsSinceLastSnapshot = sablierStaking.rewardsSinceLastSnapshot(poolIds.defaultPool);
         assertEq(actualRewardsSinceLastSnapshot, 0, "rewardsSinceLastSnapshot");
     }
 
     function testFuzz_RewardsSinceLastSnapshot(uint40 timestamp)
         external
         whenNotNull
-        givenNotCanceled
+        givenNotClosed
         whenStartTimeNotInFuture
         givenTotalStakedNotZero
         givenLastUpdateTimeLessThanEndTime
@@ -41,22 +41,22 @@ contract RewardsSinceLastSnapshot_Integration_Fuzz_Test is Shared_Integration_Fu
 
         // Warp the EVM state to the given timestamp and snapshot rewards.
         warpStateTo(timestamp);
-        stakingPool.snapshotRewards(campaignIds.defaultCampaign, users.recipient);
+        sablierStaking.snapshotRewards(poolIds.defaultPool, users.recipient);
 
         // Bound timestamp to a new value which is greater than the current block time.
         timestamp = boundUint40(timestamp, getBlockTimestamp() + 1, END_TIME + 365 days);
 
         uint128 expectedRewardsSinceLastSnapshot;
         if (timestamp > END_TIME) {
-            expectedRewardsSinceLastSnapshot = REWARD_AMOUNT * (END_TIME - getBlockTimestamp()) / CAMPAIGN_DURATION;
+            expectedRewardsSinceLastSnapshot = REWARD_AMOUNT * (END_TIME - getBlockTimestamp()) / REWARD_PERIOD;
         } else {
-            expectedRewardsSinceLastSnapshot = REWARD_AMOUNT * (timestamp - getBlockTimestamp()) / CAMPAIGN_DURATION;
+            expectedRewardsSinceLastSnapshot = REWARD_AMOUNT * (timestamp - getBlockTimestamp()) / REWARD_PERIOD;
         }
 
         vm.warp(timestamp);
 
         // It should return correct rewards per token since last snapshot.
-        uint128 actualRewardsSinceLastSnapshot = stakingPool.rewardsSinceLastSnapshot(campaignIds.defaultCampaign);
+        uint128 actualRewardsSinceLastSnapshot = sablierStaking.rewardsSinceLastSnapshot(poolIds.defaultPool);
         assertEq(actualRewardsSinceLastSnapshot, expectedRewardsSinceLastSnapshot, "rewardsSinceLastSnapshot");
     }
 }

@@ -1,22 +1,22 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity >=0.8.26;
 
-/// @notice A struct to manage the campaign IDs.
-/// @param canceledCampaign A campaign that has been canceled.
-/// @param defaultCampaign The default campaign.
-/// @param freshCampaign A campaign that has been created but not staked into.
-/// @param nullCampaign A campaign ID that does not exist.
-struct CampaignIds {
-    uint256 canceledCampaign;
-    uint256 defaultCampaign;
-    uint256 freshCampaign;
-    uint256 nullCampaign;
+/// @notice A struct to manage the Pool IDs.
+/// @param defaultPool The default pool.
+/// @param closedPool A pool that has been closed before the start time.
+/// @param freshPool A pool that has been created but not staked into.
+/// @param nullPool A Pool ID that does not exist.
+struct PoolIds {
+    uint256 defaultPool;
+    uint256 closedPool;
+    uint256 freshPool;
+    uint256 nullPool;
 }
 
 /// @notice A struct to manage the stream IDs.
-/// @param defaultStakedStream A cancelable stream that will be staked into the default campaign.
-/// @param defaultStakedStreamNonCancelable A non-cancelable stream that will be staked into the default campaign.
-/// @param defaultStream A stream that will is not staked into the default campaign.
+/// @param defaultStakedStream A cancelable stream that will be staked into the default pool.
+/// @param defaultStakedStreamNonCancelable A non-cancelable stream that will be staked into the default pool.
+/// @param defaultStream A stream that will is not staked into the default pool.
 /// @param differentTokenStream A stream with a different token.
 struct StreamIds {
     uint256 defaultStakedStream;
@@ -26,14 +26,14 @@ struct StreamIds {
 }
 
 /// @notice A struct to manage the test users.
-/// @param campaignCreator The default campaign creator.
 /// @param eve The malicious user.
+/// @param poolCreator The default pool creator.
 /// @param recipient The default stream recipient who will stake streams as well as direct tokens.
 /// @param sender The default stream sender.
 /// @param staker The default staker who will stake direct tokens.
 struct Users {
-    address payable campaignCreator;
     address payable eve;
+    address payable poolCreator;
     address payable recipient;
     address payable sender;
     address payable staker;

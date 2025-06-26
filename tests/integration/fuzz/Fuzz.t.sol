@@ -20,7 +20,7 @@ abstract contract Shared_Integration_Fuzz_Test is Integration_Test {
     function setUp() public override {
         Integration_Test.setUp();
 
-        excludedCallers = [address(0), address(stakingPool)];
+        excludedCallers = [address(0), address(sablierStaking)];
         fixtureCaller = [users.recipient, users.staker];
     }
 

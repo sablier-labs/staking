@@ -9,7 +9,7 @@ import { Shared_Integration_Fuzz_Test } from "./Fuzz.t.sol";
 contract StakeLockupNFT_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
     /// @dev Given enough fuzz runs, all of the following scenarios will be fuzzed:
     /// - Different callers with different amounts staked through Lockup stream.
-    /// - Multiple values for the block timestamp from campaign create time until the end time.
+    /// - Multiple values for the block timestamp from pool create time until the end time.
     function testFuzz_StakeLockupNFT(
         uint128 amount,
         address caller,
@@ -18,7 +18,7 @@ contract StakeLockupNFT_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         external
         whenNoDelegateCall
         whenNotNull
-        givenNotCanceled
+        givenNotClosed
         whenEndTimeInFuture
         givenLockupWhitelisted
         whenStreamTokenMatchesStakingToken
@@ -40,34 +40,34 @@ contract StakeLockupNFT_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         uint256 streamId = defaultCreateWithDurationsLL({ amount: amount, recipient: caller });
 
         setMsgSender(caller);
-        IERC721(address(lockup)).setApprovalForAll({ operator: address(stakingPool), approved: true });
+        IERC721(address(lockup)).setApprovalForAll({ operator: address(sablierStaking), approved: true });
 
         (uint256 expectedRewardsPerTokenScaled, uint128 expectedUserRewards) = calculateLatestRewards(caller);
         (uint128 initialStreamsCount, uint128 initialStreamAmountStaked,) =
-            stakingPool.userShares(campaignIds.defaultCampaign, caller);
+            sablierStaking.userShares(poolIds.defaultPool, caller);
 
         // It should emit {SnapshotRewards}, {Transfer} and {StakeLockupNFT} events.
-        vm.expectEmit({ emitter: address(stakingPool) });
+        vm.expectEmit({ emitter: address(sablierStaking) });
         emit ISablierStaking.SnapshotRewards(
-            campaignIds.defaultCampaign, timestamp, expectedRewardsPerTokenScaled, caller, expectedUserRewards
+            poolIds.defaultPool, timestamp, expectedRewardsPerTokenScaled, caller, expectedUserRewards
         );
         vm.expectEmit({ emitter: address(lockup) });
-        emit IERC721.Transfer(caller, address(stakingPool), streamId);
-        vm.expectEmit({ emitter: address(stakingPool) });
-        emit ISablierStaking.StakeLockupNFT(campaignIds.defaultCampaign, caller, lockup, streamId, amount);
+        emit IERC721.Transfer(caller, address(sablierStaking), streamId);
+        vm.expectEmit({ emitter: address(sablierStaking) });
+        emit ISablierStaking.StakeLockupNFT(poolIds.defaultPool, caller, lockup, streamId, amount);
 
         // Stake Lockup NFT.
-        stakingPool.stakeLockupNFT(campaignIds.defaultCampaign, lockup, streamId);
+        sablierStaking.stakeLockupNFT(poolIds.defaultPool, lockup, streamId);
 
         // It should stake stream.
         (uint128 actualStreamsCount, uint128 actualStreamAmountStaked,) =
-            stakingPool.userShares(campaignIds.defaultCampaign, caller);
+            sablierStaking.userShares(poolIds.defaultPool, caller);
         assertEq(actualStreamsCount, initialStreamsCount + 1, "streamsCount");
         assertEq(actualStreamAmountStaked, initialStreamAmountStaked + amount, "streamAmountStakedByUser");
 
         // It should update user rewards snapshot.
         (uint40 actualUserLastUpdateTime, uint256 actualRewardsEarnedPerTokenScaled, uint128 actualRewards) =
-            stakingPool.userSnapshot(campaignIds.defaultCampaign, caller);
+            sablierStaking.userSnapshot(poolIds.defaultPool, caller);
         assertEq(actualUserLastUpdateTime, timestamp, "userLastUpdateTime");
         assertEq(actualRewardsEarnedPerTokenScaled, expectedRewardsPerTokenScaled, "rewardsEarnedPerTokenScaled");
         assertEq(actualRewards, expectedUserRewards, "rewards");

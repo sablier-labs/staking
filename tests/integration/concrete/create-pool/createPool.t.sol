@@ -7,27 +7,27 @@ import { Errors } from "src/libraries/Errors.sol";
 
 import { Shared_Integration_Concrete_Test } from "../Concrete.t.sol";
 
-contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
+contract CreatePool_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     function setUp() public override {
         Shared_Integration_Concrete_Test.setUp();
 
         warpStateTo(FEB_1_2025);
 
-        // Set campaign creator as the default caller for this test.
-        setMsgSender(users.campaignCreator);
+        // Set pool creator as the default caller for this test.
+        setMsgSender(users.poolCreator);
     }
 
     function test_RevertWhen_DelegateCall() external {
         bytes memory callData = abi.encodeCall(
-            stakingPool.createCampaign,
-            (users.campaignCreator, stakingToken, START_TIME, END_TIME, rewardToken, REWARD_AMOUNT)
+            sablierStaking.createPool,
+            (users.poolCreator, stakingToken, START_TIME, END_TIME, rewardToken, REWARD_AMOUNT)
         );
         expectRevert_DelegateCall(callData);
     }
 
     function test_RevertWhen_AdminZeroAddress() external whenNoDelegateCall {
         vm.expectRevert(Errors.SablierStaking_AdminZeroAddress.selector);
-        stakingPool.createCampaign({
+        sablierStaking.createPool({
             admin: address(0),
             stakingToken: stakingToken,
             startTime: START_TIME,
@@ -39,8 +39,8 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
 
     function test_RevertWhen_StartTimeInPast() external whenNoDelegateCall whenAdminNotZeroAddress {
         vm.expectRevert(abi.encodeWithSelector(Errors.SablierStaking_StartTimeInPast.selector, FEB_1_2025 - 1));
-        stakingPool.createCampaign({
-            admin: users.campaignCreator,
+        sablierStaking.createPool({
+            admin: users.poolCreator,
             stakingToken: stakingToken,
             startTime: FEB_1_2025 - 1,
             endTime: END_TIME,
@@ -52,19 +52,19 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
     function test_WhenStartTimeInPresent() external whenNoDelegateCall whenAdminNotZeroAddress {
         uint40 currentTime = getBlockTimestamp();
 
-        uint256 expectedCampaignId = stakingPool.nextCampaignId();
+        uint256 expectedPoolIds = sablierStaking.nextPoolId();
 
-        // It should emit {Transfer} and {CreateCampaign} events.
+        // It should emit {Transfer} and {CreatePool} events.
         vm.expectEmit({ emitter: address(rewardToken) });
-        emit IERC20.Transfer(users.campaignCreator, address(stakingPool), REWARD_AMOUNT);
-        vm.expectEmit({ emitter: address(stakingPool) });
-        emit ISablierStaking.CreateCampaign(
-            expectedCampaignId, users.campaignCreator, stakingToken, rewardToken, currentTime, END_TIME, REWARD_AMOUNT
+        emit IERC20.Transfer(users.poolCreator, address(sablierStaking), REWARD_AMOUNT);
+        vm.expectEmit({ emitter: address(sablierStaking) });
+        emit ISablierStaking.CreatePool(
+            expectedPoolIds, users.poolCreator, stakingToken, rewardToken, currentTime, END_TIME, REWARD_AMOUNT
         );
 
-        // It should create the campaign.
-        uint256 actualCampaignId = stakingPool.createCampaign({
-            admin: users.campaignCreator,
+        // It should create the pool.
+        uint256 actualPoolIds = sablierStaking.createPool({
+            admin: users.poolCreator,
             stakingToken: stakingToken,
             startTime: currentTime,
             endTime: END_TIME,
@@ -72,11 +72,11 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
             totalRewards: REWARD_AMOUNT
         });
 
-        // It should create the campaign.
-        assertEq(actualCampaignId, expectedCampaignId, "campaignId");
+        // It should create the pool.
+        assertEq(actualPoolIds, expectedPoolIds, "poolId");
 
-        // It should bump the next campaign ID.
-        assertEq(stakingPool.nextCampaignId(), expectedCampaignId + 1, "nextCampaignId");
+        // It should bump the next Pool ID.
+        assertEq(sablierStaking.nextPoolId(), expectedPoolIds + 1, "nextPoolId");
     }
 
     function test_RevertWhen_EndTimeLessThanStartTime()
@@ -90,8 +90,8 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
                 Errors.SablierStaking_EndTimeNotGreaterThanStartTime.selector, START_TIME, START_TIME - 1
             )
         );
-        stakingPool.createCampaign({
-            admin: users.campaignCreator,
+        sablierStaking.createPool({
+            admin: users.poolCreator,
             stakingToken: stakingToken,
             startTime: START_TIME,
             endTime: START_TIME - 1,
@@ -111,8 +111,8 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
                 Errors.SablierStaking_EndTimeNotGreaterThanStartTime.selector, START_TIME, START_TIME
             )
         );
-        stakingPool.createCampaign({
-            admin: users.campaignCreator,
+        sablierStaking.createPool({
+            admin: users.poolCreator,
             stakingToken: stakingToken,
             startTime: START_TIME,
             endTime: START_TIME,
@@ -129,8 +129,8 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
         whenEndTimeGreaterThanStartTime
     {
         vm.expectRevert(Errors.SablierStaking_StakingTokenZeroAddress.selector);
-        stakingPool.createCampaign({
-            admin: users.campaignCreator,
+        sablierStaking.createPool({
+            admin: users.poolCreator,
             stakingToken: IERC20(address(0)),
             startTime: START_TIME,
             endTime: END_TIME,
@@ -148,8 +148,8 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
         whenStakingTokenNotZeroAddress
     {
         vm.expectRevert(Errors.SablierStaking_RewardTokenZeroAddress.selector);
-        stakingPool.createCampaign({
-            admin: users.campaignCreator,
+        sablierStaking.createPool({
+            admin: users.poolCreator,
             stakingToken: stakingToken,
             startTime: START_TIME,
             endTime: END_TIME,
@@ -168,8 +168,8 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
         whenRewardTokenNotZeroAddress
     {
         vm.expectRevert(Errors.SablierStaking_RewardAmountZero.selector);
-        stakingPool.createCampaign({
-            admin: users.campaignCreator,
+        sablierStaking.createPool({
+            admin: users.poolCreator,
             stakingToken: stakingToken,
             startTime: START_TIME,
             endTime: END_TIME,
@@ -187,19 +187,19 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
         whenStakingTokenNotZeroAddress
         whenRewardTokenNotZeroAddress
     {
-        uint256 expectedCampaignId = stakingPool.nextCampaignId();
+        uint256 expectedPoolIds = sablierStaking.nextPoolId();
 
-        // It should emit {Transfer} and {CreateCampaign} events.
+        // It should emit {Transfer} and {CreatePool} events.
         vm.expectEmit({ emitter: address(rewardToken) });
-        emit IERC20.Transfer(users.campaignCreator, address(stakingPool), REWARD_AMOUNT);
-        vm.expectEmit({ emitter: address(stakingPool) });
-        emit ISablierStaking.CreateCampaign(
-            expectedCampaignId, users.campaignCreator, stakingToken, rewardToken, START_TIME, END_TIME, REWARD_AMOUNT
+        emit IERC20.Transfer(users.poolCreator, address(sablierStaking), REWARD_AMOUNT);
+        vm.expectEmit({ emitter: address(sablierStaking) });
+        emit ISablierStaking.CreatePool(
+            expectedPoolIds, users.poolCreator, stakingToken, rewardToken, START_TIME, END_TIME, REWARD_AMOUNT
         );
 
-        // It should create the campaign.
-        uint256 actualCampaignId = stakingPool.createCampaign({
-            admin: users.campaignCreator,
+        // It should create the pool.
+        uint256 actualPoolIds = sablierStaking.createPool({
+            admin: users.poolCreator,
             stakingToken: stakingToken,
             startTime: START_TIME,
             endTime: END_TIME,
@@ -207,18 +207,18 @@ contract CreateCampaign_Integration_Concrete_Test is Shared_Integration_Concrete
             totalRewards: REWARD_AMOUNT
         });
 
-        // It should create the campaign.
-        assertEq(actualCampaignId, expectedCampaignId, "campaignId");
+        // It should create the pool.
+        assertEq(actualPoolIds, expectedPoolIds, "poolId");
 
-        // It should bump the next campaign ID.
-        assertEq(stakingPool.nextCampaignId(), expectedCampaignId + 1, "nextCampaignId");
+        // It should bump the next Pool ID.
+        assertEq(sablierStaking.nextPoolId(), expectedPoolIds + 1, "nextPoolId");
 
-        // It should set the correct campaign state.
-        assertEq(stakingPool.getAdmin(actualCampaignId), users.campaignCreator, "admin");
-        assertEq(stakingPool.getStakingToken(actualCampaignId), stakingToken, "stakingToken");
-        assertEq(stakingPool.getStartTime(actualCampaignId), START_TIME, "startTime");
-        assertEq(stakingPool.getEndTime(actualCampaignId), END_TIME, "endTime");
-        assertEq(stakingPool.getTotalRewards(actualCampaignId), REWARD_AMOUNT, "totalRewards");
-        assertEq(stakingPool.wasCanceled(actualCampaignId), false, "wasCanceled");
+        // It should set the correct pool state.
+        assertEq(sablierStaking.getAdmin(actualPoolIds), users.poolCreator, "admin");
+        assertEq(sablierStaking.getStakingToken(actualPoolIds), stakingToken, "stakingToken");
+        assertEq(sablierStaking.getStartTime(actualPoolIds), START_TIME, "startTime");
+        assertEq(sablierStaking.getEndTime(actualPoolIds), END_TIME, "endTime");
+        assertEq(sablierStaking.getTotalRewards(actualPoolIds), REWARD_AMOUNT, "totalRewards");
+        assertEq(sablierStaking.wasClosed(actualPoolIds), false, "wasClosed");
     }
 }

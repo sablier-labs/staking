@@ -11,7 +11,7 @@ This is a Sablier Staking contract repository focusing on secure, efficient stak
 - ERC20 token staking
 - Lockup NFT staking integration
 - Reward distribution systems
-- Campaign management
+- Pool management
 - Multi-token support
 
 ## Project Structure
@@ -133,7 +133,7 @@ function testFuzz_FeatureName(uint256 param) external { }
 The staking contract integrates with:
 - Sablier Lockup contracts for NFT staking
 - ERC20 tokens for direct staking
-- Campaign management system
+- Pool management system
 - Reward distribution mechanisms
 
 Understanding these integration points is crucial for making changes that don't break existing functionality.

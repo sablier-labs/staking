@@ -2,9 +2,9 @@ RewardRatePerTokenStaked_Integration_Concrete_Test
 ├── when null
 │  └── it should revert
 └── when not null
-   ├── given canceled
+   ├── given closed
    │  └── it should revert
-   └── given not canceled
+   └── given not closed
       ├── when start time in future
       │  └── it should revert
       └── when start time not in future

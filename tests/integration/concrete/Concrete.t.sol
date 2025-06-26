@@ -11,7 +11,7 @@ abstract contract Shared_Integration_Concrete_Test is Integration_Test {
     function setUp() public virtual override {
         Integration_Test.setUp();
 
-        // Warp to 40% of the campaign duration for all concrete tests.
+        // Warp to 40% through the rewards period for all concrete tests.
         warpStateTo(WARP_40_PERCENT);
     }
 }

@@ -5,9 +5,9 @@ StakeLockupNFT_Integration_Concrete_Test
    ├── when null
    │  └── it should revert
    └── when not null
-      ├── given canceled
+      ├── given closed
       │  └── it should revert
-      └── given not canceled
+      └── given not closed
          ├── when end time in past
          │  └── it should revert
          ├── when end time in present

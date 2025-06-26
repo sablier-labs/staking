@@ -25,21 +25,21 @@ contract UnstakeLockupNFT_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test 
                 users.recipient
             )
         );
-        stakingPool.unstakeLockupNFT(lockup, streamIds.defaultStakedStream);
+        sablierStaking.unstakeLockupNFT(lockup, streamIds.defaultStakedStream);
     }
 
     /// @dev Given enough fuzz runs, all of the following scenarios will be fuzzed:
     /// - Sender cancels the stream.
-    /// - Multiple values for the block timestamp from campaign create time.
+    /// - Multiple values for the block timestamp from pool create time.
     /// - Caller as the NFT owner.
     function testFuzz_UnstakeLockupNFT_GivenCanceledStream(uint40 timestamp)
         external
         whenNoDelegateCall
         givenStakedNFT
-        givenNotCanceled
+        givenNotClosed
         whenCallerNFTOwner
     {
-        // Bound timestamp so that it is greater than the campaign start time but less than the stream end time.
+        // Bound timestamp so that it is greater than the pool start time but less than the stream end time.
         timestamp = boundUint40(timestamp, START_TIME, FEB_1_2025 + STREAM_DURATION);
 
         // Warp EVM state to the given timestamp.
@@ -52,7 +52,7 @@ contract UnstakeLockupNFT_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test 
         setMsgSender(users.sender);
         ISablierLockup(address(lockup)).cancel(streamIds.defaultStakedStream);
 
-        // Forward timestamp by 1 month in the future before unstakingPool.
+        // Forward timestamp by 1 month in the future before unsablierStaking.
         timestamp += 30 days;
         vm.warp(timestamp);
 
@@ -64,16 +64,16 @@ contract UnstakeLockupNFT_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test 
     }
 
     /// @dev Given enough fuzz runs, all of the following scenarios will be fuzzed:
-    /// - Multiple values for the block timestamp from campaign create time.
+    /// - Multiple values for the block timestamp from pool create time.
     /// - Caller as the NFT owner.
     function testFuzz_UnstakeLockupNFT(uint40 timestamp)
         external
         whenNoDelegateCall
         givenStakedNFT
-        givenNotCanceled
+        givenNotClosed
         whenCallerNFTOwner
     {
-        // Bound timestamp so that it is greater than the campaign start time.
+        // Bound timestamp so that it is greater than the pool start time.
         timestamp = boundUint40(timestamp, START_TIME, END_TIME + 365 days);
 
         // Warp EVM state to the given timestamp.
@@ -86,35 +86,35 @@ contract UnstakeLockupNFT_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test 
     /// @dev A shared private function to test the unstaking of a Lockup NFT.
     function _test_UnstakeLockupNFT(uint40 timestamp, uint128 amountUnstaked) private {
         (uint128 previousStreamsCount, uint128 previousStreamAmountStaked,) =
-            stakingPool.userShares(campaignIds.defaultCampaign, users.recipient);
+            sablierStaking.userShares(poolIds.defaultPool, users.recipient);
 
         (uint256 rewardsEarnedPerTokenScaled, uint128 rewards) = calculateLatestRewards(users.recipient);
 
         // It should emit {SnapshotRewards}, {Transfer} and {UnstakeERC20Token} events.
-        vm.expectEmit({ emitter: address(stakingPool) });
+        vm.expectEmit({ emitter: address(sablierStaking) });
         emit ISablierStaking.SnapshotRewards(
-            campaignIds.defaultCampaign, timestamp, rewardsEarnedPerTokenScaled, users.recipient, rewards
+            poolIds.defaultPool, timestamp, rewardsEarnedPerTokenScaled, users.recipient, rewards
         );
         vm.expectEmit({ emitter: address(lockup) });
-        emit IERC721.Transfer(address(stakingPool), users.recipient, streamIds.defaultStakedStream);
-        vm.expectEmit({ emitter: address(stakingPool) });
+        emit IERC721.Transfer(address(sablierStaking), users.recipient, streamIds.defaultStakedStream);
+        vm.expectEmit({ emitter: address(sablierStaking) });
         emit ISablierStaking.UnstakeLockupNFT(
-            campaignIds.defaultCampaign, users.recipient, lockup, streamIds.defaultStakedStream
+            poolIds.defaultPool, users.recipient, lockup, streamIds.defaultStakedStream
         );
 
         // Unstake Lockup NFT.
         setMsgSender(users.recipient);
-        stakingPool.unstakeLockupNFT(lockup, streamIds.defaultStakedStream);
+        sablierStaking.unstakeLockupNFT(lockup, streamIds.defaultStakedStream);
 
         // It should unstake NFT.
         (uint128 actualStreamsCount, uint128 actualStreamAmountStaked,) =
-            stakingPool.userShares(campaignIds.defaultCampaign, users.recipient);
+            sablierStaking.userShares(poolIds.defaultPool, users.recipient);
         assertEq(actualStreamsCount, previousStreamsCount - 1, "streamsCount");
         assertEq(actualStreamAmountStaked, previousStreamAmountStaked - amountUnstaked, "streamAmountStakedByUser");
 
         // It should update global rewards snapshot.
         (uint40 actualLastUpdateTime, uint256 actualRewardsDistributedPerTokenScaled) =
-            stakingPool.globalSnapshot(campaignIds.defaultCampaign);
+            sablierStaking.globalSnapshot(poolIds.defaultPool);
         assertEq(actualLastUpdateTime, timestamp, "actualLastUpdateTime");
         assertEq(
             actualRewardsDistributedPerTokenScaled, rewardsEarnedPerTokenScaled, "rewardsDistributedPerTokenScaled"
@@ -122,7 +122,7 @@ contract UnstakeLockupNFT_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test 
 
         // It should update user rewards snapshot.
         (actualLastUpdateTime, rewardsEarnedPerTokenScaled, rewards) =
-            stakingPool.userSnapshot(campaignIds.defaultCampaign, users.recipient);
+            sablierStaking.userSnapshot(poolIds.defaultPool, users.recipient);
         assertEq(actualLastUpdateTime, timestamp, "userLastUpdateTime");
         assertEq(rewardsEarnedPerTokenScaled, rewardsEarnedPerTokenScaled, "rewardsEarnedPerTokenScaled");
         assertEq(rewards, rewards, "rewards");

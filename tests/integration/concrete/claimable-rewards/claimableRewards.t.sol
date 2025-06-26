@@ -6,38 +6,35 @@ import { Shared_Integration_Concrete_Test } from "../Concrete.t.sol";
 
 contract ClaimableRewards_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     function test_RevertWhen_Null() external {
-        bytes memory callData =
-            abi.encodeCall(stakingPool.claimableRewards, (campaignIds.nullCampaign, users.recipient));
+        bytes memory callData = abi.encodeCall(sablierStaking.claimableRewards, (poolIds.nullPool, users.recipient));
         expectRevert_Null(callData);
     }
 
-    function test_RevertGiven_Canceled() external whenNotNull {
-        vm.expectRevert(
-            abi.encodeWithSelector(Errors.SablierStakingState_CampaignCanceled.selector, campaignIds.canceledCampaign)
-        );
-        stakingPool.claimableRewards(campaignIds.canceledCampaign, users.recipient);
+    function test_RevertGiven_Closed() external whenNotNull {
+        vm.expectRevert(abi.encodeWithSelector(Errors.SablierStakingState_PoolClosed.selector, poolIds.closedPool));
+        sablierStaking.claimableRewards(poolIds.closedPool, users.recipient);
     }
 
-    function test_RevertWhen_UserZeroAddress() external whenNotNull givenNotCanceled {
+    function test_RevertWhen_UserZeroAddress() external whenNotNull givenNotClosed {
         vm.expectRevert(Errors.SablierStaking_UserZeroAddress.selector);
-        stakingPool.claimableRewards(campaignIds.defaultCampaign, address(0));
+        sablierStaking.claimableRewards(poolIds.defaultPool, address(0));
     }
 
-    function test_GivenStakedAmountZero() external view whenNotNull givenNotCanceled whenUserNotZeroAddress {
-        uint128 actualRewards = stakingPool.claimableRewards(campaignIds.defaultCampaign, users.eve);
+    function test_GivenStakedAmountZero() external view whenNotNull givenNotClosed whenUserNotZeroAddress {
+        uint128 actualRewards = sablierStaking.claimableRewards(poolIds.defaultPool, users.eve);
         assertEq(actualRewards, 0, "rewards");
     }
 
     function test_WhenClaimableRewardsZero()
         external
         whenNotNull
-        givenNotCanceled
+        givenNotClosed
         whenUserNotZeroAddress
         givenStakedAmountNotZero
     {
         warpStateTo(START_TIME);
 
-        uint128 actualRewards = stakingPool.claimableRewards(campaignIds.defaultCampaign, users.recipient);
+        uint128 actualRewards = sablierStaking.claimableRewards(poolIds.defaultPool, users.recipient);
         assertEq(actualRewards, 0, "rewards");
     }
 
@@ -45,30 +42,30 @@ contract ClaimableRewards_Integration_Concrete_Test is Shared_Integration_Concre
         external
         view
         whenNotNull
-        givenNotCanceled
+        givenNotClosed
         whenUserNotZeroAddress
         givenStakedAmountNotZero
         whenClaimableRewardsNotZero
     {
-        uint128 actualRewards = stakingPool.claimableRewards(campaignIds.defaultCampaign, users.recipient);
+        uint128 actualRewards = sablierStaking.claimableRewards(poolIds.defaultPool, users.recipient);
         assertEq(actualRewards, REWARDS_EARNED_BY_RECIPIENT, "rewards");
     }
 
     function test_WhenCurrentTimeExceedsLastUpdateTime()
         external
         whenNotNull
-        givenNotCanceled
+        givenNotClosed
         whenUserNotZeroAddress
         givenStakedAmountNotZero
         whenClaimableRewardsNotZero
     {
-        // Warp the EVM state to 20% through the campaign.
+        // Warp the EVM state to 20% through the rewards period.
         warpStateTo(WARP_20_PERCENT);
 
-        // Warp the time to 40% through the campaign so that last time update is in the past.
+        // Warp the time to 40% through the rewards period so that last time update is in the past.
         vm.warp(WARP_40_PERCENT);
 
-        uint128 actualRewards = stakingPool.claimableRewards(campaignIds.defaultCampaign, users.recipient);
+        uint128 actualRewards = sablierStaking.claimableRewards(poolIds.defaultPool, users.recipient);
         assertEq(actualRewards, REWARDS_EARNED_BY_RECIPIENT, "rewards");
     }
 }

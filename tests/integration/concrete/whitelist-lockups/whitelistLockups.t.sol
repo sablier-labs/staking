@@ -21,12 +21,12 @@ contract WhitelistLockups_Integration_Concrete_Test is Shared_Integration_Concre
 
         // Set allow to hook.
         setMsgSender(address(comptroller));
-        ISablierLockup(address(lockups[0])).allowToHook(address(stakingPool));
-        ISablierLockup(address(lockups[1])).allowToHook(address(stakingPool));
+        ISablierLockup(address(lockups[0])).allowToHook(address(sablierStaking));
+        ISablierLockup(address(lockups[1])).allowToHook(address(sablierStaking));
     }
 
     function test_RevertWhen_DelegateCall() external {
-        bytes memory callData = abi.encodeCall(stakingPool.whitelistLockups, (lockups));
+        bytes memory callData = abi.encodeCall(sablierStaking.whitelistLockups, (lockups));
         expectRevert_DelegateCall(callData);
     }
 
@@ -38,7 +38,7 @@ contract WhitelistLockups_Integration_Concrete_Test is Shared_Integration_Concre
                 ComptrollerErrors.ComptrollerManager_CallerNotComptroller.selector, comptroller, users.eve
             )
         );
-        stakingPool.whitelistLockups(lockups);
+        sablierStaking.whitelistLockups(lockups);
     }
 
     function test_RevertWhen_ZeroAddress() external whenNoDelegateCall whenCallerComptroller {
@@ -46,7 +46,7 @@ contract WhitelistLockups_Integration_Concrete_Test is Shared_Integration_Concre
         lockups.push(ISablierLockupNFT(address(0)));
 
         vm.expectRevert(abi.encodeWithSelector(Errors.SablierStaking_LockupZeroAddress.selector, 2));
-        stakingPool.whitelistLockups(lockups);
+        sablierStaking.whitelistLockups(lockups);
     }
 
     function test_RevertGiven_AlreadyWhitelisted()
@@ -58,7 +58,7 @@ contract WhitelistLockups_Integration_Concrete_Test is Shared_Integration_Concre
         lockups.push(lockup);
 
         vm.expectRevert(abi.encodeWithSelector(Errors.SablierStaking_LockupAlreadyWhitelisted.selector, 2, lockup));
-        stakingPool.whitelistLockups(lockups);
+        sablierStaking.whitelistLockups(lockups);
     }
 
     function test_RevertWhen_IsAllowedToHookReturnsFalse()
@@ -75,7 +75,7 @@ contract WhitelistLockups_Integration_Concrete_Test is Shared_Integration_Concre
         vm.expectRevert(
             abi.encodeWithSelector(Errors.SablierStaking_UnsupportedOnAllowedToHook.selector, 2, lockups[2])
         );
-        stakingPool.whitelistLockups(lockups);
+        sablierStaking.whitelistLockups(lockups);
     }
 
     function test_WhenIsAllowedToHookReturnsTrue()
@@ -91,16 +91,16 @@ contract WhitelistLockups_Integration_Concrete_Test is Shared_Integration_Concre
     /// @dev Helper function to test the whitelisting function.
     function _test_WhitelistLockups() private {
         // It should emit {LockupWhitelisted} event.
-        vm.expectEmit({ emitter: address(stakingPool) });
+        vm.expectEmit({ emitter: address(sablierStaking) });
         emit ISablierStaking.LockupWhitelisted(address(comptroller), lockups[0]);
-        vm.expectEmit({ emitter: address(stakingPool) });
+        vm.expectEmit({ emitter: address(sablierStaking) });
         emit ISablierStaking.LockupWhitelisted(address(comptroller), lockups[1]);
 
         // Whitelist the lockups.
-        stakingPool.whitelistLockups(lockups);
+        sablierStaking.whitelistLockups(lockups);
 
         // It should whitelist lockup.
-        assertEq(stakingPool.isLockupWhitelisted(lockups[0]), true);
-        assertEq(stakingPool.isLockupWhitelisted(lockups[1]), true);
+        assertEq(sablierStaking.isLockupWhitelisted(lockups[0]), true);
+        assertEq(sablierStaking.isLockupWhitelisted(lockups[1]), true);
     }
 }

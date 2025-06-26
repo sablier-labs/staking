@@ -9,7 +9,7 @@ import { Shared_Integration_Concrete_Test } from "../Concrete.t.sol";
 
 contract UnstakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     function test_RevertWhen_DelegateCall() external {
-        bytes memory callData = abi.encodeCall(stakingPool.unstakeLockupNFT, (lockup, streamIds.defaultStakedStream));
+        bytes memory callData = abi.encodeCall(sablierStaking.unstakeLockupNFT, (lockup, streamIds.defaultStakedStream));
         expectRevert_DelegateCall(callData);
     }
 
@@ -17,52 +17,52 @@ contract UnstakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concre
         vm.expectRevert(
             abi.encodeWithSelector(Errors.SablierStaking_StreamNotStaked.selector, lockup, streamIds.defaultStream)
         );
-        stakingPool.unstakeLockupNFT(lockup, streamIds.defaultStream);
+        sablierStaking.unstakeLockupNFT(lockup, streamIds.defaultStream);
     }
 
-    function test_GivenCanceled() external whenNoDelegateCall givenStakedNFT {
-        // Setup a state where the campaign is canceled after the Lockup stream is staked.
+    function test_GivenClosed() external whenNoDelegateCall givenStakedNFT {
+        // Setup a state where the pool is closed after the Lockup stream is staked.
         warpStateTo(START_TIME - 1);
-        stakingPool.stakeLockupNFT(campaignIds.defaultCampaign, lockup, streamIds.defaultStakedStream);
+        sablierStaking.stakeLockupNFT(poolIds.defaultPool, lockup, streamIds.defaultStakedStream);
 
-        // Cancel the campaign.
-        setMsgSender(users.campaignCreator);
-        stakingPool.cancelCampaign(campaignIds.defaultCampaign);
+        // Close the pool.
+        setMsgSender(users.poolCreator);
+        sablierStaking.closePool(poolIds.defaultPool);
 
         // Change the caller to the recipient.
         setMsgSender(users.recipient);
 
         // It should emit {Transfer} and {UnstakeLockupNFT} events.
         vm.expectEmit({ emitter: address(lockup) });
-        emit IERC721.Transfer(address(stakingPool), users.recipient, streamIds.defaultStakedStream);
-        vm.expectEmit({ emitter: address(stakingPool) });
+        emit IERC721.Transfer(address(sablierStaking), users.recipient, streamIds.defaultStakedStream);
+        vm.expectEmit({ emitter: address(sablierStaking) });
         emit ISablierStaking.UnstakeLockupNFT(
-            campaignIds.defaultCampaign, users.recipient, lockup, streamIds.defaultStakedStream
+            poolIds.defaultPool, users.recipient, lockup, streamIds.defaultStakedStream
         );
 
-        stakingPool.unstakeLockupNFT(lockup, streamIds.defaultStakedStream);
+        sablierStaking.unstakeLockupNFT(lockup, streamIds.defaultStakedStream);
 
         // It should unstake NFT.
         (uint128 actualStreamsCount, uint128 actualStreamAmountStaked,) =
-            stakingPool.userShares(campaignIds.defaultCampaign, users.recipient);
+            sablierStaking.userShares(poolIds.defaultPool, users.recipient);
         assertEq(actualStreamsCount, 0, "streamsCount");
         assertEq(actualStreamAmountStaked, 0, "streamAmountStakedByUser");
 
         // It should update global rewards snapshot.
         (uint40 globalLastUpdateTime, uint256 rewardsDistributedPerTokenScaled) =
-            stakingPool.globalSnapshot(campaignIds.defaultCampaign);
+            sablierStaking.globalSnapshot(poolIds.defaultPool);
         assertEq(globalLastUpdateTime, START_TIME - 1, "globalLastUpdateTime");
         assertEq(rewardsDistributedPerTokenScaled, 0, "rewardsDistributedPerTokenScaled");
 
         // It should update user rewards snapshot.
         (uint40 userLastUpdateTime, uint256 rewardsEarnedPerTokenScaled, uint128 rewards) =
-            stakingPool.userSnapshot(campaignIds.defaultCampaign, users.recipient);
+            sablierStaking.userSnapshot(poolIds.defaultPool, users.recipient);
         assertEq(userLastUpdateTime, START_TIME - 1, "userLastUpdateTime");
         assertEq(rewardsEarnedPerTokenScaled, 0, "rewardsEarnedPerTokenScaled");
         assertEq(rewards, 0, "rewards");
     }
 
-    function test_RevertWhen_CallerNotNFTOwner() external whenNoDelegateCall givenStakedNFT givenNotCanceled {
+    function test_RevertWhen_CallerNotNFTOwner() external whenNoDelegateCall givenStakedNFT givenNotClosed {
         setMsgSender(users.eve);
 
         vm.expectRevert(
@@ -74,37 +74,37 @@ contract UnstakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concre
                 users.recipient
             )
         );
-        stakingPool.unstakeLockupNFT(lockup, streamIds.defaultStakedStream);
+        sablierStaking.unstakeLockupNFT(lockup, streamIds.defaultStakedStream);
     }
 
-    function test_WhenCallerNFTOwner() external whenNoDelegateCall givenStakedNFT givenNotCanceled {
+    function test_WhenCallerNFTOwner() external whenNoDelegateCall givenStakedNFT givenNotClosed {
         // It should emit {SnapshotRewards}, {Transfer} and {UnstakeERC20Token} events.
-        vm.expectEmit({ emitter: address(stakingPool) });
+        vm.expectEmit({ emitter: address(sablierStaking) });
         emit ISablierStaking.SnapshotRewards(
-            campaignIds.defaultCampaign,
+            poolIds.defaultPool,
             WARP_40_PERCENT,
             REWARDS_DISTRIBUTED_PER_TOKEN_SCALED,
             users.recipient,
             REWARDS_EARNED_BY_RECIPIENT
         );
         vm.expectEmit({ emitter: address(lockup) });
-        emit IERC721.Transfer(address(stakingPool), users.recipient, streamIds.defaultStakedStream);
-        vm.expectEmit({ emitter: address(stakingPool) });
+        emit IERC721.Transfer(address(sablierStaking), users.recipient, streamIds.defaultStakedStream);
+        vm.expectEmit({ emitter: address(sablierStaking) });
         emit ISablierStaking.UnstakeLockupNFT(
-            campaignIds.defaultCampaign, users.recipient, lockup, streamIds.defaultStakedStream
+            poolIds.defaultPool, users.recipient, lockup, streamIds.defaultStakedStream
         );
 
-        stakingPool.unstakeLockupNFT(lockup, streamIds.defaultStakedStream);
+        sablierStaking.unstakeLockupNFT(lockup, streamIds.defaultStakedStream);
 
         // It should unstake NFT.
         (uint128 actualStreamsCount, uint128 actualStreamAmountStaked,) =
-            stakingPool.userShares(campaignIds.defaultCampaign, users.recipient);
+            sablierStaking.userShares(poolIds.defaultPool, users.recipient);
         assertEq(actualStreamsCount, 1, "streamsCount");
         assertEq(actualStreamAmountStaked, STREAM_AMOUNT_18D, "streamAmountStakedByUser");
 
         // It should update global rewards snapshot.
         (uint40 globalLastUpdateTime, uint256 rewardsDistributedPerTokenScaled) =
-            stakingPool.globalSnapshot(campaignIds.defaultCampaign);
+            sablierStaking.globalSnapshot(poolIds.defaultPool);
         assertEq(globalLastUpdateTime, WARP_40_PERCENT, "globalLastUpdateTime");
         assertEq(
             rewardsDistributedPerTokenScaled, REWARDS_DISTRIBUTED_PER_TOKEN_SCALED, "rewardsDistributedPerTokenScaled"
@@ -112,7 +112,7 @@ contract UnstakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concre
 
         // It should update user rewards snapshot.
         (uint40 userLastUpdateTime, uint256 rewardsEarnedPerTokenScaled, uint128 rewards) =
-            stakingPool.userSnapshot(campaignIds.defaultCampaign, users.recipient);
+            sablierStaking.userSnapshot(poolIds.defaultPool, users.recipient);
         assertEq(userLastUpdateTime, WARP_40_PERCENT, "userLastUpdateTime");
         assertEq(rewardsEarnedPerTokenScaled, REWARDS_DISTRIBUTED_PER_TOKEN_SCALED, "rewardsEarnedPerTokenScaled");
         assertEq(rewards, REWARDS_EARNED_BY_RECIPIENT, "rewards");

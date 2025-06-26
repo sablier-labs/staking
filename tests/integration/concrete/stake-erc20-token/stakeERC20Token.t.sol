@@ -9,69 +9,54 @@ import { Shared_Integration_Concrete_Test } from "../Concrete.t.sol";
 
 contract StakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     function test_RevertWhen_DelegateCall() external {
-        bytes memory callData =
-            abi.encodeCall(stakingPool.stakeERC20Token, (campaignIds.defaultCampaign, DEFAULT_AMOUNT));
+        bytes memory callData = abi.encodeCall(sablierStaking.stakeERC20Token, (poolIds.defaultPool, DEFAULT_AMOUNT));
         expectRevert_DelegateCall(callData);
     }
 
     function test_RevertWhen_Null() external whenNoDelegateCall {
-        bytes memory callData = abi.encodeCall(stakingPool.stakeERC20Token, (campaignIds.nullCampaign, DEFAULT_AMOUNT));
+        bytes memory callData = abi.encodeCall(sablierStaking.stakeERC20Token, (poolIds.nullPool, DEFAULT_AMOUNT));
         expectRevert_Null(callData);
     }
 
-    function test_RevertGiven_Canceled() external whenNoDelegateCall whenNotNull {
-        vm.expectRevert(
-            abi.encodeWithSelector(Errors.SablierStakingState_CampaignCanceled.selector, campaignIds.canceledCampaign)
-        );
-        stakingPool.stakeERC20Token(campaignIds.canceledCampaign, DEFAULT_AMOUNT);
+    function test_RevertGiven_Closed() external whenNoDelegateCall whenNotNull {
+        vm.expectRevert(abi.encodeWithSelector(Errors.SablierStakingState_PoolClosed.selector, poolIds.closedPool));
+        sablierStaking.stakeERC20Token(poolIds.closedPool, DEFAULT_AMOUNT);
     }
 
-    function test_RevertWhen_AmountZero() external whenNoDelegateCall whenNotNull givenNotCanceled {
-        vm.expectRevert(
-            abi.encodeWithSelector(Errors.SablierStaking_StakingZeroAmount.selector, campaignIds.defaultCampaign)
-        );
-        stakingPool.stakeERC20Token(campaignIds.defaultCampaign, 0);
+    function test_RevertWhen_AmountZero() external whenNoDelegateCall whenNotNull givenNotClosed {
+        vm.expectRevert(abi.encodeWithSelector(Errors.SablierStaking_StakingZeroAmount.selector, poolIds.defaultPool));
+        sablierStaking.stakeERC20Token(poolIds.defaultPool, 0);
     }
 
-    function test_RevertWhen_EndTimeInPast()
-        external
-        whenNoDelegateCall
-        whenNotNull
-        givenNotCanceled
-        whenAmountNotZero
-    {
+    function test_RevertWhen_EndTimeInPast() external whenNoDelegateCall whenNotNull givenNotClosed whenAmountNotZero {
         warpStateTo(END_TIME + 1);
 
         vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.SablierStaking_CampaignHasEnded.selector, campaignIds.defaultCampaign, END_TIME
-            )
+            abi.encodeWithSelector(Errors.SablierStaking_EndTimeNotInFuture.selector, poolIds.defaultPool, END_TIME)
         );
-        stakingPool.stakeERC20Token(campaignIds.defaultCampaign, DEFAULT_AMOUNT);
+        sablierStaking.stakeERC20Token(poolIds.defaultPool, DEFAULT_AMOUNT);
     }
 
     function test_RevertWhen_EndTimeInPresent()
         external
         whenNoDelegateCall
         whenNotNull
-        givenNotCanceled
+        givenNotClosed
         whenAmountNotZero
     {
         warpStateTo(END_TIME);
 
         vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.SablierStaking_CampaignHasEnded.selector, campaignIds.defaultCampaign, END_TIME
-            )
+            abi.encodeWithSelector(Errors.SablierStaking_EndTimeNotInFuture.selector, poolIds.defaultPool, END_TIME)
         );
-        stakingPool.stakeERC20Token(campaignIds.defaultCampaign, DEFAULT_AMOUNT);
+        sablierStaking.stakeERC20Token(poolIds.defaultPool, DEFAULT_AMOUNT);
     }
 
     function test_WhenStartTimeInFuture()
         external
         whenNoDelegateCall
         whenNotNull
-        givenNotCanceled
+        givenNotClosed
         whenAmountNotZero
         whenEndTimeInFuture
     {
@@ -85,7 +70,7 @@ contract StakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concret
         external
         whenNoDelegateCall
         whenNotNull
-        givenNotCanceled
+        givenNotClosed
         whenAmountNotZero
         whenEndTimeInFuture
     {
@@ -99,7 +84,7 @@ contract StakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concret
         external
         whenNoDelegateCall
         whenNotNull
-        givenNotCanceled
+        givenNotClosed
         whenAmountNotZero
         whenEndTimeInFuture
     {
@@ -112,37 +97,37 @@ contract StakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concret
 
     /// @dev Helper function to test the staking of ERC20 tokens.
     function _test_StakeERC20Token(uint256 expectedRewardsPerTokenScaled, uint128 expectedUserRewards) private {
-        (,, uint128 initialDirectAmountStaked) = stakingPool.userShares(campaignIds.defaultCampaign, users.recipient);
+        (,, uint128 initialDirectAmountStaked) = sablierStaking.userShares(poolIds.defaultPool, users.recipient);
 
         // It should emit {SnapshotRewards}, {Transfer} and {StakeERC20Token} events.
-        vm.expectEmit({ emitter: address(stakingPool) });
+        vm.expectEmit({ emitter: address(sablierStaking) });
         emit ISablierStaking.SnapshotRewards(
-            campaignIds.defaultCampaign,
+            poolIds.defaultPool,
             getBlockTimestamp(),
             expectedRewardsPerTokenScaled,
             users.recipient,
             expectedUserRewards
         );
         vm.expectEmit({ emitter: address(stakingToken) });
-        emit IERC20.Transfer(users.recipient, address(stakingPool), DEFAULT_AMOUNT);
-        vm.expectEmit({ emitter: address(stakingPool) });
-        emit ISablierStaking.StakeERC20Token(campaignIds.defaultCampaign, users.recipient, DEFAULT_AMOUNT);
+        emit IERC20.Transfer(users.recipient, address(sablierStaking), DEFAULT_AMOUNT);
+        vm.expectEmit({ emitter: address(sablierStaking) });
+        emit ISablierStaking.StakeERC20Token(poolIds.defaultPool, users.recipient, DEFAULT_AMOUNT);
 
-        stakingPool.stakeERC20Token(campaignIds.defaultCampaign, DEFAULT_AMOUNT);
+        sablierStaking.stakeERC20Token(poolIds.defaultPool, DEFAULT_AMOUNT);
 
         // It should stake tokens.
-        (,, uint128 actualDirectAmountStaked) = stakingPool.userShares(campaignIds.defaultCampaign, users.recipient);
+        (,, uint128 actualDirectAmountStaked) = sablierStaking.userShares(poolIds.defaultPool, users.recipient);
         assertEq(actualDirectAmountStaked, initialDirectAmountStaked + DEFAULT_AMOUNT, "directAmountStakedByUser");
 
         // It should update global rewards snapshot.
         (uint40 globalLastUpdateTime, uint256 rewardsDistributedPerTokenScaled) =
-            stakingPool.globalSnapshot(campaignIds.defaultCampaign);
+            sablierStaking.globalSnapshot(poolIds.defaultPool);
         assertEq(globalLastUpdateTime, getBlockTimestamp(), "globalLastUpdateTime");
         assertEq(rewardsDistributedPerTokenScaled, expectedRewardsPerTokenScaled, "rewardsDistributedPerTokenScaled");
 
         // It should update user rewards snapshot.
         (uint40 userLastUpdateTime, uint256 rewardsEarnedPerTokenScaled, uint128 rewards) =
-            stakingPool.userSnapshot(campaignIds.defaultCampaign, users.recipient);
+            sablierStaking.userSnapshot(poolIds.defaultPool, users.recipient);
         assertEq(userLastUpdateTime, getBlockTimestamp(), "userLastUpdateTime");
         assertEq(rewardsEarnedPerTokenScaled, expectedRewardsPerTokenScaled, "rewardsEarnedPerTokenScaled");
         assertEq(rewards, expectedUserRewards, "rewards");

@@ -9,27 +9,25 @@ import { Shared_Integration_Concrete_Test } from "../Concrete.t.sol";
 
 contract UnstakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     function test_RevertWhen_DelegateCall() external {
-        bytes memory callData =
-            abi.encodeCall(stakingPool.unstakeERC20Token, (campaignIds.defaultCampaign, DEFAULT_AMOUNT));
+        bytes memory callData = abi.encodeCall(sablierStaking.unstakeERC20Token, (poolIds.defaultPool, DEFAULT_AMOUNT));
         expectRevert_DelegateCall(callData);
     }
 
     function test_RevertWhen_Null() external whenNoDelegateCall {
-        bytes memory callData =
-            abi.encodeCall(stakingPool.unstakeERC20Token, (campaignIds.nullCampaign, DEFAULT_AMOUNT));
+        bytes memory callData = abi.encodeCall(sablierStaking.unstakeERC20Token, (poolIds.nullPool, DEFAULT_AMOUNT));
         expectRevert_Null(callData);
     }
 
     function test_RevertGiven_DirectStakedAmountZero() external whenNoDelegateCall whenNotNull {
-        // Warp to campaign start time when recipient has not direct staked amount.
+        // Warp to pool start time when recipient has not direct staked amount.
         warpStateTo(START_TIME);
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                Errors.SablierStaking_AmountExceedsStakedAmount.selector, campaignIds.defaultCampaign, DEFAULT_AMOUNT, 0
+                Errors.SablierStaking_AmountExceedsStakedAmount.selector, poolIds.defaultPool, DEFAULT_AMOUNT, 0
             )
         );
-        stakingPool.unstakeERC20Token(campaignIds.defaultCampaign, DEFAULT_AMOUNT);
+        sablierStaking.unstakeERC20Token(poolIds.defaultPool, DEFAULT_AMOUNT);
     }
 
     function test_RevertWhen_AmountExceedsDirectStakedAmount()
@@ -43,12 +41,12 @@ contract UnstakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concr
         vm.expectRevert(
             abi.encodeWithSelector(
                 Errors.SablierStaking_AmountExceedsStakedAmount.selector,
-                campaignIds.defaultCampaign,
+                poolIds.defaultPool,
                 amountToUnstake,
                 DIRECT_AMOUNT_STAKED_BY_RECIPIENT
             )
         );
-        stakingPool.unstakeERC20Token(campaignIds.defaultCampaign, amountToUnstake);
+        sablierStaking.unstakeERC20Token(poolIds.defaultPool, amountToUnstake);
     }
 
     function test_RevertWhen_AmountZero()
@@ -58,13 +56,11 @@ contract UnstakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concr
         givenDirectStakedAmountNotZero
         whenAmountNotExceedDirectStakedAmount
     {
-        vm.expectRevert(
-            abi.encodeWithSelector(Errors.SablierStaking_UnstakingZeroAmount.selector, campaignIds.defaultCampaign)
-        );
-        stakingPool.unstakeERC20Token(campaignIds.defaultCampaign, 0);
+        vm.expectRevert(abi.encodeWithSelector(Errors.SablierStaking_UnstakingZeroAmount.selector, poolIds.defaultPool));
+        sablierStaking.unstakeERC20Token(poolIds.defaultPool, 0);
     }
 
-    function test_GivenCanceled()
+    function test_GivenClosed()
         external
         whenNoDelegateCall
         whenNotNull
@@ -72,37 +68,37 @@ contract UnstakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concr
         whenAmountNotExceedDirectStakedAmount
         whenAmountNotZero
     {
-        // For this test, we use the users.staker because he has staked amount in the canceled campaign.
+        // For this test, we use the users.staker because he has staked amount in the closed pool.
         setMsgSender(users.staker);
 
         // It should emit {Transfer} and {UnstakeERC20Token} events.
         vm.expectEmit({ emitter: address(stakingToken) });
-        emit IERC20.Transfer(address(stakingPool), users.staker, DEFAULT_AMOUNT);
-        vm.expectEmit({ emitter: address(stakingPool) });
-        emit ISablierStaking.UnstakeERC20Token(campaignIds.canceledCampaign, users.staker, DEFAULT_AMOUNT);
+        emit IERC20.Transfer(address(sablierStaking), users.staker, DEFAULT_AMOUNT);
+        vm.expectEmit({ emitter: address(sablierStaking) });
+        emit ISablierStaking.UnstakeERC20Token(poolIds.closedPool, users.staker, DEFAULT_AMOUNT);
 
-        // Unstake from the canceled campaign.
-        stakingPool.unstakeERC20Token(campaignIds.canceledCampaign, DEFAULT_AMOUNT);
+        // Unstake from the closed pool.
+        sablierStaking.unstakeERC20Token(poolIds.closedPool, DEFAULT_AMOUNT);
 
         // It should unstake.
-        (,, uint128 actualDirectAmountStaked) = stakingPool.userShares(campaignIds.canceledCampaign, users.staker);
+        (,, uint128 actualDirectAmountStaked) = sablierStaking.userShares(poolIds.closedPool, users.staker);
         assertEq(actualDirectAmountStaked, 0, "directAmountStakedByUser");
 
         // It should update global rewards snapshot.
         (uint40 globalLastUpdateTime, uint256 rewardsDistributedPerTokenScaled) =
-            stakingPool.globalSnapshot(campaignIds.canceledCampaign);
+            sablierStaking.globalSnapshot(poolIds.closedPool);
         assertEq(globalLastUpdateTime, WARP_40_PERCENT, "globalLastUpdateTime");
         assertEq(rewardsDistributedPerTokenScaled, 0, "rewardsDistributedPerTokenScaled");
 
         // It should update user rewards snapshot.
         (uint40 userLastUpdateTime, uint256 rewardsEarnedPerTokenScaled, uint128 rewards) =
-            stakingPool.userSnapshot(campaignIds.canceledCampaign, users.staker);
+            sablierStaking.userSnapshot(poolIds.closedPool, users.staker);
         assertEq(userLastUpdateTime, WARP_40_PERCENT, "userLastUpdateTime");
         assertEq(rewardsEarnedPerTokenScaled, 0, "rewardsEarnedPerTokenScaled");
         assertEq(rewards, 0, "rewards");
     }
 
-    function test_GivenNotCanceled()
+    function test_GivenNotClosed()
         external
         whenNoDelegateCall
         whenNotNull
@@ -111,29 +107,29 @@ contract UnstakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concr
         whenAmountNotZero
     {
         // It should emit {SnapshotRewards}, {Transfer} and {UnstakeERC20Token} events.
-        vm.expectEmit({ emitter: address(stakingPool) });
+        vm.expectEmit({ emitter: address(sablierStaking) });
         emit ISablierStaking.SnapshotRewards(
-            campaignIds.defaultCampaign,
+            poolIds.defaultPool,
             WARP_40_PERCENT,
             REWARDS_DISTRIBUTED_PER_TOKEN_SCALED,
             users.recipient,
             REWARDS_EARNED_BY_RECIPIENT
         );
         vm.expectEmit({ emitter: address(stakingToken) });
-        emit IERC20.Transfer(address(stakingPool), users.recipient, DEFAULT_AMOUNT);
-        vm.expectEmit({ emitter: address(stakingPool) });
-        emit ISablierStaking.UnstakeERC20Token(campaignIds.defaultCampaign, users.recipient, DEFAULT_AMOUNT);
+        emit IERC20.Transfer(address(sablierStaking), users.recipient, DEFAULT_AMOUNT);
+        vm.expectEmit({ emitter: address(sablierStaking) });
+        emit ISablierStaking.UnstakeERC20Token(poolIds.defaultPool, users.recipient, DEFAULT_AMOUNT);
 
-        // Unstake from the default campaign.
-        stakingPool.unstakeERC20Token(campaignIds.defaultCampaign, DEFAULT_AMOUNT);
+        // Unstake from the default pool.
+        sablierStaking.unstakeERC20Token(poolIds.defaultPool, DEFAULT_AMOUNT);
 
         // It should unstake.
-        (,, uint128 actualDirectAmountStaked) = stakingPool.userShares(campaignIds.defaultCampaign, users.recipient);
+        (,, uint128 actualDirectAmountStaked) = sablierStaking.userShares(poolIds.defaultPool, users.recipient);
         assertEq(actualDirectAmountStaked, 0, "directAmountStakedByUser");
 
         // It should update global rewards snapshot.
         (uint40 globalLastUpdateTime, uint256 rewardsDistributedPerTokenScaled) =
-            stakingPool.globalSnapshot(campaignIds.defaultCampaign);
+            sablierStaking.globalSnapshot(poolIds.defaultPool);
         assertEq(globalLastUpdateTime, WARP_40_PERCENT, "globalLastUpdateTime");
         assertEq(
             rewardsDistributedPerTokenScaled, REWARDS_DISTRIBUTED_PER_TOKEN_SCALED, "rewardsDistributedPerTokenScaled"
@@ -141,7 +137,7 @@ contract UnstakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concr
 
         // It should update user rewards snapshot.
         (uint40 userLastUpdateTime, uint256 rewardsEarnedPerTokenScaled, uint128 rewards) =
-            stakingPool.userSnapshot(campaignIds.defaultCampaign, users.recipient);
+            sablierStaking.userSnapshot(poolIds.defaultPool, users.recipient);
         assertEq(userLastUpdateTime, WARP_40_PERCENT, "userLastUpdateTime");
         assertEq(rewardsEarnedPerTokenScaled, REWARDS_DISTRIBUTED_PER_TOKEN_SCALED, "rewardsEarnedPerTokenScaled");
         assertEq(rewards, REWARDS_EARNED_BY_RECIPIENT, "rewards");

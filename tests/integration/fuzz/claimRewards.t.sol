@@ -9,21 +9,21 @@ import { Shared_Integration_Fuzz_Test } from "./Fuzz.t.sol";
 
 contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
     /// @dev It should revert since the fee does not meet the minimum fee.
-    function testFuzz_RevertWhen_FeeNotPaid(uint256 fee) external whenNoDelegateCall whenNotNull givenNotCanceled {
+    function testFuzz_RevertWhen_FeeNotPaid(uint256 fee) external whenNoDelegateCall whenNotNull givenNotClosed {
         // Bound fee such that it does not meet the minimum fee.
         fee = bound(fee, 0, FEE - 1);
 
         // It should revert.
         vm.expectRevert(abi.encodeWithSelector(Errors.SablierStaking_InsufficientFeePayment.selector, fee, FEE));
-        stakingPool.claimRewards{ value: fee }(campaignIds.defaultCampaign);
+        sablierStaking.claimRewards{ value: fee }(poolIds.defaultPool);
     }
 
-    /// @dev It should revert since the campaign has not started yet.
+    /// @dev It should revert since the start time is in the future.
     function testFuzz_RevertWhen_StartTimeInFuture(uint40 timestamp)
         external
         whenNoDelegateCall
         whenNotNull
-        givenNotCanceled
+        givenNotClosed
         whenFeePaid
     {
         // Bound timestamp such that the start time is in the future.
@@ -34,11 +34,9 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
 
         // It should revert.
         vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.SablierStaking_CampaignNotStarted.selector, campaignIds.defaultCampaign, START_TIME
-            )
+            abi.encodeWithSelector(Errors.SablierStaking_StartTimeInFuture.selector, poolIds.defaultPool, START_TIME)
         );
-        stakingPool.claimRewards{ value: FEE }(campaignIds.defaultCampaign);
+        sablierStaking.claimRewards{ value: FEE }(poolIds.defaultPool);
     }
 
     /// @dev It should revert.
@@ -49,7 +47,7 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         external
         whenNoDelegateCall
         whenNotNull
-        givenNotCanceled
+        givenNotClosed
         whenFeePaid
         whenStartTimeInPast
     {
@@ -67,11 +65,9 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
 
         // It should revert.
         vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.SablierStaking_ZeroClaimableRewards.selector, campaignIds.defaultCampaign, caller
-            )
+            abi.encodeWithSelector(Errors.SablierStaking_ZeroClaimableRewards.selector, poolIds.defaultPool, caller)
         );
-        stakingPool.claimRewards{ value: FEE }(campaignIds.defaultCampaign);
+        sablierStaking.claimRewards{ value: FEE }(poolIds.defaultPool);
     }
 
     /// @dev It should run tests for a multiple callers when caller is staking for the first time.
@@ -88,7 +84,7 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         external
         whenNoDelegateCall
         whenNotNull
-        givenNotCanceled
+        givenNotClosed
         whenFeePaid
         whenStartTimeInPast
         whenClaimableRewardsNotZero
@@ -104,7 +100,7 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         // Ensure caller is neither a staker nor a recipient for this test.
         vm.assume(caller != users.staker && caller != users.recipient);
 
-        // Bound timestamp between the start and 40% through the campaign.
+        // Bound timestamp between the start and 40% through the rewards period.
         uint40 stakingTimestamp = boundUint40(timestamp, START_TIME + 1 seconds, WARP_40_PERCENT);
 
         // Warp EVM state to the given timestamp.
@@ -113,12 +109,12 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         // Change the caller and approve the staking pool.
         setMsgSender(caller);
         deal({ token: address(stakingToken), to: caller, give: amountToStake });
-        stakingToken.approve(address(stakingPool), amountToStake);
+        stakingToken.approve(address(sablierStaking), amountToStake);
 
         // Caller stakes first and then warp to a new randomized timestamp.
-        stakingPool.stakeERC20Token(campaignIds.defaultCampaign, amountToStake);
+        sablierStaking.stakeERC20Token(poolIds.defaultPool, amountToStake);
 
-        uint128 totalAmountStakedAtStake = stakingPool.totalAmountStaked(campaignIds.defaultCampaign);
+        uint128 totalAmountStakedAtStake = sablierStaking.totalAmountStaked(poolIds.defaultPool);
 
         // Randomly select a timestamp to claim rewards.
         uint40 claimTimestamp = randomUint40({
@@ -141,7 +137,7 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         external
         whenNoDelegateCall
         whenNotNull
-        givenNotCanceled
+        givenNotClosed
         whenFeePaid
         whenStartTimeInPast
         whenClaimableRewardsNotZero
@@ -166,34 +162,34 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         (uint256 expectedRewardsPerTokenScaled, uint128 expectedUserRewards) = calculateLatestRewards(caller);
 
         // It should emit {SnapshotRewards}, {Transfer} and {ClaimRewards} events.
-        vm.expectEmit({ emitter: address(stakingPool) });
+        vm.expectEmit({ emitter: address(sablierStaking) });
         emit ISablierStaking.SnapshotRewards(
-            campaignIds.defaultCampaign, timestamp, expectedRewardsPerTokenScaled, caller, expectedUserRewards
+            poolIds.defaultPool, timestamp, expectedRewardsPerTokenScaled, caller, expectedUserRewards
         );
         vm.expectEmit({ emitter: address(rewardToken) });
-        emit IERC20.Transfer(address(stakingPool), caller, expectedUserRewards);
-        vm.expectEmit({ emitter: address(stakingPool) });
-        emit ISablierStaking.ClaimRewards(campaignIds.defaultCampaign, caller, expectedUserRewards);
+        emit IERC20.Transfer(address(sablierStaking), caller, expectedUserRewards);
+        vm.expectEmit({ emitter: address(sablierStaking) });
+        emit ISablierStaking.ClaimRewards(poolIds.defaultPool, caller, expectedUserRewards);
 
         // Claim the rewards.
-        uint128 actualRewards = stakingPool.claimRewards{ value: fee }(campaignIds.defaultCampaign);
+        uint128 actualRewards = sablierStaking.claimRewards{ value: fee }(poolIds.defaultPool);
 
         // It should return the rewards.
         assertEq(actualRewards, expectedUserRewards, "return value");
 
         (uint40 actualLastUpdateTime, uint256 actualRewardsPerTokenScaled,) =
-            stakingPool.userSnapshot(campaignIds.defaultCampaign, caller);
+            sablierStaking.userSnapshot(poolIds.defaultPool, caller);
 
         // It should set last time update to current timestamp.
         assertEq(actualLastUpdateTime, timestamp, "lastUpdateTime");
 
         // It should set rewards to zero.
-        assertEq(stakingPool.claimableRewards(campaignIds.defaultCampaign, caller), 0, "rewards");
+        assertEq(sablierStaking.claimableRewards(poolIds.defaultPool, caller), 0, "rewards");
 
         // It should set the rewards earned per token.
         assertEq(actualRewardsPerTokenScaled, expectedRewardsPerTokenScaled, "rewardsEarnedPerTokenScaled");
 
         // It should deposit fee into the staking pool.
-        assertEq(address(stakingPool).balance, fee, "staking pool balance");
+        assertEq(address(sablierStaking).balance, fee, "staking pool balance");
     }
 }

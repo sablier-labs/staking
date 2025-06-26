@@ -14,12 +14,12 @@ UnstakeERC20Token_Integration_Concrete_Test
             ├── when amount zero
             │  └── it should revert
             └── when amount not zero
-               ├── given canceled
+               ├── given closed
                │  ├── it should unstake
                │  ├── it should update global rewards snapshot
                │  ├── it should update user rewards snapshot
                │  └── it should emit {Transfer} and {UnstakeERC20Token} events
-               └── given not canceled
+               └── given not closed
                   ├── it should unstake
                   ├── it should update global rewards snapshot
                   ├── it should update user rewards snapshot

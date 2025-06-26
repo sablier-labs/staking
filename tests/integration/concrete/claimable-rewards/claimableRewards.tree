@@ -2,9 +2,9 @@ ClaimableRewards_Integration_Concrete_Test
 ├── when null
 │  └── it should revert
 └── when not null
-   ├── given canceled
+   ├── given closed
    │  └── it should revert
-   └── given not canceled
+   └── given not closed
       ├── when user zero address
       │  └── it should revert
       └── when user not zero address

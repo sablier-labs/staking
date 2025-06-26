@@ -35,7 +35,7 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
     //////////////////////////////////////////////////////////////////////////*/
 
     ISablierLockupNFT internal lockup;
-    ISablierStaking internal stakingPool;
+    ISablierStaking internal sablierStaking;
 
     /*//////////////////////////////////////////////////////////////////////////
                                   SET-UP FUNCTION
@@ -54,9 +54,9 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
 
         // Deploy the staking protocol.
         if (!isTestOptimizedProfile()) {
-            stakingPool = new SablierStaking(address(comptroller));
+            sablierStaking = new SablierStaking(address(comptroller));
         } else {
-            stakingPool = deployOptimizedSablierStaking(address(comptroller));
+            sablierStaking = deployOptimizedSablierStaking(address(comptroller));
         }
 
         // Deploy the Lockup contract for testing.
@@ -65,7 +65,7 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
         // Label the contracts.
         vm.label({ account: address(lockup), newLabel: "Lockup" });
         vm.label({ account: address(rewardToken), newLabel: "Reward Token" });
-        vm.label({ account: address(stakingPool), newLabel: "Staking Protocol" });
+        vm.label({ account: address(sablierStaking), newLabel: "Staking Protocol" });
 
         // Create users for testing.
         createTestUsers();
@@ -83,7 +83,7 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
         setMsgSender(address(comptroller));
         ISablierLockupNFT[] memory lockups = new ISablierLockupNFT[](1);
         lockups[0] = lockup;
-        stakingPool.whitelistLockups(lockups);
+        sablierStaking.whitelistLockups(lockups);
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -94,12 +94,12 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
     function createTestUsers() internal {
         // Create users for testing.
         address[] memory spenders = new address[](2);
-        spenders[0] = address(stakingPool);
+        spenders[0] = address(sablierStaking);
         spenders[1] = address(lockup);
 
         // Create test users and approve the staking pool to spend their ERC20 tokens.
-        users.campaignCreator = createUser("Campaign Creator", spenders);
         users.eve = createUser("eve", spenders);
+        users.poolCreator = createUser("Pool Creator", spenders);
         users.recipient = createUser("Recipient", spenders);
         users.sender = createUser("Sender", spenders);
         users.staker = createUser("Staker", spenders);
@@ -124,18 +124,18 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
 
         // Allow the Lockup contract to hook with the staking pool.
         setMsgSender(address(comptroller));
-        lockupContract.allowToHook(address(stakingPool));
+        lockupContract.allowToHook(address(sablierStaking));
 
         // Change caller to the sender.
         setMsgSender(users.sender);
 
-        // A stream that is cancelable and will not be staked into the default campaign.
+        // A stream that is cancelable and will not be staked into the default pool.
         streamIds.defaultStream = defaultCreateWithDurationsLL();
 
-        // A stream that is cancelable and will be staked into the default campaign.
+        // A stream that is cancelable and will be staked into the default pool.
         streamIds.defaultStakedStream = defaultCreateWithDurationsLL();
 
-        // A stream that is not cancelable and will be staked into the default campaign.
+        // A stream that is not cancelable and will be staked into the default pool.
         streamIds.defaultStakedStreamNonCancelable = defaultCreateWithDurationsLL({ cancelable: false });
 
         // A USDC stream that is cancelable.
@@ -143,7 +143,7 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
 
         // Approve the staking pool to spend the Lockup NFTs.
         setMsgSender(users.recipient);
-        lockupContract.setApprovalForAll({ operator: address(stakingPool), approved: true });
+        lockupContract.setApprovalForAll({ operator: address(sablierStaking), approved: true });
     }
 
     /// @dev Create a stream with `createWithDurationsLL` function using the default parameters.

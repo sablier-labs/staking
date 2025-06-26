@@ -5,7 +5,7 @@ import { Errors as EvmUtilsErrors } from "@sablier/evm-utils/src/libraries/Error
 import { Errors } from "src/libraries/Errors.sol";
 
 import { Base_Test } from "../Base.t.sol";
-import { CampaignIds } from "../utils/Types.sol";
+import { PoolIds } from "../utils/Types.sol";
 
 /// @notice Common logic needed by all integration tests, both concrete and fuzz tests.
 abstract contract Integration_Test is Base_Test {
@@ -13,7 +13,7 @@ abstract contract Integration_Test is Base_Test {
                                      VARIABLES
     //////////////////////////////////////////////////////////////////////////*/
 
-    CampaignIds internal campaignIds;
+    PoolIds internal poolIds;
 
     /*//////////////////////////////////////////////////////////////////////////
                                        SET-UP
@@ -22,8 +22,8 @@ abstract contract Integration_Test is Base_Test {
     function setUp() public virtual override {
         Base_Test.setUp();
 
-        // Set up default campaigns.
-        setupDefaultCampaigns();
+        // Set up default pools.
+        setupDefaultPools();
 
         // Simulate the staking behavior of the users at different times and create EVM snapshots.
         simulateAndSnapshotStakingBehavior();
@@ -37,18 +37,18 @@ abstract contract Integration_Test is Base_Test {
     //////////////////////////////////////////////////////////////////////////*/
 
     function expectRevert_DelegateCall(bytes memory callData) internal {
-        (bool success, bytes memory returnData) = address(stakingPool).delegatecall(callData);
+        (bool success, bytes memory returnData) = address(sablierStaking).delegatecall(callData);
         assertFalse(success, "delegatecall success");
         assertEq(returnData, abi.encodeWithSelector(EvmUtilsErrors.DelegateCall.selector), "delegatecall error");
     }
 
     function expectRevert_Null(bytes memory callData) internal {
-        (bool success, bytes memory returnData) = address(stakingPool).call(callData);
+        (bool success, bytes memory returnData) = address(sablierStaking).call(callData);
         assertFalse(success, "null call success");
         assertEq(
             returnData,
-            abi.encodeWithSelector(Errors.SablierStakingState_CampaignDoesNotExist.selector, campaignIds.nullCampaign),
-            "null campaign error"
+            abi.encodeWithSelector(Errors.SablierStakingState_PoolDoesNotExist.selector, poolIds.nullPool),
+            "non-existent pool"
         );
     }
 
@@ -67,7 +67,7 @@ abstract contract Integration_Test is Base_Test {
         }
 
         (uint40 lastUpdateTime, uint256 rewardsDistributedPerTokenScaled) =
-            stakingPool.globalSnapshot(campaignIds.defaultCampaign);
+            sablierStaking.globalSnapshot(poolIds.defaultPool);
 
         // Calculate starting point in time for rewards calculation.
         uint40 startingPointInTime = lastUpdateTime >= START_TIME ? lastUpdateTime : START_TIME;
@@ -77,28 +77,28 @@ abstract contract Integration_Test is Base_Test {
             getBlockTimestamp() >= END_TIME ? END_TIME - startingPointInTime : getBlockTimestamp() - startingPointInTime;
 
         // Calculate global rewards distributed since last update.
-        uint128 rewardsDistributedSinceLastUpdate = REWARD_AMOUNT * timeElapsed / CAMPAIGN_DURATION;
+        uint128 rewardsDistributedSinceLastUpdate = REWARD_AMOUNT * timeElapsed / REWARD_PERIOD;
 
         // Update global rewards distributed per token scaled.
-        rewardsDistributedPerTokenScaled += getScaledValue(rewardsDistributedSinceLastUpdate)
-            / stakingPool.totalAmountStaked(campaignIds.defaultCampaign);
+        rewardsDistributedPerTokenScaled +=
+            getScaledValue(rewardsDistributedSinceLastUpdate) / sablierStaking.totalAmountStaked(poolIds.defaultPool);
 
         // Get user rewards snapshot.
-        (, rewardsEarnedPerTokenScaled, rewards) = stakingPool.userSnapshot(campaignIds.defaultCampaign, user);
+        (, rewardsEarnedPerTokenScaled, rewards) = sablierStaking.userSnapshot(poolIds.defaultPool, user);
 
         // Calculate latest rewards earned per token scaled.
         uint256 rewardsEarnedPerTokenScaledDelta = rewardsDistributedPerTokenScaled - rewardsEarnedPerTokenScaled;
         rewardsEarnedPerTokenScaled += rewardsEarnedPerTokenScaledDelta;
 
         // Calculate latest rewards for user.
-        uint128 totalAmountStakedByUser = stakingPool.totalAmountStakedByUser(campaignIds.defaultCampaign, user);
+        uint128 totalAmountStakedByUser = sablierStaking.totalAmountStakedByUser(poolIds.defaultPool, user);
         rewards += getDescaledValue(rewardsEarnedPerTokenScaledDelta * totalAmountStakedByUser);
     }
 
-    /// @notice Creates a default campaign.
-    function createDefaultCampaign() internal returns (uint256 campaignId) {
-        return stakingPool.createCampaign({
-            admin: users.campaignCreator,
+    /// @notice Creates a default pool.
+    function createDefaultPool() internal returns (uint256 poolId) {
+        return sablierStaking.createPool({
+            admin: users.poolCreator,
             stakingToken: stakingToken,
             startTime: START_TIME,
             endTime: END_TIME,
@@ -107,53 +107,53 @@ abstract contract Integration_Test is Base_Test {
         });
     }
 
-    /// @notice Creates the default campaigns and populates the campaign IDs struct.
-    function setupDefaultCampaigns() internal {
-        setMsgSender(users.campaignCreator);
+    /// @notice Creates the default pools and populates the Pool IDs struct.
+    function setupDefaultPools() internal {
+        setMsgSender(users.poolCreator);
 
-        // Default campaign.
-        campaignIds.defaultCampaign = createDefaultCampaign();
+        // Default pool.
+        poolIds.defaultPool = createDefaultPool();
 
-        // Canceled campaign.
-        campaignIds.canceledCampaign = createDefaultCampaign();
+        // Closed pool.
+        poolIds.closedPool = createDefaultPool();
 
-        // Fresh campaign.
-        campaignIds.freshCampaign = createDefaultCampaign();
+        // Fresh pool.
+        poolIds.freshPool = createDefaultPool();
 
-        // Null campaign.
-        campaignIds.nullCampaign = 420;
+        // Null pool.
+        poolIds.nullPool = 420;
     }
 
     /// @dev This function simulates the staking behavior of the users at different times and creates EVM snapshots to
     /// be used for testing.
     function simulateAndSnapshotStakingBehavior() internal {
-        // First snapshot after the campaigns are created and the staker stakes direct tokens immediately.
+        // First snapshot after the pools are created and the staker stakes direct tokens immediately.
         setMsgSender(users.staker);
-        stakingPool.stakeERC20Token(campaignIds.defaultCampaign, DEFAULT_AMOUNT);
-        stakingPool.stakeERC20Token(campaignIds.canceledCampaign, DEFAULT_AMOUNT);
+        sablierStaking.stakeERC20Token(poolIds.defaultPool, DEFAULT_AMOUNT);
+        sablierStaking.stakeERC20Token(poolIds.closedPool, DEFAULT_AMOUNT);
 
-        // Cancel the canceledCampaign before snapshot.
-        setMsgSender(users.campaignCreator);
-        stakingPool.cancelCampaign(campaignIds.canceledCampaign);
+        // Close the `poolIds.closedPool` before snapshot.
+        setMsgSender(users.poolCreator);
+        sablierStaking.closePool(poolIds.closedPool);
 
         snapshotState(); // snapshot ID = 0
 
-        // Second snapshot when the campaign starts: Recipient stakes a stream.
+        // Second snapshot when the rewards period starts: Recipient stakes a stream.
         vm.warp(START_TIME);
         setMsgSender(users.recipient);
-        stakingPool.stakeLockupNFT(campaignIds.defaultCampaign, lockup, streamIds.defaultStakedStream);
+        sablierStaking.stakeLockupNFT(poolIds.defaultPool, lockup, streamIds.defaultStakedStream);
         snapshotState(); // snapshot ID = 1
 
-        // Third snapshot when 20% through the campaign: Recipient stakes a stream and direct tokens.
+        // Third snapshot when 20% through the rewards period: Recipient stakes a stream and direct tokens.
         vm.warp(WARP_20_PERCENT);
-        stakingPool.stakeERC20Token(campaignIds.defaultCampaign, DEFAULT_AMOUNT);
-        stakingPool.stakeLockupNFT(campaignIds.defaultCampaign, lockup, streamIds.defaultStakedStreamNonCancelable);
+        sablierStaking.stakeERC20Token(poolIds.defaultPool, DEFAULT_AMOUNT);
+        sablierStaking.stakeLockupNFT(poolIds.defaultPool, lockup, streamIds.defaultStakedStreamNonCancelable);
         snapshotState(); // snapshot ID = 2
 
-        // Fourth snapshot when 40% through the campaign: Staker stakes direct tokens.
+        // Fourth snapshot when 40% through the rewards period: Staker stakes direct tokens.
         vm.warp(WARP_40_PERCENT);
         setMsgSender(users.staker);
-        stakingPool.stakeERC20Token(campaignIds.defaultCampaign, DEFAULT_AMOUNT);
+        sablierStaking.stakeERC20Token(poolIds.defaultPool, DEFAULT_AMOUNT);
         snapshotState(); // snapshot ID = 3
     }
 }

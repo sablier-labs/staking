@@ -6,7 +6,7 @@ import { Errors } from "src/libraries/Errors.sol";
 import { Shared_Integration_Fuzz_Test } from "./Fuzz.t.sol";
 
 contract RewardRatePerTokenStaked_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
-    function testFuzz_RevertWhen_StartTimeInFuture(uint40 timestamp) external whenNotNull givenNotCanceled {
+    function testFuzz_RevertWhen_StartTimeInFuture(uint40 timestamp) external whenNotNull givenNotClosed {
         // Bound timestamp such that the start time is in the future.
         timestamp = boundUint40(timestamp, 0, START_TIME - 1);
 
@@ -16,13 +16,13 @@ contract RewardRatePerTokenStaked_Integration_Fuzz_Test is Shared_Integration_Fu
         // It should revert.
         vm.expectRevert(
             abi.encodeWithSelector(
-                Errors.SablierStakingState_CampaignNotActive.selector, campaignIds.defaultCampaign, START_TIME, END_TIME
+                Errors.SablierStakingState_OutsideRewardsPeriod.selector, poolIds.defaultPool, START_TIME, END_TIME
             )
         );
-        stakingPool.rewardRatePerTokenStaked(campaignIds.defaultCampaign);
+        sablierStaking.rewardRatePerTokenStaked(poolIds.defaultPool);
     }
 
-    function testFuzz_RevertWhen_EndTimeInPast(uint40 timestamp) external whenNotNull givenNotCanceled {
+    function testFuzz_RevertWhen_EndTimeInPast(uint40 timestamp) external whenNotNull givenNotClosed {
         // Bound timestamp such that the end time is in the past.
         timestamp = boundUint40(timestamp, END_TIME + 1, type(uint40).max);
 
@@ -32,16 +32,16 @@ contract RewardRatePerTokenStaked_Integration_Fuzz_Test is Shared_Integration_Fu
         // It should revert.
         vm.expectRevert(
             abi.encodeWithSelector(
-                Errors.SablierStakingState_CampaignNotActive.selector, campaignIds.defaultCampaign, START_TIME, END_TIME
+                Errors.SablierStakingState_OutsideRewardsPeriod.selector, poolIds.defaultPool, START_TIME, END_TIME
             )
         );
-        stakingPool.rewardRatePerTokenStaked(campaignIds.defaultCampaign);
+        sablierStaking.rewardRatePerTokenStaked(poolIds.defaultPool);
     }
 
     function testFuzz_RewardRatePerTokenStaked(uint40 timestamp)
         external
         whenNotNull
-        givenNotCanceled
+        givenNotClosed
         whenStartTimeNotInFuture
         whenEndTimeNotInPast
         givenTotalStakedNotZero
@@ -53,7 +53,7 @@ contract RewardRatePerTokenStaked_Integration_Fuzz_Test is Shared_Integration_Fu
         warpStateTo(timestamp);
 
         // It should return the correct reward rate per token staked.
-        uint128 actualRewardRatePerTokenStaked = stakingPool.rewardRatePerTokenStaked(campaignIds.defaultCampaign);
+        uint128 actualRewardRatePerTokenStaked = sablierStaking.rewardRatePerTokenStaked(poolIds.defaultPool);
         uint128 expectedRewardRatePerTokenStaked = REWARD_RATE / TOTAL_STAKED;
         assertEq(actualRewardRatePerTokenStaked, expectedRewardRatePerTokenStaked, "reward rate per token staked");
     }

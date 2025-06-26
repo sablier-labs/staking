@@ -9,7 +9,7 @@ import { Shared_Integration_Fuzz_Test } from "./Fuzz.t.sol";
 contract StakeERC20Token_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
     /// @dev Given enough fuzz runs, all of the following scenarios will be fuzzed:
     /// - Different callers with different amounts staked.
-    /// - Multiple values for the block timestamp from campaign create time until the end time.
+    /// - Multiple values for the block timestamp from pool create time until the end time.
     function testFuzz_StakeERC20Token(
         uint128 amount,
         address caller,
@@ -18,7 +18,7 @@ contract StakeERC20Token_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         external
         whenNoDelegateCall
         whenNotNull
-        givenNotCanceled
+        givenNotClosed
         whenAmountNotZero
         whenEndTimeInFuture
     {
@@ -36,31 +36,31 @@ contract StakeERC20Token_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         // Change caller and deal tokens.
         setMsgSender(caller);
         deal({ token: address(stakingToken), to: caller, give: amount });
-        stakingToken.approve(address(stakingPool), amount);
+        stakingToken.approve(address(sablierStaking), amount);
 
         (uint256 expectedRewardsPerTokenScaled, uint128 expectedUserRewards) = calculateLatestRewards(caller);
-        (,, uint128 initialDirectAmountStaked) = stakingPool.userShares(campaignIds.defaultCampaign, caller);
+        (,, uint128 initialDirectAmountStaked) = sablierStaking.userShares(poolIds.defaultPool, caller);
 
         // It should emit {SnapshotRewards}, {Transfer} and {StakeERC20Token} events.
-        vm.expectEmit({ emitter: address(stakingPool) });
+        vm.expectEmit({ emitter: address(sablierStaking) });
         emit ISablierStaking.SnapshotRewards(
-            campaignIds.defaultCampaign, timestamp, expectedRewardsPerTokenScaled, caller, expectedUserRewards
+            poolIds.defaultPool, timestamp, expectedRewardsPerTokenScaled, caller, expectedUserRewards
         );
         vm.expectEmit({ emitter: address(stakingToken) });
-        emit IERC20.Transfer(caller, address(stakingPool), amount);
-        vm.expectEmit({ emitter: address(stakingPool) });
-        emit ISablierStaking.StakeERC20Token(campaignIds.defaultCampaign, caller, amount);
+        emit IERC20.Transfer(caller, address(sablierStaking), amount);
+        vm.expectEmit({ emitter: address(sablierStaking) });
+        emit ISablierStaking.StakeERC20Token(poolIds.defaultPool, caller, amount);
 
-        // Stake ERC20 tokens into the default campaign.
-        stakingPool.stakeERC20Token(campaignIds.defaultCampaign, amount);
+        // Stake ERC20 tokens into the default pool.
+        sablierStaking.stakeERC20Token(poolIds.defaultPool, amount);
 
         // It should stake tokens.
-        (,, uint128 actualDirectAmountStaked) = stakingPool.userShares(campaignIds.defaultCampaign, caller);
+        (,, uint128 actualDirectAmountStaked) = sablierStaking.userShares(poolIds.defaultPool, caller);
         assertEq(actualDirectAmountStaked, initialDirectAmountStaked + amount, "directAmountStakedByUser");
 
         // It should update global rewards snapshot.
         (uint40 actualGlobalLastUpdateTime, uint256 actualRewardsDistributedPerTokenScaled) =
-            stakingPool.globalSnapshot(campaignIds.defaultCampaign);
+            sablierStaking.globalSnapshot(poolIds.defaultPool);
         assertEq(actualGlobalLastUpdateTime, timestamp, "globalLastUpdateTime");
         assertEq(
             actualRewardsDistributedPerTokenScaled, expectedRewardsPerTokenScaled, "rewardsDistributedPerTokenScaled"
@@ -68,7 +68,7 @@ contract StakeERC20Token_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
 
         // It should update user rewards snapshot.
         (uint40 actualUserLastUpdateTime, uint256 actualRewardsEarnedPerTokenScaled, uint128 actualRewards) =
-            stakingPool.userSnapshot(campaignIds.defaultCampaign, caller);
+            sablierStaking.userSnapshot(poolIds.defaultPool, caller);
         assertEq(actualUserLastUpdateTime, timestamp, "userLastUpdateTime");
         assertEq(actualRewardsEarnedPerTokenScaled, expectedRewardsPerTokenScaled, "rewardsEarnedPerTokenScaled");
         assertEq(actualRewards, expectedUserRewards, "rewards");

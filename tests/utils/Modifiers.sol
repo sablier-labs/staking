@@ -36,7 +36,7 @@ abstract contract Modifiers is EvmUtilsBase {
         _;
     }
 
-    modifier givenNotCanceled() {
+    modifier givenNotClosed() {
         _;
     }
 
@@ -76,11 +76,6 @@ abstract contract Modifiers is EvmUtilsBase {
         _;
     }
 
-    modifier whenCallerCampaignAdmin() {
-        setMsgSender(users.campaignCreator);
-        _;
-    }
-
     modifier whenCallerComptroller() {
         setMsgSender(address(comptroller));
         _;
@@ -99,6 +94,11 @@ abstract contract Modifiers is EvmUtilsBase {
     }
 
     modifier whenCallerNotAdmin() {
+        _;
+    }
+
+    modifier whenCallerPoolAdmin() {
+        setMsgSender(users.poolCreator);
         _;
     }
 

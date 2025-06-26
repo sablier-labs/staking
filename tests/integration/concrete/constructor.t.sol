@@ -27,10 +27,10 @@ contract Constructor_Integration_Concrete_Test is Shared_Integration_Concrete_Te
         // {SablierStaking.LOCKUP_WHITELIST_ROLE}
         assertEq(constructedProtocol.LOCKUP_WHITELIST_ROLE(), keccak256("LOCKUP_WHITELIST_ROLE"), "whitelist role");
 
-        // {SablierStaking.nextCampaignId}
-        uint256 actualCampaignId = constructedProtocol.nextCampaignId();
-        uint256 expectedCampaignId = 1;
-        assertEq(actualCampaignId, expectedCampaignId, "nextCampaignId");
+        // {SablierStaking.nextPoolId}
+        uint256 actualPoolIds = constructedProtocol.nextPoolId();
+        uint256 expectedPoolIds = 1;
+        assertEq(actualPoolIds, expectedPoolIds, "nextPoolId");
 
         // {SablierStaking.supportsInterface}
         assertTrue(

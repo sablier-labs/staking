@@ -64,7 +64,7 @@ Getters_Integration_Concrete_Test::streamLookup
    ├── when stream not staked
    │  └── it should revert
    └── when stream staked
-      └── it should return campaign id and owner
+      └── it should return pool id and owner
 
 Getters_Integration_Concrete_Test::totalAmountStaked
 ├── when null
@@ -107,11 +107,11 @@ Getters_Integration_Concrete_Test::userSnapshot
          └── when end time not in future
             └── it should return correct return values
 
-Getters_Integration_Concrete_Test::wasCanceled
+Getters_Integration_Concrete_Test::wasClosed
 ├── when null
 │  └── it should revert
 └── when not null
-   ├── given not canceled
+   ├── given not closed
    │  └── it should return false
-   └── given canceled
+   └── given closed
       └── it should return true

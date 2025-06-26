@@ -10,7 +10,7 @@ contract ClaimableRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test 
     )
         external
         whenNotNull
-        givenNotCanceled
+        givenNotClosed
         whenUserNotZeroAddress
         whenClaimableRewardsNotZero
     {
@@ -25,7 +25,7 @@ contract ClaimableRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test 
 
         (, uint128 expectedUserRewards) = calculateLatestRewards(caller);
 
-        uint128 actualRewards = stakingPool.claimableRewards(campaignIds.defaultCampaign, caller);
+        uint128 actualRewards = sablierStaking.claimableRewards(poolIds.defaultPool, caller);
         assertEq(actualRewards, expectedUserRewards, "rewards");
     }
 }

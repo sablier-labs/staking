@@ -1,4 +1,4 @@
-# Sablier Staking [![Github Actions][gha-badge]][gha] [![Coverage][codecov-badge]][codecov] [![Foundry][foundry-badge]][foundry] [![Discord][discord-badge]][discord]
+# Sablier Staking Protocol [![Github Actions][gha-badge]][gha] [![Coverage][codecov-badge]][codecov] [![Foundry][foundry-badge]][foundry] [![Discord][discord-badge]][discord]
 
 [gha]: https://github.com/sablier-labs/staking/actions
 [gha-badge]: https://github.com/sablier-labs/staking/actions/workflows/ci.yml/badge.svg
@@ -17,15 +17,15 @@ Traditional staking protocols only support ERC20 tokens, leaving token stream ho
 vesting or payment streams. This creates a significant opportunity cost for these users who decided to align themselves
 with the long term growth of the token.
 
-Sablier Staking is the first EVM protocol to enable staking of both ERC20 tokens and token streams at the same time.
-This allows users to earn rewards on their vesting tokens without having to withdraw tokens from the streams or waiting
-for their streams to end.
+Sablier Staking Protocol is the first EVM protocol to enable staking of both ERC20 tokens and token streams at the same
+time. This allows users to earn rewards on their vesting tokens without having to withdraw tokens from the streams or
+waiting for their streams to end.
 
 ### Key Features
 
-- **Permissionless**: Anyone can create and participate in staking campaigns without restrictions.
-- **Stream support**: Stake ERC20 tokens and Sablier Lockup streams in the same campaign.
-- **Immutability**: Campaign parameters cannot be changed once the campaign has been started.
+- **Permissionless**: Anyone can create and participate in staking pools without restrictions.
+- **Stream support**: Stake ERC20 tokens and Sablier Lockup streams in the same pool.
+- **Immutability**: Pool parameters cannot be changed once the reward period has started.
 - **No hidden opportunity cost**: Rewards are earned on the basis of the total underlying tokens in the streams, and not
   just available liquidity.
 - **Flexibility**: Stake and unstake multiple times without losing earned rewards.
@@ -58,7 +58,7 @@ For guidance on how to create PRs, see the [CONTRIBUTING](./CONTRIBUTING.md) gui
 
 ## License
 
-The primary license for Sablier Staking is the Business Source License 1.1 (`BUSL-1.1`), see
+The primary license for Sablier Staking Protocol is the Business Source License 1.1 (`BUSL-1.1`), see
 [`LICENSE.md`](./LICENSE.md). However, there are exceptions:
 
 - All files in `src/interfaces/` and `src/types` are licensed under `GPL-3.0-or-later`, see

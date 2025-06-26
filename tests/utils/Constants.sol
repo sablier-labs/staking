@@ -2,16 +2,16 @@
 pragma solidity >=0.8.26;
 
 abstract contract Constants {
-    // Campaign
-    uint40 internal constant CAMPAIGN_DURATION = ONE_MONTH * 10; // 10 months = 300 days
-    uint40 internal constant END_TIME = START_TIME + CAMPAIGN_DURATION;
+    // Pool Parameters
+    uint40 internal constant END_TIME = START_TIME + REWARD_PERIOD;
     uint128 internal constant REWARD_AMOUNT = 10_000_000e18; // Fixed 10M rewards
+    uint40 internal constant REWARD_PERIOD = ONE_MONTH * 10; // 10 months = 300 days
     uint128 internal constant REWARD_RATE = 0.385802469135802469e18; // 10M / 300 days
     uint40 internal constant START_TIME = ONE_MONTH_SINCE_CREATE;
 
     // Lockup Stream
-    // Streams will have their end time before campaign end time because streams are created at `FEB_1_2025` whereas
-    // campaign starts at `FEB_1_2025 + 1 month`.
+    // Streams will have their end time before rewards end time because streams are created at `FEB_1_2025` whereas
+    // rewards start at `FEB_1_2025 + 1 month`.
     uint40 internal constant STREAM_DURATION = ONE_MONTH * 10; // 10 months.
     uint128 internal constant STREAM_AMOUNT = 10_000; // equivalent to DEFAULT_STAKED_AMOUNT in 18 decimals
     uint128 internal constant STREAM_AMOUNT_18D = 10_000e18;
@@ -25,7 +25,7 @@ abstract contract Constants {
     uint40 internal constant ONE_MONTH_SINCE_CREATE = FEB_1_2025 + ONE_MONTH;
     uint256 internal constant SCALE_FACTOR = 1e20;
 
-    // Pre campaign start
+    // Pre rewards start
     uint128 internal constant AMOUNT_STAKED_BY_RECIPIENT_PRE_START = 0;
     uint128 internal constant AMOUNT_STAKED_BY_STAKER_PRE_START = 10_000e18;
     uint128 internal constant DIRECT_AMOUNT_STAKED_BY_RECIPIENT_PRE_START = 0;
@@ -33,7 +33,7 @@ abstract contract Constants {
     uint8 internal constant STREAMS_COUNT_FOR_RECIPIENT_PRE_START = 0;
     uint128 internal constant TOTAL_STAKED_PRE_START = 10_000e18;
 
-    // 0% through the campaign
+    // 0% through the rewards period
     uint128 internal constant AMOUNT_STAKED_BY_RECIPIENT_START_TIME = 10_000e18;
     uint128 internal constant AMOUNT_STAKED_BY_STAKER_START_TIME = 10_000e18;
     uint128 internal constant DIRECT_AMOUNT_STAKED_BY_RECIPIENT_START_TIME = 0;
@@ -42,7 +42,7 @@ abstract contract Constants {
     uint128 internal constant TOTAL_STAKED_START_TIME =
         AMOUNT_STAKED_BY_RECIPIENT_START_TIME + AMOUNT_STAKED_BY_STAKER_START_TIME;
 
-    // 20% through the campaign
+    // 20% through the rewards period
     uint128 internal constant AMOUNT_STAKED_BY_RECIPIENT_20_PERCENT = 30_000e18;
     uint128 internal constant AMOUNT_STAKED_BY_STAKER_20_PERCENT = 10_000e18;
     uint128 internal constant DIRECT_AMOUNT_STAKED_BY_RECIPIENT_20_PERCENT = 10_000e18;
@@ -56,7 +56,7 @@ abstract contract Constants {
         AMOUNT_STAKED_BY_RECIPIENT_20_PERCENT + AMOUNT_STAKED_BY_STAKER_20_PERCENT;
     uint40 internal constant WARP_20_PERCENT = START_TIME + 60 days;
 
-    // 40% through the campaign (time at which most integration tests are performed)
+    // 40% through the rewards period (time at which most integration tests are performed)
     uint128 internal constant AMOUNT_STAKED_BY_RECIPIENT = 30_000e18;
     uint128 internal constant AMOUNT_STAKED_BY_STAKER = 20_000e18;
     uint128 internal constant DIRECT_AMOUNT_STAKED_BY_RECIPIENT = 10_000e18;
@@ -69,7 +69,7 @@ abstract contract Constants {
     uint128 internal constant TOTAL_STAKED = AMOUNT_STAKED_BY_RECIPIENT + AMOUNT_STAKED_BY_STAKER;
     uint40 internal constant WARP_40_PERCENT = START_TIME + 120 days;
 
-    // 100% through the campaign
+    // 100% through the rewards period
     uint128 internal constant AMOUNT_STAKED_BY_RECIPIENT_END_TIME = AMOUNT_STAKED_BY_RECIPIENT;
     uint128 internal constant AMOUNT_STAKED_BY_STAKER_END_TIME = AMOUNT_STAKED_BY_STAKER;
     uint128 internal constant DIRECT_AMOUNT_STAKED_BY_RECIPIENT_END_TIME = DIRECT_AMOUNT_STAKED_BY_RECIPIENT;

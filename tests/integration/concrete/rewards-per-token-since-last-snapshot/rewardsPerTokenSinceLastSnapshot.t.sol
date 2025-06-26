@@ -7,64 +7,60 @@ import { Shared_Integration_Concrete_Test } from "../Concrete.t.sol";
 
 contract RewardsPerTokenSinceLastSnapshot_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     function test_RevertWhen_Null() external {
-        bytes memory callData = abi.encodeCall(stakingPool.rewardsPerTokenSinceLastSnapshot, (campaignIds.nullCampaign));
+        bytes memory callData = abi.encodeCall(sablierStaking.rewardsPerTokenSinceLastSnapshot, (poolIds.nullPool));
         expectRevert_Null(callData);
     }
 
-    function test_RevertGiven_Canceled() external whenNotNull {
-        vm.expectRevert(
-            abi.encodeWithSelector(Errors.SablierStakingState_CampaignCanceled.selector, campaignIds.canceledCampaign)
-        );
-        stakingPool.rewardsPerTokenSinceLastSnapshot(campaignIds.canceledCampaign);
+    function test_RevertGiven_Closed() external whenNotNull {
+        vm.expectRevert(abi.encodeWithSelector(Errors.SablierStakingState_PoolClosed.selector, poolIds.closedPool));
+        sablierStaking.rewardsPerTokenSinceLastSnapshot(poolIds.closedPool);
     }
 
-    function test_RevertWhen_StartTimeInFuture() external whenNotNull givenNotCanceled {
+    function test_RevertWhen_StartTimeInFuture() external whenNotNull givenNotClosed {
         warpStateTo(START_TIME - 1);
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                Errors.SablierStaking_CampaignNotStarted.selector, campaignIds.defaultCampaign, START_TIME, END_TIME
+                Errors.SablierStaking_StartTimeInFuture.selector, poolIds.defaultPool, START_TIME, END_TIME
             )
         );
-        stakingPool.rewardsPerTokenSinceLastSnapshot(campaignIds.defaultCampaign);
+        sablierStaking.rewardsPerTokenSinceLastSnapshot(poolIds.defaultPool);
     }
 
-    function test_GivenTotalStakedZero() external view whenNotNull givenNotCanceled whenStartTimeNotInFuture {
+    function test_GivenTotalStakedZero() external view whenNotNull givenNotClosed whenStartTimeNotInFuture {
         // It should return zero.
-        uint128 actualRewardRatePerTokenStaked = stakingPool.rewardsPerTokenSinceLastSnapshot(campaignIds.freshCampaign);
+        uint128 actualRewardRatePerTokenStaked = sablierStaking.rewardsPerTokenSinceLastSnapshot(poolIds.freshPool);
         assertEq(actualRewardRatePerTokenStaked, 0, "rewardsPerTokenSinceLastSnapshot");
     }
 
     function test_GivenLastUpdateTimeNotLessThanEndTime()
         external
         whenNotNull
-        givenNotCanceled
+        givenNotClosed
         whenStartTimeNotInFuture
         givenTotalStakedNotZero
     {
         warpStateTo(END_TIME);
 
         // Snapshot rewards so that last time update equals end time.
-        stakingPool.snapshotRewards(campaignIds.defaultCampaign, users.recipient);
+        sablierStaking.snapshotRewards(poolIds.defaultPool, users.recipient);
 
         // It should return zero.
-        uint128 actualRewardRatePerTokenStaked =
-            stakingPool.rewardsPerTokenSinceLastSnapshot(campaignIds.defaultCampaign);
+        uint128 actualRewardRatePerTokenStaked = sablierStaking.rewardsPerTokenSinceLastSnapshot(poolIds.defaultPool);
         assertEq(actualRewardRatePerTokenStaked, 0, "rewardsPerTokenSinceLastSnapshot");
     }
 
     function test_GivenLastUpdateTimeLessThanEndTime()
         external
         whenNotNull
-        givenNotCanceled
+        givenNotClosed
         whenStartTimeNotInFuture
         givenTotalStakedNotZero
     {
         warpStateTo(END_TIME);
 
         // It should return correct rewards per token since last snapshot.
-        uint128 actualRewardRatePerTokenStaked =
-            stakingPool.rewardsPerTokenSinceLastSnapshot(campaignIds.defaultCampaign);
+        uint128 actualRewardRatePerTokenStaked = sablierStaking.rewardsPerTokenSinceLastSnapshot(poolIds.defaultPool);
         assertEq(
             actualRewardRatePerTokenStaked,
             REWARDS_DISTRIBUTED_PER_TOKEN_END_TIME - REWARDS_DISTRIBUTED_PER_TOKEN,

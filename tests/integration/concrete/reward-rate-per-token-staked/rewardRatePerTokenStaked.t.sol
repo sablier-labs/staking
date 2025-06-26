@@ -7,48 +7,46 @@ import { Shared_Integration_Concrete_Test } from "../Concrete.t.sol";
 
 contract RewardRatePerTokenStaked_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     function test_RevertWhen_Null() external {
-        bytes memory callData = abi.encodeCall(stakingPool.rewardRate, (campaignIds.nullCampaign));
+        bytes memory callData = abi.encodeCall(sablierStaking.rewardRate, (poolIds.nullPool));
         expectRevert_Null(callData);
     }
 
-    function test_RevertGiven_Canceled() external whenNotNull {
-        vm.expectRevert(
-            abi.encodeWithSelector(Errors.SablierStakingState_CampaignCanceled.selector, campaignIds.canceledCampaign)
-        );
-        stakingPool.rewardRatePerTokenStaked(campaignIds.canceledCampaign);
+    function test_RevertGiven_Closed() external whenNotNull {
+        vm.expectRevert(abi.encodeWithSelector(Errors.SablierStakingState_PoolClosed.selector, poolIds.closedPool));
+        sablierStaking.rewardRatePerTokenStaked(poolIds.closedPool);
     }
 
-    function test_RevertWhen_StartTimeInFuture() external whenNotNull givenNotCanceled {
+    function test_RevertWhen_StartTimeInFuture() external whenNotNull givenNotClosed {
         warpStateTo(START_TIME - 1);
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                Errors.SablierStakingState_CampaignNotActive.selector, campaignIds.defaultCampaign, START_TIME, END_TIME
+                Errors.SablierStakingState_OutsideRewardsPeriod.selector, poolIds.defaultPool, START_TIME, END_TIME
             )
         );
-        stakingPool.rewardRatePerTokenStaked(campaignIds.defaultCampaign);
+        sablierStaking.rewardRatePerTokenStaked(poolIds.defaultPool);
     }
 
-    function test_RevertWhen_EndTimeInPast() external whenNotNull givenNotCanceled whenStartTimeNotInFuture {
+    function test_RevertWhen_EndTimeInPast() external whenNotNull givenNotClosed whenStartTimeNotInFuture {
         warpStateTo(END_TIME + 1);
         vm.expectRevert(
             abi.encodeWithSelector(
-                Errors.SablierStakingState_CampaignNotActive.selector, campaignIds.defaultCampaign, START_TIME, END_TIME
+                Errors.SablierStakingState_OutsideRewardsPeriod.selector, poolIds.defaultPool, START_TIME, END_TIME
             )
         );
-        stakingPool.rewardRatePerTokenStaked(campaignIds.defaultCampaign);
+        sablierStaking.rewardRatePerTokenStaked(poolIds.defaultPool);
     }
 
     function test_GivenTotalStakedZero()
         external
         view
         whenNotNull
-        givenNotCanceled
+        givenNotClosed
         whenStartTimeNotInFuture
         whenEndTimeNotInPast
     {
         // It should return zero.
-        uint128 actualRewardRatePerTokenStaked = stakingPool.rewardRatePerTokenStaked(campaignIds.freshCampaign);
+        uint128 actualRewardRatePerTokenStaked = sablierStaking.rewardRatePerTokenStaked(poolIds.freshPool);
         assertEq(actualRewardRatePerTokenStaked, 0, "reward rate per token staked");
     }
 
@@ -56,12 +54,12 @@ contract RewardRatePerTokenStaked_Integration_Concrete_Test is Shared_Integratio
         external
         view
         whenNotNull
-        givenNotCanceled
+        givenNotClosed
         whenStartTimeNotInFuture
         whenEndTimeNotInPast
     {
         // It should return correct reward rate per token staked.
-        uint128 actualRewardRatePerTokenStaked = stakingPool.rewardRatePerTokenStaked(campaignIds.defaultCampaign);
+        uint128 actualRewardRatePerTokenStaked = sablierStaking.rewardRatePerTokenStaked(poolIds.defaultPool);
         uint128 expectedRewardRatePerTokenStaked = REWARD_RATE / TOTAL_STAKED;
         assertEq(actualRewardRatePerTokenStaked, expectedRewardRatePerTokenStaked, "reward rate per token staked");
     }

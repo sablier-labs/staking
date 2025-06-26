@@ -2,8 +2,8 @@
 
 ## Overview
 
-The Sablier Staking protocol distributes rewards to users over time who stake ERC20 tokens in campaigns. The protocol
-supports two types of staking:
+The Sablier Staking protocol distributes rewards to users over time who stake ERC20 tokens in staking pools. The
+protocol supports two types of staking:
 
 1. **Direct ERC20 Token Staking**: Users can directly stake ERC20 tokens.
 2. **Lockup NFT Staking**: Users can stake Sablier Lockup NFTs that are streaming the supported staking token.
@@ -40,7 +40,7 @@ rpt_g(e) = rpt_g(e-1) + \frac{\text{rewards distributed in period } [e-1, e]}{A_
 Where the rewards distributed in period $[e-1, e]$ is:
 
 ```math
-\text{rewards distributed} = \frac{\text{total campaign rewards} \cdot T}{\text{campaign duration}}
+\text{rewards distributed} = \frac{\text{total pool rewards} \cdot T}{\text{reward period}}
 ```
 
 So, the total rewards distributed until $e$ becomes
@@ -49,7 +49,7 @@ So, the total rewards distributed until $e$ becomes
 R_g = \sum_e rpt_g(e) \cdot A_g(e)
 ```
 
-Of course, by the end of the campaign, $R_g$ must become equal to the campaign rewards.
+Of course, by the end of the reward period, $R_g$ must become equal to the pool rewards.
 
 #### User Snapshots
 
@@ -88,12 +88,12 @@ R_u(e) = R_u(e_{last}) + \text{pending rewards}
 - Prevents withdrawal from staked streams
 - Handles stream cancellation events
 
-### 3. Campaign lifecycle
+### 3. Lifecycle
 
-A campaign ends when one of the following two events occur:
+A staking pool comes to its end when one of the following two events occur:
 
-- Campaign creator cancels it before the campaign start time
-- Campaign reaches its end time
+- Pool creator closes it before the start time
+- Pool reaches its end time
 
 ### 4. Other Considerations
 

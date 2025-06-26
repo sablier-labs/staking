@@ -6,7 +6,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ISablierLockupNFT } from "../interfaces/ISablierLockupNFT.sol";
 import { ISablierStakingState } from "../interfaces/ISablierStakingState.sol";
 import { Errors } from "../libraries/Errors.sol";
-import { Campaign, GlobalSnapshot, StreamLookup, UserShares, UserSnapshot } from "../types/DataTypes.sol";
+import { GlobalSnapshot, Pool, StreamLookup, UserShares, UserSnapshot } from "../types/DataTypes.sol";
 
 /// @title SablierStakingState
 /// @notice See the documentation in {ISablierStakingState}.
@@ -19,55 +19,55 @@ abstract contract SablierStakingState is ISablierStakingState {
     bytes32 public constant override LOCKUP_WHITELIST_ROLE = keccak256("LOCKUP_WHITELIST_ROLE");
 
     /// @inheritdoc ISablierStakingState
-    uint256 public override nextCampaignId;
+    uint256 public override nextPoolId;
 
-    /// @notice The campaign parameters mapped by the campaign ID.
-    /// @dev See the documentation for Campaign in {DataTypes}.
-    mapping(uint256 campaignId => Campaign campaign) internal _campaign;
+    /// @notice The Pool parameters mapped by the Pool ID.
+    /// @dev See the documentation for Pool in {DataTypes}.
+    mapping(uint256 poolId => Pool pool) internal _pool;
 
-    /// @notice Tracks the global rewards data and total staked amount for a given campaign.
+    /// @notice Tracks the global rewards data and total staked amount for a given pool.
     /// @dev See the documentation for GlobalSnapshot in {DataTypes}.
-    mapping(uint256 campaignId => GlobalSnapshot snapshot) internal _globalSnapshot;
+    mapping(uint256 poolId => GlobalSnapshot snapshot) internal _globalSnapshot;
 
     /// @notice Indicates whether the Lockup contract is whitelisted to stake into this contract.
     mapping(ISablierLockupNFT lockup => bool isWhitelisted) internal _lockupWhitelist;
 
-    /// @notice Get the campaign ID and the original owner of the staked stream.
+    /// @notice Get the Pool ID and the original owner of the staked stream.
     /// @dev See the documentation for StreamLookup in {DataTypes}.
     mapping(ISablierLockupNFT lockup => mapping(uint256 streamId => StreamLookup lookup)) internal _streamLookup;
 
-    /// @notice The total amount of tokens staked in a campaign (both direct staking and through Sablier streams).
-    mapping(uint256 campaignId => uint128 amount) internal _totalAmountStaked;
+    /// @notice The total amount of tokens staked in a pool (both direct staking and through Sablier streams).
+    mapping(uint256 poolId => uint128 amount) internal _totalAmountStaked;
 
-    /// @notice The user's shares of tokens staked in a campaign.
+    /// @notice The user's shares of tokens staked in a pool.
     /// @dev See the documentation for UserShares in {DataTypes}.
-    mapping(address user => mapping(uint256 campaignId => UserShares shares)) internal _userShares;
+    mapping(address user => mapping(uint256 poolId => UserShares shares)) internal _userShares;
 
-    /// @notice Stores the user's staking details for each campaign.
+    /// @notice Stores the user's staking details for each pool.
     /// @dev See the documentation for UserSnapshot in {DataTypes}.
-    mapping(address user => mapping(uint256 campaignId => UserSnapshot snapshot)) internal _userSnapshot;
+    mapping(address user => mapping(uint256 poolId => UserSnapshot snapshot)) internal _userSnapshot;
 
     /*//////////////////////////////////////////////////////////////////////////
                                      MODIFIERS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice Checks that the campaign is active by checking that it is not canceled and that the current time is
-    /// between the campaign's start and end times.
-    modifier isActive(uint256 campaignId) {
-        _revertIfCanceled(campaignId);
-        _revertIfCampaignNotOngoing(campaignId);
+    /// @notice Checks that the pool is active by checking that it was not closed and that the current time is between
+    /// the pool's start and end times.
+    modifier isActive(uint256 poolId) {
+        _revertIfClosed(poolId);
+        _revertIfOutsideRewardsPeriod(poolId);
         _;
     }
 
-    /// @notice Checks that the campaign is not canceled.
-    modifier notCanceled(uint256 campaignId) {
-        _revertIfCanceled(campaignId);
+    /// @notice Checks that the pool was not closed by the admin.
+    modifier notClosed(uint256 poolId) {
+        _revertIfClosed(poolId);
         _;
     }
 
-    /// @notice Checks that `campaignId` does not reference a null campaign.
-    modifier notNull(uint256 campaignId) {
-        _revertIfNull(campaignId);
+    /// @notice Checks that `poolId` does not reference to a non-existent pool.
+    modifier notNull(uint256 poolId) {
+        _revertIfNull(poolId);
         _;
     }
 
@@ -76,43 +76,43 @@ abstract contract SablierStakingState is ISablierStakingState {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc ISablierStakingState
-    function getAdmin(uint256 campaignId) external view notNull(campaignId) returns (address) {
-        return _campaign[campaignId].admin;
+    function getAdmin(uint256 poolId) external view notNull(poolId) returns (address) {
+        return _pool[poolId].admin;
     }
 
     /// @inheritdoc ISablierStakingState
-    function getEndTime(uint256 campaignId) external view notNull(campaignId) returns (uint40) {
-        return _campaign[campaignId].endTime;
+    function getEndTime(uint256 poolId) external view notNull(poolId) returns (uint40) {
+        return _pool[poolId].endTime;
     }
 
     /// @inheritdoc ISablierStakingState
-    function getRewardToken(uint256 campaignId) external view notNull(campaignId) returns (IERC20) {
-        return _campaign[campaignId].rewardToken;
+    function getRewardToken(uint256 poolId) external view notNull(poolId) returns (IERC20) {
+        return _pool[poolId].rewardToken;
     }
 
     /// @inheritdoc ISablierStakingState
-    function getStakingToken(uint256 campaignId) external view notNull(campaignId) returns (IERC20) {
-        return _campaign[campaignId].stakingToken;
+    function getStakingToken(uint256 poolId) external view notNull(poolId) returns (IERC20) {
+        return _pool[poolId].stakingToken;
     }
 
     /// @inheritdoc ISablierStakingState
-    function getStartTime(uint256 campaignId) external view notNull(campaignId) returns (uint40) {
-        return _campaign[campaignId].startTime;
+    function getStartTime(uint256 poolId) external view notNull(poolId) returns (uint40) {
+        return _pool[poolId].startTime;
     }
 
     /// @inheritdoc ISablierStakingState
-    function getTotalRewards(uint256 campaignId) external view notNull(campaignId) returns (uint128) {
-        return _campaign[campaignId].totalRewards;
+    function getTotalRewards(uint256 poolId) external view notNull(poolId) returns (uint128) {
+        return _pool[poolId].totalRewards;
     }
 
     /// @inheritdoc ISablierStakingState
-    function globalSnapshot(uint256 campaignId)
+    function globalSnapshot(uint256 poolId)
         external
         view
-        notNull(campaignId)
+        notNull(poolId)
         returns (uint40 lastUpdateTime, uint256 rewardsDistributedPerTokenScaled)
     {
-        GlobalSnapshot memory snapshot = _globalSnapshot[campaignId];
+        GlobalSnapshot memory snapshot = _globalSnapshot[poolId];
 
         lastUpdateTime = snapshot.lastUpdateTime;
         rewardsDistributedPerTokenScaled = snapshot.rewardsDistributedPerTokenScaled;
@@ -135,55 +135,47 @@ abstract contract SablierStakingState is ISablierStakingState {
     )
         external
         view
-        returns (uint256 campaignId, address owner)
+        returns (uint256 poolId, address owner)
     {
         // Check: the lockup is not the zero address.
         if (address(lockup) == address(0)) {
             revert Errors.SablierStakingState_ZeroAddress();
         }
 
-        // Check: the stream ID is staked in a campaign.
-        if (_streamLookup[lockup][streamId].campaignId == 0) {
+        // Check: the stream ID is staked in a pool.
+        if (_streamLookup[lockup][streamId].poolId == 0) {
             revert Errors.SablierStakingState_StreamNotStaked(lockup, streamId);
         }
 
-        campaignId = _streamLookup[lockup][streamId].campaignId;
+        poolId = _streamLookup[lockup][streamId].poolId;
         owner = _streamLookup[lockup][streamId].owner;
     }
 
     /// @inheritdoc ISablierStakingState
-    function totalAmountStaked(uint256 campaignId) external view notNull(campaignId) returns (uint128) {
-        return _totalAmountStaked[campaignId];
+    function totalAmountStaked(uint256 poolId) external view notNull(poolId) returns (uint128) {
+        return _totalAmountStaked[poolId];
     }
 
     /// @inheritdoc ISablierStakingState
-    function totalAmountStakedByUser(
-        uint256 campaignId,
-        address user
-    )
-        external
-        view
-        notNull(campaignId)
-        returns (uint128)
-    {
+    function totalAmountStakedByUser(uint256 poolId, address user) external view notNull(poolId) returns (uint128) {
         // Check: the user is not the zero address.
         if (user == address(0)) {
             revert Errors.SablierStakingState_ZeroAddress();
         }
 
-        UserShares memory shares = _userShares[user][campaignId];
+        UserShares memory shares = _userShares[user][poolId];
 
         return shares.directAmountStaked + shares.streamAmountStaked;
     }
 
     /// @inheritdoc ISablierStakingState
     function userShares(
-        uint256 campaignId,
+        uint256 poolId,
         address user
     )
         external
         view
-        notNull(campaignId)
+        notNull(poolId)
         returns (uint128 streamsCount, uint128 streamAmountStaked, uint128 directAmountStaked)
     {
         // Check: the user is not the zero address.
@@ -191,19 +183,19 @@ abstract contract SablierStakingState is ISablierStakingState {
             revert Errors.SablierStakingState_ZeroAddress();
         }
 
-        UserShares memory shares = _userShares[user][campaignId];
+        UserShares memory shares = _userShares[user][poolId];
 
         return (shares.streamsCount, shares.streamAmountStaked, shares.directAmountStaked);
     }
 
     /// @inheritdoc ISablierStakingState
     function userSnapshot(
-        uint256 campaignId,
+        uint256 poolId,
         address user
     )
         external
         view
-        notNull(campaignId)
+        notNull(poolId)
         returns (uint40 lastUpdateTime, uint256 rewardsEarnedPerTokenScaled, uint128 rewards)
     {
         // Check: the user is not the zero address.
@@ -211,7 +203,7 @@ abstract contract SablierStakingState is ISablierStakingState {
             revert Errors.SablierStakingState_ZeroAddress();
         }
 
-        UserSnapshot memory snapshot = _userSnapshot[user][campaignId];
+        UserSnapshot memory snapshot = _userSnapshot[user][poolId];
 
         lastUpdateTime = snapshot.lastUpdateTime;
         rewardsEarnedPerTokenScaled = snapshot.rewardsEarnedPerTokenScaled;
@@ -219,37 +211,37 @@ abstract contract SablierStakingState is ISablierStakingState {
     }
 
     /// @inheritdoc ISablierStakingState
-    function wasCanceled(uint256 campaignId) external view notNull(campaignId) returns (bool) {
-        return _campaign[campaignId].wasCanceled;
+    function wasClosed(uint256 poolId) external view notNull(poolId) returns (bool) {
+        return _pool[poolId].wasClosed;
     }
 
     /*//////////////////////////////////////////////////////////////////////////
                             PRIVATE READ-ONLY FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @dev Reverts if the campaign is not ongoing.
-    function _revertIfCampaignNotOngoing(uint256 campaignId) private view {
+    /// @dev Reverts if the pool was closed by the admin.
+    function _revertIfClosed(uint256 poolId) private view {
+        if (_pool[poolId].wasClosed) {
+            revert Errors.SablierStakingState_PoolClosed(poolId);
+        }
+    }
+
+    /// @dev Reverts if the pool ID does not exist.
+    function _revertIfNull(uint256 poolId) private view {
+        if (_pool[poolId].admin == address(0)) {
+            revert Errors.SablierStakingState_PoolDoesNotExist(poolId);
+        }
+    }
+
+    /// @dev Reverts if the current timestamp is not between the start and end times.
+    function _revertIfOutsideRewardsPeriod(uint256 poolId) private view {
         uint40 currentTimestamp = uint40(block.timestamp);
-        Campaign memory campaign = _campaign[campaignId];
+        Pool memory pool = _pool[poolId];
 
-        // Check: the campaign is ongoing by comparing the current timestamp with the campaign's start and end times.
-        bool isCampaignOngoing = campaign.startTime <= currentTimestamp && currentTimestamp <= campaign.endTime;
-        if (!isCampaignOngoing) {
-            revert Errors.SablierStakingState_CampaignNotActive(campaignId, campaign.startTime, campaign.endTime);
-        }
-    }
-
-    /// @dev Reverts if the campaign is canceled.
-    function _revertIfCanceled(uint256 campaignId) private view {
-        if (_campaign[campaignId].wasCanceled) {
-            revert Errors.SablierStakingState_CampaignCanceled(campaignId);
-        }
-    }
-
-    /// @dev Reverts if the campaign does not exist.
-    function _revertIfNull(uint256 campaignId) private view {
-        if (_campaign[campaignId].admin == address(0)) {
-            revert Errors.SablierStakingState_CampaignDoesNotExist(campaignId);
+        // Check: the timestamp is between the start and end times.
+        bool isRewardsPeriodActive = pool.startTime <= currentTimestamp && currentTimestamp <= pool.endTime;
+        if (!isRewardsPeriodActive) {
+            revert Errors.SablierStakingState_OutsideRewardsPeriod(poolId, pool.startTime, pool.endTime);
         }
     }
 }

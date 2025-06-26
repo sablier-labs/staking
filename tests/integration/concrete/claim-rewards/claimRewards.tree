@@ -5,9 +5,9 @@ ClaimRewards_Integration_Concrete_Test
    ├── when null
    │  └── it should revert
    └── when not null
-      ├── given canceled
+      ├── given closed
       │  └── it should revert
-      └── given not canceled
+      └── given not closed
          ├── when fee not paid
          │  └── it should revert
          └── when fee paid

@@ -2,18 +2,12 @@
 pragma solidity >=0.8.26;
 
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
-import { BaseTest as EvmUtilsBase } from "@sablier/evm-utils/src/tests/BaseTest.sol";
-import { SablierStaking } from "src/SablierStaking.sol";
+import { BaseUtils } from "@sablier/evm-utils/src/tests/BaseUtils.sol";
 
 import { Constants } from "./Constants.sol";
 
-abstract contract Utils is Constants, EvmUtilsBase {
+abstract contract Utils is Constants, BaseUtils {
     using SafeCast for uint256;
-
-    /// @dev Deploys {SablierStaking} from an optimized source compiled with `--via-ir`.
-    function deployOptimizedSablierStaking(address admin) internal returns (SablierStaking) {
-        return SablierStaking(deployCode("out-optimized/SablierStaking.sol/SablierStaking.json", abi.encode(admin)));
-    }
 
     /// @dev Descales the value by dividing it by `SCALE_FACTOR`.
     function getDescaledValue(uint256 value) internal pure returns (uint128) {

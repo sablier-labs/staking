@@ -105,6 +105,11 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
         users.staker = createUser("Staker", spenders);
     }
 
+    /// @dev Deploys {SablierStaking} from an optimized source compiled with `--via-ir`.
+    function deployOptimizedSablierStaking(address admin) internal returns (SablierStaking) {
+        return SablierStaking(deployCode("out-optimized/SablierStaking.sol/SablierStaking.json", abi.encode(admin)));
+    }
+
     /*//////////////////////////////////////////////////////////////////////////
                                    LOCKUP-HELPERS
     //////////////////////////////////////////////////////////////////////////*/

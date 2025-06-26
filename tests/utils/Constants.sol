@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity >=0.8.26;
 
-abstract contract Constants {
+import { BaseConstants } from "@sablier/evm-utils/src/tests/BaseConstants.sol";
+
+abstract contract Constants is BaseConstants {
     // Pool Parameters
     uint40 internal constant END_TIME = START_TIME + REWARD_PERIOD;
     uint128 internal constant REWARD_AMOUNT = 10_000_000e18; // Fixed 10M rewards

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity >=0.8.26;
 
+import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { BaseUtils } from "@sablier/evm-utils/src/tests/BaseUtils.sol";
 
@@ -8,6 +10,11 @@ import { Constants } from "./Constants.sol";
 
 abstract contract Utils is Constants, BaseUtils {
     using SafeCast for uint256;
+
+    /// @dev Returns the amount in wei using the token's decimals.
+    function amountInWei(uint128 amount, IERC20 token) internal view returns (uint128) {
+        return (amount * 10 ** IERC20Metadata(address(token)).decimals()).toUint128();
+    }
 
     /// @dev Descales the value by dividing it by `SCALE_FACTOR`.
     function getDescaledValue(uint256 value) internal pure returns (uint128) {

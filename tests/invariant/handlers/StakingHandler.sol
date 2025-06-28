@@ -12,6 +12,19 @@ contract StakingHandler is BaseHandler {
     using SafeCast for uint256;
 
     /*//////////////////////////////////////////////////////////////////////////
+                                      STRUCTS
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @dev Create parameter struct to avoid stack too deep error.
+    struct CreateParams {
+        uint40 endTime;
+        address poolAdmin;
+        uint256 rewardTokenIndex;
+        uint256 stakingTokenIndex;
+        uint128 totalRewards;
+    }
+
+    /*//////////////////////////////////////////////////////////////////////////
                                     CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
 
@@ -27,7 +40,7 @@ contract StakingHandler is BaseHandler {
                                   GENERIC HANDLERS
     //////////////////////////////////////////////////////////////////////////*/
 
-    function passTime(uint256 timeJump) external adjustTimestamp(timeJump) updateRewardsDistributedForAllPools { }
+    function passTime(uint256 timeJump) external adjustTimestamp(timeJump) updateTotalRewardsPeriodForAllPools { }
 
     /*//////////////////////////////////////////////////////////////////////////
                                   BOUNDED HANDLERS
@@ -42,7 +55,7 @@ contract StakingHandler is BaseHandler {
         adjustTimestamp(timeJump)
         useFuzzedPool(poolIdIndex)
         useFuzzedStaker(stakerIndex)
-        updateRewardsDistributedForAllPools
+        updateTotalRewardsPeriodForAllPools
         instrument("claimRewards")
     {
         uint128 claimableRewards = sablierStaking.claimableRewards(selectedPoolId, selectedStaker);
@@ -54,24 +67,20 @@ contract StakingHandler is BaseHandler {
         assert(rewards == claimableRewards);
 
         // Update handler store.
-        handlerStore.updateRewardsClaimed(selectedPoolId, selectedStaker, rewards);
+        handlerStore.addRewardsClaimed(selectedPoolId, selectedStaker, rewards);
         handlerStore.updateUserSnapshotTime(selectedPoolId, selectedStaker, getBlockTimestamp());
     }
 
     function createPool(
         uint256 timeJump,
-        uint40 endTime,
-        address poolAdmin,
-        uint256 rewardTokenIndex,
-        uint256 stakingTokenIndex,
-        uint128 totalRewards
+        CreateParams memory createParams
     )
         external
         adjustTimestamp(timeJump)
-        updateRewardsDistributedForAllPools
+        updateTotalRewardsPeriodForAllPools
         instrument("createPool")
     {
-        vm.assume(poolAdmin != address(0));
+        vm.assume(createParams.poolAdmin != address(0));
 
         // Ensure that number of pools created does not exceed the maximum number of pools.
         vm.assume(handlerStore.totalPools() < MAX_POOL_COUNT);
@@ -80,33 +89,33 @@ contract StakingHandler is BaseHandler {
         uint40 startTime = getBlockTimestamp();
 
         // Bound variables to valid values.
-        endTime = boundUint40(endTime, startTime + 1 seconds, startTime + 3650 days);
-        rewardTokenIndex = bound(rewardTokenIndex, 0, tokens.length - 1);
-        stakingTokenIndex = bound(stakingTokenIndex, 0, tokens.length - 1);
+        createParams.endTime = boundUint40(createParams.endTime, startTime + 1 seconds, startTime + 3650 days);
+        createParams.rewardTokenIndex = bound(createParams.rewardTokenIndex, 0, tokens.length - 1);
+        createParams.stakingTokenIndex = bound(createParams.stakingTokenIndex, 0, tokens.length - 1);
 
-        IERC20 rewardToken = tokens[rewardTokenIndex];
-        IERC20 stakingToken = tokens[stakingTokenIndex];
+        IERC20 rewardToken = tokens[createParams.rewardTokenIndex];
+        IERC20 stakingToken = tokens[createParams.stakingTokenIndex];
 
         // Bound the total rewards.
-        totalRewards = boundUint128({
-            x: totalRewards,
+        createParams.totalRewards = boundUint128({
+            x: createParams.totalRewards,
             min: amountInWei(100, rewardToken),
             max: amountInWei(20_000_000_000, rewardToken)
         });
 
         // Deal tokens to the caller and approve the staking pool.
-        deal({ token: address(rewardToken), to: poolAdmin, give: totalRewards });
+        deal({ token: address(rewardToken), to: createParams.poolAdmin, give: createParams.totalRewards });
 
-        setMsgSender(poolAdmin);
-        rewardToken.approve(address(sablierStaking), totalRewards);
+        setMsgSender(createParams.poolAdmin);
+        rewardToken.approve(address(sablierStaking), createParams.totalRewards);
 
         uint256 poolId = sablierStaking.createPool({
-            admin: poolAdmin,
+            admin: createParams.poolAdmin,
             stakingToken: stakingToken,
             startTime: startTime,
-            endTime: endTime,
+            endTime: createParams.endTime,
             rewardToken: rewardToken,
-            totalRewards: totalRewards
+            totalRewards: createParams.totalRewards
         });
 
         // Add the pool ID to the handler store.
@@ -122,7 +131,7 @@ contract StakingHandler is BaseHandler {
         adjustTimestamp(timeJump)
         useFuzzedPool(poolIdIndex)
         useFuzzedStaker(stakerIndex)
-        updateRewardsDistributedForAllPools
+        updateTotalRewardsPeriodForAllPools
         instrument("snapshotRewards")
     {
         uint40 lastSnapshotTime = handlerStore.userSnapshotTime(selectedPoolId, selectedStaker);
@@ -151,7 +160,7 @@ contract StakingHandler is BaseHandler {
         adjustTimestamp(timeJump)
         useFuzzedPool(poolIdIndex)
         useFuzzedStaker(stakerIndex)
-        updateRewardsDistributedForAllPools
+        updateTotalRewardsPeriodForAllPools
         instrument("stakeERC20Token")
     {
         // Do nothing if end time is not in the future.
@@ -179,7 +188,7 @@ contract StakingHandler is BaseHandler {
         sablierStaking.stakeERC20Token(selectedPoolId, amount);
 
         // Update handler store.
-        handlerStore.increaseUserStake(selectedPoolId, selectedStaker, amount);
+        handlerStore.addUserStake(selectedPoolId, selectedStaker, amount);
         handlerStore.updateUserSnapshotTime(selectedPoolId, selectedStaker, getBlockTimestamp());
     }
 
@@ -193,7 +202,7 @@ contract StakingHandler is BaseHandler {
         adjustTimestamp(timeJump)
         useFuzzedPool(poolIdIndex)
         useFuzzedStaker(stakerIndex)
-        updateRewardsDistributedForAllPools
+        updateTotalRewardsPeriodForAllPools
         instrument("unstakeERC20Token")
     {
         uint128 amountStakedByUser = handlerStore.amountStaked(selectedPoolId, selectedStaker);
@@ -207,7 +216,7 @@ contract StakingHandler is BaseHandler {
         sablierStaking.unstakeERC20Token(selectedPoolId, amount);
 
         // Update handler store.
-        handlerStore.decreaseUserStake(selectedPoolId, selectedStaker, amount);
+        handlerStore.subtractUserStake(selectedPoolId, selectedStaker, amount);
         handlerStore.updateUserSnapshotTime(selectedPoolId, selectedStaker, getBlockTimestamp());
     }
 }

@@ -2,16 +2,14 @@
 // solhint-disable immutable-vars-naming
 pragma solidity >=0.8.26;
 
-import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
-import { BaseUtils } from "@sablier/evm-utils/src/tests/BaseUtils.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
 import { ISablierStaking } from "src/interfaces/ISablierStaking.sol";
-import { Constants } from "tests/utils/Constants.sol";
+import { Utils } from "../../utils/Utils.sol";
 import { HandlerStore } from "./../stores/HandlerStore.sol";
 
-contract BaseHandler is BaseUtils, Constants, StdCheats {
+contract BaseHandler is Utils, StdCheats {
     using SafeCast for uint256;
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -47,9 +45,39 @@ contract BaseHandler is BaseUtils, Constants, StdCheats {
                                      MODIFIERS
     //////////////////////////////////////////////////////////////////////////*/
 
+    /// @dev Forwards the block timestamp.
     modifier adjustTimestamp(uint256 timeJump) {
         timeJump = bound(timeJump, 0, 30 days);
         skip(timeJump);
+        _;
+    }
+
+    /// @dev Calculates the rewards period for all the pools and updates it in the handler store.
+    modifier updateTotalRewardsPeriodForAllPools() {
+        uint40 previousCalculationTime = handlerStore.rewardsPeriodUpdatedAt();
+
+        // Loop over all pools.
+        for (uint256 i = 0; i < handlerStore.totalPools(); ++i) {
+            uint256 poolId = handlerStore.poolIds(i);
+            uint40 endTime = sablierStaking.getEndTime(poolId);
+
+            // Do nothing if end time has passed or there are no stakers.
+            if (previousCalculationTime < endTime && sablierStaking.totalAmountStaked(poolId) > 0) {
+                uint40 durationSinceLastCalculation;
+                // Keep in mind the pool end time for the duration calculation.
+                if (getBlockTimestamp() > endTime) {
+                    durationSinceLastCalculation = endTime - previousCalculationTime;
+                } else {
+                    durationSinceLastCalculation = getBlockTimestamp() - previousCalculationTime;
+                }
+
+                // Update new rewards period in the handler store.
+                handlerStore.addRewardDistributionPeriod(poolId, durationSinceLastCalculation);
+            }
+        }
+
+        // Update the timestamp for the last rewards period update.
+        handlerStore.updateRewardsPeriodUpdatedAt(getBlockTimestamp());
 
         _;
     }
@@ -57,11 +85,11 @@ contract BaseHandler is BaseUtils, Constants, StdCheats {
     /// @dev Records a function call for instrumentation purposes.
     modifier instrument(string memory functionName) {
         _;
-
         calls[selectedPoolId][functionName]++;
         totalCalls[functionName]++;
     }
 
+    /// @dev Selects a pool ID from the store.
     modifier useFuzzedPool(uint256 poolIdIndex) {
         // Return if there are no pools.
         if (handlerStore.totalPools() == 0) {
@@ -70,46 +98,23 @@ contract BaseHandler is BaseUtils, Constants, StdCheats {
 
         poolIdIndex = bound(poolIdIndex, 0, handlerStore.totalPools() - 1);
         selectedPoolId = handlerStore.poolIds(poolIdIndex);
-
         _;
     }
 
+    /// @dev Selects a staker from the store or creates a new one if there are no stakers.
     modifier useFuzzedStaker(uint256 stakerIndex) {
         uint256 totalStakers = handlerStore.totalStakers(selectedPoolId);
 
-        // Return if there are no stakers.
+        // Create if there are no stakers.
         if (totalStakers == 0) {
-            return;
+            selectedStaker = vm.randomAddress();
+            handlerStore.addStaker(selectedPoolId, selectedStaker);
+        } else {
+            stakerIndex = bound(stakerIndex, 0, totalStakers - 1);
+            selectedStaker = handlerStore.poolStakers(selectedPoolId, stakerIndex);
         }
-
-        stakerIndex = bound(stakerIndex, 0, totalStakers - 1);
-        selectedStaker = handlerStore.poolStakers(selectedPoolId, stakerIndex);
-
         setMsgSender(selectedStaker);
-
         _;
-    }
-
-    /// @dev Updates the rewards distributed by all the pools in the handler store.
-    modifier updateRewardsDistributedForAllPools() {
-        _;
-
-        for (uint256 i = 0; i < handlerStore.totalPools(); ++i) {
-            uint256 poolId = handlerStore.poolIds(i);
-
-            uint128 rewardsPerSecond = sablierStaking.rewardRate(poolId);
-            uint40 durationSinceLastUpdate = getBlockTimestamp() - handlerStore.rewardsDistributedAt();
-
-            for (uint256 j = 0; j < handlerStore.totalStakers(poolId); ++j) {
-                address staker = handlerStore.poolStakers(poolId, j);
-                uint128 amountStakedByUser = handlerStore.amountStaked(poolId, staker);
-
-                uint128 rewardsDistributedToUser = amountStakedByUser * rewardsPerSecond * durationSinceLastUpdate;
-                handlerStore.updateRewardsDistributed(poolId, rewardsDistributedToUser);
-            }
-        }
-
-        handlerStore.updateRewardsDistributedAt(getBlockTimestamp());
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -123,14 +128,5 @@ contract BaseHandler is BaseUtils, Constants, StdCheats {
         for (uint256 i = 0; i < tokens_.length; ++i) {
             tokens.push(tokens_[i]);
         }
-    }
-
-    /*//////////////////////////////////////////////////////////////////////////
-                                      HELPERS
-    //////////////////////////////////////////////////////////////////////////*/
-
-    /// @dev Returns the amount in wei using the token's decimals.
-    function amountInWei(uint128 amount, IERC20 token) internal view returns (uint128) {
-        return (amount * 10 ** IERC20Metadata(address(token)).decimals()).toUint128();
     }
 }

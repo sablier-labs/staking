@@ -522,6 +522,9 @@ contract SablierStaking is
             _userSnapshot[msg.sender][poolId].lastUpdateTime = blockTimestamp;
         }
 
+        // Effect: reduce total amount staked in the pool.
+        _totalAmountStaked[poolId] -= amount;
+
         // Effect: update the global last update time.
         _globalSnapshot[poolId].lastUpdateTime = blockTimestamp;
 

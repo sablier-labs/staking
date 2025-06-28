@@ -10,13 +10,11 @@ contract HandlerStore {
     /// @dev Tracks all pools created by the invariant handler.
     uint256[] public poolIds;
 
-    uint40 public rewardsDistributedAt;
+    /// @dev Tracks the time when rewards period was last updated for all pools.
+    uint40 public rewardsPeriodUpdatedAt;
 
     /// @dev Tracks the amount of tokens staked by each staker in each pool.
     mapping(uint256 poolId => mapping(address staker => uint128 amount)) public amountStaked;
-
-    /// @dev Tracks the last time rewards were updated for each staker in each pool.
-    mapping(uint256 poolId => mapping(address staker => uint40 time)) public userSnapshotTime;
 
     /// @dev Maps stakers with the pool ID they have staked in.
     mapping(uint256 poolId => address[] stakers) public poolStakers;
@@ -24,8 +22,11 @@ contract HandlerStore {
     /// @dev Tracks rewards claimed by each staker in each pool.
     mapping(uint256 poolId => mapping(address staker => uint128 rewards)) public rewardsClaimed;
 
-    /// @dev Tracks rewards distributed by each pool.
-    mapping(uint256 poolId => uint128 rewards) public rewardsDistributed;
+    /// @dev Tracks rewards distribution period for each pool.
+    mapping(uint256 poolId => uint40 rewards) public rewardDistributionPeriod;
+
+    /// @dev Tracks the last time rewards were updated for each staker in each pool.
+    mapping(uint256 poolId => mapping(address staker => uint40 time)) public userSnapshotTime;
 
     /*//////////////////////////////////////////////////////////////////////////
                                       GETTERS
@@ -55,27 +56,27 @@ contract HandlerStore {
                                       SETTERS
     //////////////////////////////////////////////////////////////////////////*/
 
-    function decreaseUserStake(uint256 poolId, address staker, uint128 amount) external {
+    function addRewardsClaimed(uint256 poolId, address staker, uint128 rewards) external {
+        rewardsClaimed[poolId][staker] += rewards;
+    }
+
+    function addRewardDistributionPeriod(uint256 poolId, uint40 period) external {
+        rewardDistributionPeriod[poolId] += period;
+    }
+
+    function addUserStake(uint256 poolId, address staker, uint128 amount) external {
+        amountStaked[poolId][staker] += amount;
+    }
+
+    function subtractUserStake(uint256 poolId, address staker, uint128 amount) external {
         amountStaked[poolId][staker] -= amount;
     }
 
-    function increaseUserStake(uint256 poolId, address staker, uint128 amount) external {
-        amountStaked[poolId][staker] += amount;
+    function updateRewardsPeriodUpdatedAt(uint40 time) external {
+        rewardsPeriodUpdatedAt = time;
     }
 
     function updateUserSnapshotTime(uint256 poolId, address staker, uint40 time) external {
         userSnapshotTime[poolId][staker] = time;
-    }
-
-    function updateRewardsClaimed(uint256 poolId, address staker, uint128 rewards) external {
-        rewardsClaimed[poolId][staker] += rewards;
-    }
-
-    function updateRewardsDistributed(uint256 poolId, uint128 rewards) external {
-        rewardsDistributed[poolId] += rewards;
-    }
-
-    function updateRewardsDistributedAt(uint40 time) external {
-        rewardsDistributedAt = time;
     }
 }

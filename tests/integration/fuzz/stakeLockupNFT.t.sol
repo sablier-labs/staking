@@ -42,14 +42,16 @@ contract StakeLockupNFT_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         setMsgSender(caller);
         IERC721(address(lockup)).setApprovalForAll({ operator: address(sablierStaking), approved: true });
 
-        (uint256 expectedRewardsPerTokenScaled, uint128 expectedUserRewards) = calculateLatestRewards(caller);
+        (vars.expectedRewardsPerTokenScaled, vars.expectedUserRewards) = calculateLatestRewards(caller);
         (uint128 initialStreamsCount, uint128 initialStreamAmountStaked,) =
             sablierStaking.userShares(poolIds.defaultPool, caller);
+
+        vars.expectedTotalAmountStaked = sablierStaking.totalAmountStaked(poolIds.defaultPool) + amount;
 
         // It should emit {SnapshotRewards}, {Transfer} and {StakeLockupNFT} events.
         vm.expectEmit({ emitter: address(sablierStaking) });
         emit ISablierStaking.SnapshotRewards(
-            poolIds.defaultPool, timestamp, expectedRewardsPerTokenScaled, caller, expectedUserRewards
+            poolIds.defaultPool, timestamp, vars.expectedRewardsPerTokenScaled, caller, vars.expectedUserRewards
         );
         vm.expectEmit({ emitter: address(lockup) });
         emit IERC721.Transfer(caller, address(sablierStaking), streamId);
@@ -60,16 +62,20 @@ contract StakeLockupNFT_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         sablierStaking.stakeLockupNFT(poolIds.defaultPool, lockup, streamId);
 
         // It should stake stream.
-        (uint128 actualStreamsCount, uint128 actualStreamAmountStaked,) =
+        (vars.actualStreamCount, vars.actualStreamAmountStaked,) =
             sablierStaking.userShares(poolIds.defaultPool, caller);
-        assertEq(actualStreamsCount, initialStreamsCount + 1, "streamsCount");
-        assertEq(actualStreamAmountStaked, initialStreamAmountStaked + amount, "streamAmountStakedByUser");
+        assertEq(vars.actualStreamCount, initialStreamsCount + 1, "streamsCount");
+        assertEq(vars.actualStreamAmountStaked, initialStreamAmountStaked + amount, "streamAmountStakedByUser");
+
+        // It should increase total amount staked.
+        vars.actualTotalAmountStaked = sablierStaking.totalAmountStaked(poolIds.defaultPool);
+        assertEq(vars.actualTotalAmountStaked, vars.expectedTotalAmountStaked, "total amount staked");
 
         // It should update user rewards snapshot.
-        (uint40 actualUserLastUpdateTime, uint256 actualRewardsEarnedPerTokenScaled, uint128 actualRewards) =
+        (vars.actualLastUpdateTime, vars.actualRewardsPerTokenScaled, vars.actualUserRewards) =
             sablierStaking.userSnapshot(poolIds.defaultPool, caller);
-        assertEq(actualUserLastUpdateTime, timestamp, "userLastUpdateTime");
-        assertEq(actualRewardsEarnedPerTokenScaled, expectedRewardsPerTokenScaled, "rewardsEarnedPerTokenScaled");
-        assertEq(actualRewards, expectedUserRewards, "rewards");
+        assertEq(vars.actualLastUpdateTime, timestamp, "userLastUpdateTime");
+        assertEq(vars.actualRewardsPerTokenScaled, vars.expectedRewardsPerTokenScaled, "rewardsEarnedPerTokenScaled");
+        assertEq(vars.actualUserRewards, vars.expectedUserRewards, "rewards");
     }
 }

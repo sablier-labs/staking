@@ -5,7 +5,7 @@ import { Errors as EvmUtilsErrors } from "@sablier/evm-utils/src/libraries/Error
 import { Errors } from "src/libraries/Errors.sol";
 
 import { Base_Test } from "../Base.t.sol";
-import { PoolIds } from "../utils/Types.sol";
+import { PoolIds, Vars } from "../utils/Types.sol";
 
 /// @notice Common logic needed by all integration tests, both concrete and fuzz tests.
 abstract contract Integration_Test is Base_Test {
@@ -14,6 +14,8 @@ abstract contract Integration_Test is Base_Test {
     //////////////////////////////////////////////////////////////////////////*/
 
     PoolIds internal poolIds;
+
+    Vars internal vars;
 
     /*//////////////////////////////////////////////////////////////////////////
                                        SET-UP

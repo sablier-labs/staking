@@ -3,18 +3,16 @@
 ### Unconditional Invariants
 
 1. The `nextPoolId` should always equal the last pool ID + 1.
-2. In a pool, total rewards distributed should be equal to the sum of total rewards claimed by all users and total
-   claimable rewards of all users.
-3. Total rewards distributed should never exceed `pool.totalRewards`.
-4. Total rewards earned by a user in a pool should be equal to the sum of the product of rewards earned per token and
-   amount staked by user at each user snapshot time.
-5. Global rewards distributed per token should never decrease over time
-6. For any user in a pool, rewards earned per token should never decrease over time
-7. For any user in a pool, rewards earned per tokens should never exceed global rewards distributed per token.
-8. Global and user snapshot times should never decrease.
-9. For any user in a pool, snapshot time should never exceed the global snapshot time.
-10. For any user in a pool, their total staked amount should equal `directAmountStaked + streamAmountStaked`.
-11. In a pool, the total staked amount should equal to the sum of total staked amount by all the users.
+2. In a pool, the sum of total rewards claimed by all users and total claimable rewards of all users should never exceed
+   the expected rewards calculated without performing more than 1 division.
+3. the sum of total rewards claimed by all users and total claimable rewards of all users should never exceed
+   `pool.totalRewards`.
+4. Global rewards distributed per token and snapshot time should never decrease over time.
+5. For any user in a pool, rewards earned per token and snapshot time should never decrease over time.
+6. For any user in a pool, rewards earned per tokens should never exceed global rewards distributed per token.
+7. For any user in a pool, snapshot time should never exceed the global snapshot time.
+8. For any user in a pool, their total staked amount should equal `directAmountStaked + streamAmountStaked`.
+9. In a pool, the total staked amount should equal to the sum of total staked amount by all the users.
 
 ### Conditional Invariants
 

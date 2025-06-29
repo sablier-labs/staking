@@ -19,13 +19,22 @@ contract HandlerStore {
     /// @dev Maps stakers with the pool ID they have staked in.
     mapping(uint256 poolId => address[] stakers) public poolStakers;
 
+    /// @dev Stores previous values for global rewards per token for each pool.
+    mapping(uint256 poolId => uint256 rewardsPerTokenScaled) public globalRewardsPerTokenScaled;
+
+    /// @dev Tracks the previous time global snapshot was taken for each pool.
+    mapping(uint256 poolId => uint40 time) public globalSnapshotTime;
+
     /// @dev Tracks rewards claimed by each staker in each pool.
     mapping(uint256 poolId => mapping(address staker => uint128 rewards)) public rewardsClaimed;
 
     /// @dev Tracks rewards distribution period for each pool.
     mapping(uint256 poolId => uint40 rewards) public rewardDistributionPeriod;
 
-    /// @dev Tracks the last time rewards were updated for each staker in each pool.
+    /// @dev Stores previous values for user rewards per token for each pool.
+    mapping(uint256 poolId => mapping(address staker => uint256 rewardsPerTokenScaled)) public userRewardsPerTokenScaled;
+
+    /// @dev Tracks the last time user snapshot was taken for each staker in each pool.
     mapping(uint256 poolId => mapping(address staker => uint40 time)) public userSnapshotTime;
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -72,11 +81,17 @@ contract HandlerStore {
         amountStaked[poolId][staker] -= amount;
     }
 
+    function updateGlobalSnapshot(uint256 poolId, uint40 time, uint256 rewardsPerTokenScaled) external {
+        globalRewardsPerTokenScaled[poolId] = rewardsPerTokenScaled;
+        globalSnapshotTime[poolId] = time;
+    }
+
     function updateRewardsPeriodUpdatedAt(uint40 time) external {
         rewardsPeriodUpdatedAt = time;
     }
 
-    function updateUserSnapshotTime(uint256 poolId, address staker, uint40 time) external {
+    function updateUserSnapshot(uint256 poolId, address staker, uint40 time, uint256 rewardsPerTokenScaled) external {
+        userRewardsPerTokenScaled[poolId][staker] = rewardsPerTokenScaled;
         userSnapshotTime[poolId][staker] = time;
     }
 }

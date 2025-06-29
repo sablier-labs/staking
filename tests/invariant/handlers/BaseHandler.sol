@@ -52,8 +52,11 @@ contract BaseHandler is Utils, StdCheats {
         _;
     }
 
-    /// @dev Calculates the rewards period for all the pools and updates it in the handler store.
-    modifier updateTotalRewardsPeriodForAllPools() {
+    /// @dev It updates the following values in the handler store:
+    /// - Calculates and stores the rewards period for all the pools.
+    /// - Updates the global snapshot time and rewards per token for all the pools.
+    /// - Updates the user snapshot time and rewards per token for all the stakers in all the pools.
+    modifier updateHandlerStoreForAllPools() {
         uint40 previousCalculationTime = handlerStore.rewardsPeriodUpdatedAt();
 
         // Loop over all pools.
@@ -73,6 +76,19 @@ contract BaseHandler is Utils, StdCheats {
 
                 // Update new rewards period in the handler store.
                 handlerStore.addRewardDistributionPeriod(poolId, durationSinceLastCalculation);
+            }
+
+            // Update global rewards per token in handler store.
+            (uint40 globalSnapshotTime, uint256 rewardsDistributedPerTokenScaled) =
+                sablierStaking.globalSnapshot(poolId);
+            handlerStore.updateGlobalSnapshot(poolId, globalSnapshotTime, rewardsDistributedPerTokenScaled);
+
+            // Loop over all stakers in the pool.
+            for (uint256 j = 0; j < handlerStore.totalStakers(poolId); ++j) {
+                address staker = handlerStore.poolStakers(poolId, j);
+                // Update user rewards per token in handler store.
+                (uint40 userSnapshotTime, uint256 rewardsPerTokenScaled,) = sablierStaking.userSnapshot(poolId, staker);
+                handlerStore.updateUserSnapshot(poolId, staker, userSnapshotTime, rewardsPerTokenScaled);
             }
         }
 

@@ -35,7 +35,7 @@ contract WhitelistLockups_Integration_Concrete_Test is Shared_Integration_Concre
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                ComptrollerErrors.ComptrollerManager_CallerNotComptroller.selector, comptroller, users.eve
+                ComptrollerErrors.Comptrollerable_CallerNotComptroller.selector, comptroller, users.eve
             )
         );
         sablierStaking.whitelistLockups(lockups);

@@ -20,11 +20,13 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
 
     function test_RevertGiven_Closed() external whenNoDelegateCall whenNotNull {
         vm.expectRevert(abi.encodeWithSelector(Errors.SablierStakingState_PoolClosed.selector, poolIds.closedPool));
-        sablierStaking.claimRewards{ value: FEE }(poolIds.closedPool);
+        sablierStaking.claimRewards{ value: STAKING_MIN_FEE_WEI }(poolIds.closedPool);
     }
 
     function test_RevertWhen_FeeNotPaid() external whenNoDelegateCall whenNotNull givenNotClosed {
-        vm.expectRevert(abi.encodeWithSelector(Errors.SablierStaking_InsufficientFeePayment.selector, 0, FEE));
+        vm.expectRevert(
+            abi.encodeWithSelector(Errors.SablierStaking_InsufficientFeePayment.selector, 0, STAKING_MIN_FEE_WEI)
+        );
         sablierStaking.claimRewards(poolIds.defaultPool);
     }
 
@@ -34,7 +36,7 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
         vm.expectRevert(
             abi.encodeWithSelector(Errors.SablierStaking_StartTimeInFuture.selector, poolIds.defaultPool, START_TIME)
         );
-        sablierStaking.claimRewards{ value: FEE }(poolIds.defaultPool);
+        sablierStaking.claimRewards{ value: STAKING_MIN_FEE_WEI }(poolIds.defaultPool);
     }
 
     function test_RevertWhen_StartTimeInPresent() external whenNoDelegateCall whenNotNull givenNotClosed whenFeePaid {
@@ -46,7 +48,7 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
                 Errors.SablierStaking_ZeroClaimableRewards.selector, poolIds.defaultPool, users.recipient
             )
         );
-        sablierStaking.claimRewards{ value: FEE }(poolIds.defaultPool);
+        sablierStaking.claimRewards{ value: STAKING_MIN_FEE_WEI }(poolIds.defaultPool);
     }
 
     function test_RevertWhen_ClaimableRewardsZero()
@@ -64,7 +66,7 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
         vm.expectRevert(
             abi.encodeWithSelector(Errors.SablierStaking_ZeroClaimableRewards.selector, poolIds.defaultPool, users.eve)
         );
-        sablierStaking.claimRewards{ value: FEE }(poolIds.defaultPool);
+        sablierStaking.claimRewards{ value: STAKING_MIN_FEE_WEI }(poolIds.defaultPool);
     }
 
     function test_WhenClaimableRewardsNotZero()
@@ -93,7 +95,7 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
         emit ISablierStaking.ClaimRewards(poolIds.defaultPool, users.recipient, REWARDS_EARNED_BY_RECIPIENT);
 
         // Claim the rewards.
-        uint128 actualRewards = sablierStaking.claimRewards{ value: FEE }(poolIds.defaultPool);
+        uint128 actualRewards = sablierStaking.claimRewards{ value: STAKING_MIN_FEE_WEI }(poolIds.defaultPool);
 
         (uint40 lastUpdateTime, uint256 rewardsEarnedPerTokenScaled,) =
             sablierStaking.userSnapshot(poolIds.defaultPool, users.recipient);
@@ -123,6 +125,6 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
         assertEq(rewardsEarnedPerTokenScaled, REWARDS_DISTRIBUTED_PER_TOKEN_SCALED, "rewardsEarnedPerTokenScaled");
 
         // It should deposit fee into the staking pool.
-        assertEq(address(sablierStaking).balance, FEE, "staking pool balance");
+        assertEq(address(sablierStaking).balance, STAKING_MIN_FEE_WEI, "staking pool balance");
     }
 }

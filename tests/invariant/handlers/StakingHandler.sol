@@ -62,7 +62,7 @@ contract StakingHandler is BaseHandler {
         vm.assume(claimableRewards > 0);
 
         setMsgSender(selectedStaker);
-        uint128 rewards = sablierStaking.claimRewards{ value: FEE }(selectedPoolId);
+        uint128 rewards = sablierStaking.claimRewards{ value: STAKING_MIN_FEE_WEI }(selectedPoolId);
 
         assert(rewards == claimableRewards);
 

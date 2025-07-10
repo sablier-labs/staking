@@ -3,13 +3,13 @@ pragma solidity >=0.8.26;
 
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { ZERO } from "@prb/math/src/UD60x18.sol";
+import { ISablierComptroller } from "@sablier/evm-utils/src/interfaces/ISablierComptroller.sol";
 import { ERC20Mock } from "@sablier/evm-utils/src/mocks/erc20/ERC20Mock.sol";
 import { BaseTest as EvmUtilsBase } from "@sablier/evm-utils/src/tests/BaseTest.sol";
 import { LockupNFTDescriptor } from "@sablier/lockup/src/LockupNFTDescriptor.sol";
 import { SablierLockup } from "@sablier/lockup/src/SablierLockup.sol";
 import { Lockup, LockupLinear, Broker } from "@sablier/lockup/src/types/DataTypes.sol";
 import { SafeCastLib } from "solady/src/utils/SafeCastLib.sol";
-
 import { ISablierLockupNFT } from "src/interfaces/ISablierLockupNFT.sol";
 import { ISablierStaking } from "src/interfaces/ISablierStaking.sol";
 import { SablierStaking } from "src/SablierStaking.sol";
@@ -78,6 +78,10 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
 
         // Create and configure Lockup streams for testing.
         createAndConfigureStreams();
+
+        // Set the minimum fee for the staking protocol.
+        setMsgSender(admin);
+        comptroller.setMinFeeUSD(ISablierComptroller.Protocol.Staking, STAKING_MIN_FEE_USD);
 
         // Whitelist the Lockup contract for staking.
         setMsgSender(address(comptroller));

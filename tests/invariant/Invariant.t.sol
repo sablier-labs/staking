@@ -43,7 +43,6 @@ contract Invariant_Test is Base_Test, StdInvariant {
                               UNCONDITIONAL INVARIANTS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @dev The `nextPoolId` should always equal the current pool ID + 1.
     function invariant_NextPoolId() external view {
         if (handlerStore.totalPools() == 0) {
             return;
@@ -54,56 +53,7 @@ contract Invariant_Test is Base_Test, StdInvariant {
         assertEq(nextPoolId, lastPoolId + 1, "Invariant violation: next pool ID not incremented");
     }
 
-    /// @dev In a pool, the sum of total rewards claimed by all users and total claimable rewards of all users should
-    /// never exceed the expected rewards calculated without performing more than 1 division.
-    function invariant_TotalRewardsDistributedEqUserRewards() external view {
-        // Loop through all pools.
-        for (uint256 i = 0; i < handlerStore.totalPools(); ++i) {
-            uint256 poolId = handlerStore.poolIds(i);
-
-            uint128 rewardsEarnedByAllStakers = _actualRewardsEarnedByAllStakers(poolId);
-
-            uint128 poolRewards = sablierStaking.getTotalRewards(poolId);
-            uint128 totalRewardsPeriod = sablierStaking.getEndTime(poolId) - sablierStaking.getStartTime(poolId);
-            uint128 expectedRewardsDistributed =
-                poolRewards * handlerStore.rewardDistributionPeriod(poolId) / totalRewardsPeriod;
-
-            // Because of the difference between the calculation of `expectedRewardsDistributed` and the actual rewards
-            // earned by all stakers, there could be a small difference. Therefore, we use an error percentage of 5% to
-            // account for the precision loss. Important bit is that the actual rewards earned by all stakers should
-            // never exceed the expected rewards distributed, because the latter uses more precise calculations.
-            assertApproxEqRel(
-                rewardsEarnedByAllStakers,
-                expectedRewardsDistributed,
-                5e18,
-                "Invariant violation: total rewards distributed != rewardsClaimed + claimableRewards +/- 5%"
-            );
-            assertLe(
-                rewardsEarnedByAllStakers,
-                expectedRewardsDistributed,
-                "Invariant violation: rewardsClaimed + claimableRewards > total rewards distributed"
-            );
-        }
-    }
-
-    /// @dev The sum of total rewards claimed by all users and total claimable rewards of all users should never exceed
-    /// `pool.totalRewards`.
-    function invariant_UserRewardsLePoolRewards() external view {
-        for (uint256 i = 0; i < handlerStore.totalPools(); ++i) {
-            uint256 poolId = handlerStore.poolIds(i);
-            uint128 rewardsEarnedByAllStakers = _actualRewardsEarnedByAllStakers(poolId);
-            uint128 poolRewards = sablierStaking.getTotalRewards(poolId);
-
-            assertLe(
-                rewardsEarnedByAllStakers,
-                poolRewards,
-                "Invariant violation: rewardsClaimed + claimableRewards > total rewards distributed"
-            );
-        }
-    }
-
-    /// @dev Global rewards distributed per token and snapshot time should never decrease over time.
-    function invariant_GlobalRewardsPerTokenNeverDecrease() external view {
+    function invariant_GlobalSnapshot() external view {
         for (uint256 i = 0; i < handlerStore.totalPools(); ++i) {
             uint256 poolId = handlerStore.poolIds(i);
             (uint40 snapshotTime, uint256 currentRewardsPerToken) = sablierStaking.globalSnapshot(poolId);
@@ -120,8 +70,46 @@ contract Invariant_Test is Base_Test, StdInvariant {
         }
     }
 
-    /// @dev For any user in a pool, rewards earned per token and snapshot time should never decrease over time.
-    function invariant_UserRewardsPerTokenNeverDecrease() external view {
+    function invariant_PoolRewardsEqClaimedPlusClaimable() external view {
+        for (uint256 i = 0; i < handlerStore.totalPools(); ++i) {
+            uint256 poolId = handlerStore.poolIds(i);
+            uint128 rewardsEarnedByAllStakers;
+            for (uint256 j = 0; j < handlerStore.totalStakers(poolId); ++j) {
+                address staker = handlerStore.poolStakers(poolId, j);
+                uint128 rewardsClaimed = handlerStore.rewardsClaimed(poolId, staker);
+                uint128 claimableRewards = sablierStaking.claimableRewards(poolId, staker);
+                uint128 totalRewardsEarnedByUser = rewardsClaimed + claimableRewards;
+                rewardsEarnedByAllStakers += totalRewardsEarnedByUser;
+            }
+            uint128 poolRewards = sablierStaking.getTotalRewards(poolId);
+
+            assertLe(
+                rewardsEarnedByAllStakers,
+                poolRewards,
+                "Invariant violation: rewardsClaimed + claimableRewards > total rewards distributed"
+            );
+        }
+    }
+
+    function invariant_TotalStakedAmount() external view {
+        for (uint256 i = 0; i < handlerStore.totalPools(); ++i) {
+            uint256 poolId = handlerStore.poolIds(i);
+            uint128 totalAmountStakedInPool = sablierStaking.totalAmountStaked(poolId);
+            uint128 totalAmountStakedByUser;
+            for (uint256 j = 0; j < handlerStore.totalStakers(poolId); ++j) {
+                address staker = handlerStore.poolStakers(poolId, j);
+                totalAmountStakedByUser += sablierStaking.totalAmountStakedByUser(poolId, staker);
+            }
+
+            assertEq(
+                totalAmountStakedInPool,
+                totalAmountStakedByUser,
+                "Invariant violation: total amount staked != sum of total amount staked by users"
+            );
+        }
+    }
+
+    function invariant_UserSnapshot() external view {
         for (uint256 i = 0; i < handlerStore.totalPools(); ++i) {
             uint256 poolId = handlerStore.poolIds(i);
 
@@ -142,15 +130,20 @@ contract Invariant_Test is Base_Test, StdInvariant {
         }
     }
 
-    /// @dev For any user in a pool, rewards earned per tokens should never exceed global rewards distributed per token.
-    function invariant_UserRewardsPerTokenLeGlobalRewardsPerToken() external view {
+    function invariant_UserSnapshotLeGlobalSnapshot() external view {
         for (uint256 i = 0; i < handlerStore.totalPools(); ++i) {
             uint256 poolId = handlerStore.poolIds(i);
-            (, uint256 globalRewardsPerToken) = sablierStaking.globalSnapshot(poolId);
+            (uint40 globalSnapshotTime, uint256 globalRewardsPerToken) = sablierStaking.globalSnapshot(poolId);
 
             for (uint256 j = 0; j < handlerStore.totalStakers(poolId); ++j) {
                 address staker = handlerStore.poolStakers(poolId, j);
-                (, uint256 userRewardsPerToken,) = sablierStaking.userSnapshot(poolId, staker);
+                (uint40 userLastTimeUpdate, uint256 userRewardsPerToken,) = sablierStaking.userSnapshot(poolId, staker);
+
+                assertLe(
+                    userLastTimeUpdate,
+                    globalSnapshotTime,
+                    "Invariant violation: user snapshot time > global snapshot time"
+                );
 
                 assertLe(
                     userRewardsPerToken,
@@ -161,19 +154,81 @@ contract Invariant_Test is Base_Test, StdInvariant {
         }
     }
 
+    function invariant_UserStakedEqDirectPlusStream() external view {
+        for (uint256 i = 0; i < handlerStore.totalPools(); ++i) {
+            uint256 poolId = handlerStore.poolIds(i);
+
+            for (uint256 j = 0; j < handlerStore.totalStakers(poolId); ++j) {
+                address staker = handlerStore.poolStakers(poolId, j);
+                uint128 totalAmountStakedByUser = sablierStaking.totalAmountStakedByUser(poolId, staker);
+
+                (, uint128 streamAmountStakedByUser, uint128 directAmountStakedByUser) =
+                    sablierStaking.userShares(poolId, staker);
+
+                assertEq(
+                    totalAmountStakedByUser,
+                    streamAmountStakedByUser + directAmountStakedByUser,
+                    "Invariant violation: user total amount staked != user direct amount staked + user stream amount staked"
+                );
+            }
+        }
+    }
+
     /*//////////////////////////////////////////////////////////////////////////
-                                      HELPERS
+                               CONDITIONAL INVARIANTS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @dev Private function to calculate the rewards earned by all stakers in a given pool.
-    function _actualRewardsEarnedByAllStakers(uint256 poolId) internal view returns (uint128 rewards) {
-        uint256 totalStakers = handlerStore.totalStakers(poolId);
-        for (uint256 i = 0; i < totalStakers; ++i) {
-            address staker = handlerStore.poolStakers(poolId, i);
-            uint128 rewardsClaimed = handlerStore.rewardsClaimed(poolId, staker);
-            uint128 claimableRewards = sablierStaking.claimableRewards(poolId, staker);
-            uint128 totalRewardsEarnedByUser = rewardsClaimed + claimableRewards;
-            rewards += totalRewardsEarnedByUser;
+    function invariant_AmountStaked_WhenUnstakeNotCalled() external view {
+        for (uint256 i = 0; i < handlerStore.totalPools(); ++i) {
+            uint256 poolId = handlerStore.poolIds(i);
+            uint256 unstakeCalls =
+                stakingHandler.calls(poolId, "unstakeERC20Token") + stakingHandler.calls(poolId, "unstakeLockupNFT");
+
+            if (unstakeCalls == 0) {
+                for (uint256 j = 0; j < handlerStore.totalStakers(poolId); ++j) {
+                    address staker = handlerStore.poolStakers(poolId, j);
+                    uint128 amountStakedByUser = sablierStaking.totalAmountStakedByUser(poolId, staker);
+                    uint128 previousAmountStakedByUser = handlerStore.amountStaked(poolId, staker);
+
+                    assertGe(
+                        amountStakedByUser, previousAmountStakedByUser, "invariant violation: amount staked decreased"
+                    );
+                }
+            }
+        }
+    }
+
+    function invariant_StreamAmountStaked_WhenStakeLockupNFTNotCalled() external view {
+        for (uint256 i = 0; i < handlerStore.totalPools(); ++i) {
+            uint256 poolId = handlerStore.poolIds(i);
+            uint256 stakeLockupNFTCalls = stakingHandler.calls(poolId, "stakeLockupNFT");
+
+            if (stakeLockupNFTCalls == 0) {
+                for (uint256 j = 0; j < handlerStore.totalStakers(poolId); ++j) {
+                    address staker = handlerStore.poolStakers(poolId, j);
+                    (, uint128 streamAmountStaked,) = sablierStaking.userShares(poolId, staker);
+
+                    assertGe(streamAmountStaked, 0, "invariant violation: streamAmountStaked != 0");
+                }
+            }
+        }
+    }
+
+    function invariant_DirectAmountStaked_WhenStakeERC20TokenNotCalled() external view {
+        for (uint256 i = 0; i < handlerStore.totalPools(); ++i) {
+            uint256 poolId = handlerStore.poolIds(i);
+
+            uint256 stakeERC20TokenCalls = stakingHandler.calls(poolId, "stakeERC20Token");
+
+            if (stakeERC20TokenCalls == 0) {
+                for (uint256 j = 0; j < handlerStore.totalStakers(poolId); ++j) {
+                    address staker = handlerStore.poolStakers(poolId, j);
+
+                    (,, uint128 directAmountStaked) = sablierStaking.userShares(poolId, staker);
+
+                    assertGe(directAmountStaked, 0, "invariant violation: directAmountStaked != 0");
+                }
+            }
         }
     }
 }

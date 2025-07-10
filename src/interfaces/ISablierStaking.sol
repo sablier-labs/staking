@@ -4,7 +4,7 @@ pragma solidity >=0.8.26;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IERC721Receiver } from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
-import { IComptrollerManager } from "@sablier/evm-utils/src/interfaces/IComptrollerManager.sol";
+import { IComptrollerable } from "@sablier/evm-utils/src/interfaces/IComptrollerable.sol";
 
 import { ISablierLockupNFT } from "./ISablierLockupNFT.sol";
 import { ISablierStakingState } from "./ISablierStakingState.sol";
@@ -12,7 +12,7 @@ import { ISablierStakingState } from "./ISablierStakingState.sol";
 /// @title ISablierStaking
 /// @notice Creates and manages staking pools allowing staking of both ERC20 tokens and Sablier Lockup NFTs.
 interface ISablierStaking is
-    IComptrollerManager, // 0 inherited components
+    IComptrollerable, // 0 inherited components
     IERC165, // 0 inherited components
     IERC721Receiver, // 0 inherited components
     ISablierStakingState // 0 inherited components

@@ -11,10 +11,12 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
     /// @dev It should revert since the fee does not meet the minimum fee.
     function testFuzz_RevertWhen_FeeNotPaid(uint256 fee) external whenNoDelegateCall whenNotNull givenNotClosed {
         // Bound fee such that it does not meet the minimum fee.
-        fee = bound(fee, 0, FEE - 1);
+        fee = bound(fee, 0, STAKING_MIN_FEE_WEI - 1);
 
         // It should revert.
-        vm.expectRevert(abi.encodeWithSelector(Errors.SablierStaking_InsufficientFeePayment.selector, fee, FEE));
+        vm.expectRevert(
+            abi.encodeWithSelector(Errors.SablierStaking_InsufficientFeePayment.selector, fee, STAKING_MIN_FEE_WEI)
+        );
         sablierStaking.claimRewards{ value: fee }(poolIds.defaultPool);
     }
 
@@ -36,7 +38,7 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         vm.expectRevert(
             abi.encodeWithSelector(Errors.SablierStaking_StartTimeInFuture.selector, poolIds.defaultPool, START_TIME)
         );
-        sablierStaking.claimRewards{ value: FEE }(poolIds.defaultPool);
+        sablierStaking.claimRewards{ value: STAKING_MIN_FEE_WEI }(poolIds.defaultPool);
     }
 
     /// @dev It should revert.
@@ -67,7 +69,7 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         vm.expectRevert(
             abi.encodeWithSelector(Errors.SablierStaking_ZeroClaimableRewards.selector, poolIds.defaultPool, caller)
         );
-        sablierStaking.claimRewards{ value: FEE }(poolIds.defaultPool);
+        sablierStaking.claimRewards{ value: STAKING_MIN_FEE_WEI }(poolIds.defaultPool);
     }
 
     /// @dev It should run tests for a multiple callers when caller is staking for the first time.
@@ -90,7 +92,7 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         whenClaimableRewardsNotZero
     {
         // Bound fee such that it meets the minimum fee.
-        fee = bound(fee, FEE, 1 ether);
+        fee = bound(fee, STAKING_MIN_FEE_WEI, 1 ether);
 
         // Bound amount to stake such that there are always rewards to claim.
         amountToStake = boundUint128(amountToStake, 1e18, MAX_UINT128 - MAX_AMOUNT_STAKED);
@@ -143,7 +145,7 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         whenClaimableRewardsNotZero
     {
         // Bound fee such that it meets the minimum fee.
-        fee = bound(fee, FEE, 1 ether);
+        fee = bound(fee, STAKING_MIN_FEE_WEI, 1 ether);
 
         // Change the caller.
         setMsgSender(users.recipient);

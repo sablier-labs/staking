@@ -6,7 +6,8 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { ERC721Holder } from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
-import { ComptrollerManager } from "@sablier/evm-utils/src/ComptrollerManager.sol";
+import { Comptrollerable } from "@sablier/evm-utils/src/Comptrollerable.sol";
+import { ISablierComptroller } from "@sablier/evm-utils/src/interfaces/ISablierComptroller.sol";
 import { NoDelegateCall } from "@sablier/evm-utils/src/NoDelegateCall.sol";
 import { ISablierLockupRecipient } from "@sablier/lockup/src/interfaces/ISablierLockupRecipient.sol";
 
@@ -20,7 +21,7 @@ import { GlobalSnapshot, Pool, StreamLookup, UserShares, UserSnapshot } from "./
 /// @title SablierStaking
 /// @notice See the documentation in {ISablierStaking}.
 contract SablierStaking is
-    ComptrollerManager, // 1 inherited component
+    Comptrollerable, // 1 inherited component
     ERC721Holder, // 1 inherited component
     ISablierStaking, // 4 inherited components
     NoDelegateCall, // 0 inherited components
@@ -34,7 +35,7 @@ contract SablierStaking is
                                     CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
 
-    constructor(address initialComptroller) ComptrollerManager(initialComptroller) {
+    constructor(address initialComptroller) Comptrollerable(initialComptroller) {
         // Effect: Set the next pool ID to 1.
         nextPoolId = 1;
     }
@@ -180,8 +181,8 @@ contract SablierStaking is
         notClosed(poolId)
         returns (uint128 rewards)
     {
-        // TODO: change this to `calculateStakingMinFeeWeiFor` when it's implemented.
-        uint256 minFeeWei = comptroller.calculateAirdropsMinFeeWeiFor(_pool[poolId].admin);
+        // Get minimum fee in wei for the pool admin.
+        uint256 minFeeWei = comptroller.calculateMinFeeWeiFor(ISablierComptroller.Protocol.Staking, _pool[poolId].admin);
 
         // Check: fee paid is at least the minimum fee.
         if (msg.value < minFeeWei) {

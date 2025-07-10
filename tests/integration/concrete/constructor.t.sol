@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.26;
 
-import { IComptrollerManager } from "@sablier/evm-utils/src/interfaces/IComptrollerManager.sol";
+import { IComptrollerable } from "@sablier/evm-utils/src/interfaces/IComptrollerable.sol";
 import { ISablierComptroller } from "@sablier/evm-utils/src/interfaces/ISablierComptroller.sol";
 import { ISablierLockupRecipient } from "@sablier/lockup/src/interfaces/ISablierLockupRecipient.sol";
 import { SablierStaking } from "src/SablierStaking.sol";
@@ -11,7 +11,7 @@ contract Constructor_Integration_Concrete_Test is Shared_Integration_Concrete_Te
     function test_Constructor() external {
         // Expect the relevant event to be emitted.
         vm.expectEmit();
-        emit IComptrollerManager.SetComptroller({
+        emit IComptrollerable.SetComptroller({
             newComptroller: comptroller,
             oldComptroller: ISablierComptroller(address(0))
         });

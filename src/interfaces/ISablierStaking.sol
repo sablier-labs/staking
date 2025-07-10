@@ -74,6 +74,11 @@ interface ISablierStaking is
                                 READ-ONLY FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
+    /// @notice Calculates the minimum fee in wei required to claim rewards from the given pool ID.
+    /// @dev Reverts if `poolId` references a non-existent pool or a closed pool.
+    /// @param poolId The pool ID for the query.
+    function calculateMinFeeWei(uint256 poolId) external view returns (uint256);
+
     /// @notice Returns the amount of reward ERC20 tokens available to claim by the user.
     /// @dev Reverts if `poolId` references a non-existent pool or a closed pool, or if `user` is the zero address.
     function claimableRewards(uint256 poolId, address user) external view returns (uint128);

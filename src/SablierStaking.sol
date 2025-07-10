@@ -45,6 +45,19 @@ contract SablierStaking is
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc ISablierStaking
+    function calculateMinFeeWei(uint256 poolId)
+        external
+        view
+        override
+        notNull(poolId)
+        notClosed(poolId)
+        returns (uint256)
+    {
+        // Calculate the minimum fee in wei.
+        return comptroller.calculateMinFeeWeiFor(ISablierComptroller.Protocol.Staking, _pool[poolId].admin);
+    }
+
+    /// @inheritdoc ISablierStaking
     function claimableRewards(
         uint256 poolId,
         address user

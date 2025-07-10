@@ -8,6 +8,7 @@ import { HandlerStore } from "../stores/HandlerStore.sol";
 
 import { BaseHandler } from "./BaseHandler.sol";
 
+// TODO: Add Lockup related handlers.
 contract StakingHandler is BaseHandler {
     using SafeCast for uint256;
 

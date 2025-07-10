@@ -38,3 +38,19 @@ struct Users {
     address payable sender;
     address payable staker;
 }
+
+/// @notice A struct to manage test variables, required to prevent stack too deep error.
+struct Vars {
+    // Actual values.
+    uint128 actualDirectAmountStaked;
+    uint256 actualRewardsPerTokenScaled;
+    uint128 actualStreamAmountStaked;
+    uint128 actualStreamCount;
+    uint128 actualTotalAmountStaked;
+    uint40 actualLastUpdateTime;
+    uint128 actualUserRewards;
+    // Expected values.
+    uint256 expectedRewardsPerTokenScaled;
+    uint128 expectedTotalAmountStaked;
+    uint128 expectedUserRewards;
+}

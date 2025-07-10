@@ -20,14 +20,14 @@ on:
         required: false
 
 jobs:
-  lint:
+  check:
     uses: "sablier-labs/gha-utils/.github/workflows/full-check.yml@main"
 
   build:
     uses: "sablier-labs/gha-utils/.github/workflows/forge-build.yml@main"
 
   test-integration:
-    needs: ["lint", "build"]
+    needs: ["check", "build"]
     uses: "sablier-labs/gha-utils/.github/workflows/forge-test.yml@main"
     with:
       foundry-fuzz-runs: ${{ fromJSON(inputs.integrationFuzzRuns || '100000') }}
@@ -36,7 +36,7 @@ jobs:
       name: "Integration tests"
 
   test-invariant:
-    needs: ["lint", "build"]
+    needs: ["check", "build"]
     uses: "sablier-labs/gha-utils/.github/workflows/forge-test.yml@main"
     with:
       foundry-invariant-depth: ${{ fromJSON(inputs.invariantDepth || '200') }}
@@ -47,7 +47,7 @@ jobs:
 
   notify-on-failure:
     if: failure()
-    needs: ["lint", "build", "test-integration", "test-invariant"]
+    needs: ["check", "build", "test-integration", "test-invariant"]
     runs-on: "ubuntu-latest"
     steps:
       - name: "Send Slack notification"

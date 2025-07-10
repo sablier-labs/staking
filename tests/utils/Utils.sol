@@ -1,18 +1,19 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity >=0.8.26;
 
+import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
-import { BaseTest as EvmUtilsBase } from "@sablier/evm-utils/src/tests/BaseTest.sol";
-import { SablierStaking } from "src/SablierStaking.sol";
+import { BaseUtils } from "@sablier/evm-utils/src/tests/BaseUtils.sol";
 
 import { Constants } from "./Constants.sol";
 
-abstract contract Utils is Constants, EvmUtilsBase {
+abstract contract Utils is Constants, BaseUtils {
     using SafeCast for uint256;
 
-    /// @dev Deploys {SablierStaking} from an optimized source compiled with `--via-ir`.
-    function deployOptimizedSablierStaking(address admin) internal returns (SablierStaking) {
-        return SablierStaking(deployCode("out-optimized/SablierStaking.sol/SablierStaking.json", abi.encode(admin)));
+    /// @dev Returns the amount in wei using the token's decimals.
+    function amountInWei(uint128 amount, IERC20 token) internal view returns (uint128) {
+        return (amount * 10 ** IERC20Metadata(address(token)).decimals()).toUint128();
     }
 
     /// @dev Descales the value by dividing it by `SCALE_FACTOR`.

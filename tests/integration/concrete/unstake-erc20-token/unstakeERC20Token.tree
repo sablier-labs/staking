@@ -21,6 +21,7 @@ UnstakeERC20Token_Integration_Concrete_Test
                │  └── it should emit {Transfer} and {UnstakeERC20Token} events
                └── given not closed
                   ├── it should unstake
+                  ├── it should decrease total amount staked
                   ├── it should update global rewards snapshot
                   ├── it should update user rewards snapshot
                   └── it should emit {SnapshotRewards}, {Transfer} and {UnstakeERC20Token} events

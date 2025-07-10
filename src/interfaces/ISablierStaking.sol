@@ -4,7 +4,7 @@ pragma solidity >=0.8.26;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IERC721Receiver } from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
-import { IComptrollerManager } from "@sablier/evm-utils/src/interfaces/IComptrollerManager.sol";
+import { IComptrollerable } from "@sablier/evm-utils/src/interfaces/IComptrollerable.sol";
 
 import { ISablierLockupNFT } from "./ISablierLockupNFT.sol";
 import { ISablierStakingState } from "./ISablierStakingState.sol";
@@ -12,7 +12,7 @@ import { ISablierStakingState } from "./ISablierStakingState.sol";
 /// @title ISablierStaking
 /// @notice Creates and manages staking pools allowing staking of both ERC20 tokens and Sablier Lockup NFTs.
 interface ISablierStaking is
-    IComptrollerManager, // 0 inherited components
+    IComptrollerable, // 0 inherited components
     IERC165, // 0 inherited components
     IERC721Receiver, // 0 inherited components
     ISablierStakingState // 0 inherited components
@@ -73,6 +73,11 @@ interface ISablierStaking is
     /*//////////////////////////////////////////////////////////////////////////
                                 READ-ONLY FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
+
+    /// @notice Calculates the minimum fee in wei required to claim rewards from the given pool ID.
+    /// @dev Reverts if `poolId` references a non-existent pool or a closed pool.
+    /// @param poolId The pool ID for the query.
+    function calculateMinFeeWei(uint256 poolId) external view returns (uint256);
 
     /// @notice Returns the amount of reward ERC20 tokens available to claim by the user.
     /// @dev Reverts if `poolId` references a non-existent pool or a closed pool, or if `user` is the zero address.

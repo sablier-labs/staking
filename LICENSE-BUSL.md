@@ -13,7 +13,7 @@ Licensed Work: Sablier Staking The Licensed Work is (C) 2025 Sablier Labs Ltd
 
 Additional Use Grant: Any uses listed and defined at license-grants.sablier.eth
 
-Change Date: The earlier of TODO or a date specified at license-date.sablier.eth
+Change Date: The earlier of TODO or a date specified at license-dates.sablier.eth
 
 Change License: GNU General Public License v3.0 or later
 

@@ -26,7 +26,3 @@ lcov.info
 package-lock.json
 pnpm-lock.yaml
 yarn.lock
-
-
-# Un-ignore the cursor rules
-!.cursor/

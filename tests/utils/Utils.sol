@@ -29,8 +29,8 @@ abstract contract Utils is Constants, BaseUtils {
     }
 
     /// @dev Returns the minimum duration, in seconds, it takes to earn one reward token with `amount` staked.
-    function minDurationToEarnOneToken(uint128 amount, uint128 totalAmountStaked) internal pure returns (uint40) {
-        return (totalAmountStaked / (uint256(amount) * REWARD_RATE)).toUint40() + 1 seconds;
+    function minDurationToEarnOneToken(uint128 amount, uint128 totalStakedAmount) internal pure returns (uint40) {
+        return (totalStakedAmount / (uint256(amount) * REWARD_RATE)).toUint40() + 1 seconds;
     }
 
     /// @dev Returns a random uint40 between `min` and `max`.

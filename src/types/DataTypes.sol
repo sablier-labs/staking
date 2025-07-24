@@ -9,7 +9,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  * data types together so that they fit in a single 32-byte slot.
  */
 
-/// @notice A data structure to store the total rewards snapshot data for each pool.
+/// @notice A data structure to store the reward distributed per token snapshot data for each pool.
 /// @param lastUpdateTime The last time this snapshot was updated, denoted in UNIX timestamp.
 /// @param rewardsDistributedPerTokenScaled The amount of rewards distributed per staking token (includes both direct
 /// staking and through Sablier streams), scaled by {Helpers.SCALE_FACTOR} to minimize precision loss.
@@ -22,31 +22,36 @@ struct GlobalSnapshot {
 
 /// @notice A data structure to store the pool parameters.
 /// @param admin The admin of the staking pool. This may be different from the pool creator.
-/// @param rewardToken The address of the ERC20 token to used as staking rewards.
-/// @param stakingToken The address of the ERC20 token that can be staked either directly or through Sablier stream.
 /// @param endTime The end time of the rewards period, denoted in UNIX timestamp.
 /// @param startTime The start time of the rewards period, denoted in UNIX timestamp.
-/// @param totalRewards The amount of total rewards to be distributed during the rewards period, denoted in reward
+/// @param rewardToken The address of the ERC20 token to used as staking rewards.
+/// @param stakingToken The address of the ERC20 token that can be staked either directly or through Sablier stream.
+/// @param rewardAmount The amount of rewards to be distributed between the start and end times, denoted in reward
 /// token's decimals.
+/// @param totalStakedAmount The total amount of tokens staked in a pool (both direct staking and through Sablier
+/// streams), denoted in staking token's decimals.
 struct Pool {
     // Slot 0
     address admin;
+    uint40 endTime;
+    uint40 startTime;
     // Slot 1
     IERC20 rewardToken;
     // Slot 2
     IERC20 stakingToken;
     // Slot 3
-    uint40 endTime;
-    uint40 startTime;
-    uint128 totalRewards;
+    uint128 rewardAmount;
+    uint128 totalStakedAmount;
 }
 
 /// @notice Enum to represent the different statuses of a staking pool.
-/// @custom:value0 DISTRIBUTING The pool is open and distributing rewards.
-/// @custom:value1 NOT_DISTRIBUTING The pool is open but not distributing rewards.
+/// @custom:value0 SCHEDULED The staking period is scheduled to start in the future.
+/// @custom:value1 ACTIVE The staking period is active and rewards are being distributed to stakers.
+/// @custom:value2 COMPLETED The staking period has ended and rewards are no longer being distributed.
 enum Status {
-    DISTRIBUTING,
-    NON_DISTRIBUTING
+    SCHEDULED,
+    ACTIVE,
+    ENDED
 }
 
 /// @notice A data structure to reverse lookup from a Lockup stream ID to the pool ID and original stream owner.

@@ -6,7 +6,6 @@ import { IERC721Receiver } from "@openzeppelin/contracts/token/ERC721/IERC721Rec
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import { IComptrollerable } from "@sablier/evm-utils/src/interfaces/IComptrollerable.sol";
 
-import { Status } from "../types/DataTypes.sol";
 import { ISablierLockupNFT } from "./ISablierLockupNFT.sol";
 import { ISablierStakingState } from "./ISablierStakingState.sol";
 
@@ -30,17 +29,17 @@ interface ISablierStaking is
         uint256 indexed poolId,
         address indexed admin,
         uint40 endTime,
+        uint128 rewardAmount,
         IERC20 rewardToken,
         IERC20 indexed stakingToken,
-        uint40 startTime,
-        uint128 totalRewards
+        uint40 startTime
     );
 
     /// @notice Emitted when a Lockup contract is whitelisted.
     event LockupWhitelisted(address indexed comptroller, ISablierLockupNFT indexed lockup);
 
     /// @notice Emitted when the next staking round is configured.
-    event NextStakingRound(uint256 indexed poolId, uint40 newEndTime, uint40 newStartTime, uint128 totalRewards);
+    event NextStakingRound(uint256 indexed poolId, uint40 newEndTime, uint40 newStartTime, uint128 newRewardAmount);
 
     /// @notice Emitted when the rewards snapshot is taken.
     event SnapshotRewards(
@@ -108,12 +107,12 @@ interface ISablierStaking is
         returns (bytes4 selector);
 
     /// @notice Returns the amount of reward ERC20 tokens distributed every second.
-    /// @dev Reverts if `poolId` references a non-existent pool or is not distributing rewards.
+    /// @dev Reverts if `poolId` references a non-existent pool or is not active.
     function rewardRate(uint256 poolId) external view returns (uint128);
 
     /// @notice Returns the amount of reward ERC20 token that each staked ERC20 token is earning every second. Returns 0
     /// if total staked tokens are 0.
-    /// @dev Reverts if `poolId` references a non-existent pool or is not distributing rewards.
+    /// @dev Reverts if `poolId` references a non-existent pool or is not active.
     function rewardRatePerTokenStaked(uint256 poolId) external view returns (uint128);
 
     /// @notice Calculates rewards distributed per ERC20 token since the last snapshot.
@@ -133,10 +132,6 @@ interface ISablierStaking is
     ///  - `poolId` must not reference a non-existent pool.
     ///  -  The start time must not be in the future.
     function rewardsSinceLastSnapshot(uint256 poolId) external view returns (uint128);
-
-    /// @notice Returns the status of the pool.
-    /// @dev Reverts if `poolId` references a non-existent pool.
-    function status(uint256 poolId) external view returns (Status);
 
     /*//////////////////////////////////////////////////////////////////////////
                               STATE-CHANGING FUNCTIONS
@@ -164,47 +159,47 @@ interface ISablierStaking is
     /// @dev Emits a {NextStakingRound} event.
     ///
     /// Requirements:
-    ///  - `msg.sender` must be the pool admin.
     ///  - Must not be delegate called.
     ///  - `poolId` must not reference a non-existent pool.
-    ///  - The pool end time must be in the past.
-    ///  - `endTime` must be greater than `startTime`.
-    ///  - `startTime` must be greater than or equal to the `block.timestamp`.
-    ///  - `totalRewards` must be greater than 0.
-    ///  - `msg.sender` must have approved this contract to spend the `totalRewards` of reward ERC20 token.
+    ///  - `msg.sender` must be the pool admin.
+    ///  - Pool end time must be in the past.
+    ///  - New `startTime` must be greater than or equal to the `block.timestamp`.
+    ///  - New `endTime` must be greater than new `startTime`.
+    ///  - `rewardAmount` must be greater than 0.
+    ///  - `msg.sender` must have approved this contract to spend the `rewardAmount` of reward ERC20 token.
     ///
     /// @param poolId The pool ID for which to configure the next staking round.
     /// @param newEndTime The end time for the next staking round, denoted in UNIX timestamp.
     /// @param newStartTime The start time for the next staking round, denoted in UNIX timestamp.
-    /// @param totalRewards The amount of reward tokens to distribute during the next staking round, denoted in reward
+    /// @param rewardAmount The amount of reward tokens to distribute during the next staking round, denoted in reward
     /// token's decimals.
     function configureNextRound(
         uint256 poolId,
         uint40 newEndTime,
         uint40 newStartTime,
-        uint128 totalRewards
+        uint128 rewardAmount
     )
         external;
 
-    /// @notice Creates a new staking pool and transfer the total reward amount from `msg.sender` to this contract.
+    /// @notice Creates a new staking pool and transfer the reward amount from `msg.sender` to this contract.
     /// @dev Emits a {Transfer} and {CreatePool} events.
     ///
     /// Requirements:
     ///  - Must not be delegate called.
     ///  - `admin` must not be the zero address.
     ///  - `startTime` must be greater than or equal to the `block.timestamp`.
-    ///  - `endTime` must be greater than `startTime`.
+    ///  - `startTime` must be less than `endTime`.
     ///  - `stakingToken` must not be the zero address.
     ///  - `rewardToken` must not be the zero address.
-    ///  - `totalRewards` must be greater than 0.
-    ///  - `msg.sender` must have approved this contract to spend the `totalRewards` of reward ERC20 token.
+    ///  - `rewardAmount` must be greater than 0.
+    ///  - `msg.sender` must have approved this contract to spend the `rewardAmount` of reward ERC20 token.
     ///
     /// @param admin The admin of the pool.
     /// @param stakingToken The ERC20 token permitted for staking either directly or through Lockup streams.
     /// @param startTime The start time of the rewards period, denoted in UNIX timestamp.
     /// @param endTime The end time of the rewards period, denoted in UNIX timestamp.
     /// @param rewardToken The ERC20 token that will be distributed as rewards.
-    /// @param totalRewards The amount of reward tokens to distribute, denoted in reward token's decimals.
+    /// @param rewardAmount The amount of reward tokens to distribute, denoted in reward token's decimals.
     /// @return poolId The ID of the newly created pool.
     function createPool(
         address admin,
@@ -212,7 +207,7 @@ interface ISablierStaking is
         uint40 startTime,
         uint40 endTime,
         IERC20 rewardToken,
-        uint128 totalRewards
+        uint128 rewardAmount
     )
         external
         returns (uint256 poolId);

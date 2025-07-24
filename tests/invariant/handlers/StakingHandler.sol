@@ -20,9 +20,9 @@ contract StakingHandler is BaseHandler {
     struct CreateParams {
         uint40 endTime;
         address poolAdmin;
+        uint128 rewardAmount;
         uint256 rewardTokenIndex;
         uint256 stakingTokenIndex;
-        uint128 totalRewards;
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -96,26 +96,26 @@ contract StakingHandler is BaseHandler {
         IERC20 rewardToken = tokens[createParams.rewardTokenIndex];
         IERC20 stakingToken = tokens[createParams.stakingTokenIndex];
 
-        // Bound the total rewards.
-        createParams.totalRewards = boundUint128({
-            x: createParams.totalRewards,
+        // Bound the reward amount.
+        createParams.rewardAmount = boundUint128({
+            x: createParams.rewardAmount,
             min: amountInWei(100, rewardToken),
             max: amountInWei(20_000_000_000, rewardToken)
         });
 
         // Deal tokens to the caller and approve the staking pool.
-        deal({ token: address(rewardToken), to: createParams.poolAdmin, give: createParams.totalRewards });
+        deal({ token: address(rewardToken), to: createParams.poolAdmin, give: createParams.rewardAmount });
 
         setMsgSender(createParams.poolAdmin);
-        rewardToken.approve(address(sablierStaking), createParams.totalRewards);
+        rewardToken.approve(address(sablierStaking), createParams.rewardAmount);
 
         uint256 poolId = sablierStaking.createPool({
             admin: createParams.poolAdmin,
-            stakingToken: stakingToken,
-            startTime: startTime,
             endTime: createParams.endTime,
+            rewardAmount: createParams.rewardAmount,
             rewardToken: rewardToken,
-            totalRewards: createParams.totalRewards
+            stakingToken: stakingToken,
+            startTime: startTime
         });
 
         // Add the pool ID to the handler store.

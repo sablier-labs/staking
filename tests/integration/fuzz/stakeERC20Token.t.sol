@@ -40,7 +40,7 @@ contract StakeERC20Token_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         (vars.expectedRewardsPerTokenScaled, vars.expectedUserRewards) = calculateLatestRewards(caller);
         (,, uint128 initialDirectAmountStaked) = sablierStaking.userShares(poolIds.defaultPool, caller);
 
-        vars.expectedTotalAmountStaked = sablierStaking.totalAmountStaked(poolIds.defaultPool) + amount;
+        vars.expectedTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool) + amount;
 
         // It should emit {SnapshotRewards}, {Transfer} and {StakeERC20Token} events.
         vm.expectEmit({ emitter: address(sablierStaking) });
@@ -60,7 +60,7 @@ contract StakeERC20Token_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         assertEq(vars.actualDirectAmountStaked, initialDirectAmountStaked + amount, "directAmountStakedByUser");
 
         // It should increase total amount staked.
-        vars.actualTotalAmountStaked = sablierStaking.totalAmountStaked(poolIds.defaultPool);
+        vars.actualTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool);
         assertEq(vars.actualTotalAmountStaked, vars.expectedTotalAmountStaked, "total amount staked");
 
         // It should update global rewards snapshot.

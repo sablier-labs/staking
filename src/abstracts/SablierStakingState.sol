@@ -6,7 +6,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ISablierLockupNFT } from "../interfaces/ISablierLockupNFT.sol";
 import { ISablierStakingState } from "../interfaces/ISablierStakingState.sol";
 import { Errors } from "../libraries/Errors.sol";
-import { GlobalSnapshot, Pool, StreamLookup, UserShares, UserSnapshot } from "../types/DataTypes.sol";
+import { GlobalSnapshot, Pool, Status, StreamLookup, UserShares, UserSnapshot } from "../types/DataTypes.sol";
 
 /// @title SablierStakingState
 /// @notice See the documentation in {ISablierStakingState}.
@@ -18,10 +18,6 @@ abstract contract SablierStakingState is ISablierStakingState {
     /// @inheritdoc ISablierStakingState
     uint256 public override nextPoolId;
 
-    /// @notice The Pool parameters mapped by the Pool ID.
-    /// @dev See the documentation for Pool in {DataTypes}.
-    mapping(uint256 poolId => Pool pool) internal _pool;
-
     /// @notice Tracks the global rewards data and total staked amount for a given pool.
     /// @dev See the documentation for GlobalSnapshot in {DataTypes}.
     mapping(uint256 poolId => GlobalSnapshot snapshot) internal _globalSnapshot;
@@ -29,12 +25,13 @@ abstract contract SablierStakingState is ISablierStakingState {
     /// @notice Indicates whether the Lockup contract is whitelisted to stake into this contract.
     mapping(ISablierLockupNFT lockup => bool isWhitelisted) internal _lockupWhitelist;
 
+    /// @notice The Pool parameters mapped by the Pool ID.
+    /// @dev See the documentation for Pool in {DataTypes}.
+    mapping(uint256 poolId => Pool pool) internal _pool;
+
     /// @notice Get the Pool ID and the original owner of the staked stream.
     /// @dev See the documentation for StreamLookup in {DataTypes}.
     mapping(ISablierLockupNFT lockup => mapping(uint256 streamId => StreamLookup lookup)) internal _streamLookup;
-
-    /// @notice The total amount of tokens staked in a pool (both direct staking and through Sablier streams).
-    mapping(uint256 poolId => uint128 amount) internal _totalAmountStaked;
 
     /// @notice The user's shares of tokens staked in a pool.
     /// @dev See the documentation for UserShares in {DataTypes}.
@@ -48,9 +45,9 @@ abstract contract SablierStakingState is ISablierStakingState {
                                      MODIFIERS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice Modifier that checks that the pool is distributing rewards.
-    modifier isDistributingRewards(uint256 poolId) {
-        _revertIfNotDistributingRewards(poolId);
+    /// @notice Modifier that checks that the pool is active.
+    modifier isActive(uint256 poolId) {
+        _revertIfNotActive(poolId);
         _;
     }
 
@@ -90,8 +87,13 @@ abstract contract SablierStakingState is ISablierStakingState {
     }
 
     /// @inheritdoc ISablierStakingState
-    function getTotalRewards(uint256 poolId) external view notNull(poolId) returns (uint128) {
-        return _pool[poolId].totalRewards;
+    function getRewardAmount(uint256 poolId) external view notNull(poolId) returns (uint128) {
+        return _pool[poolId].rewardAmount;
+    }
+
+    /// @inheritdoc ISablierStakingState
+    function getTotalStakedAmount(uint256 poolId) external view notNull(poolId) returns (uint128) {
+        return _pool[poolId].totalStakedAmount;
     }
 
     /// @inheritdoc ISablierStakingState
@@ -118,6 +120,22 @@ abstract contract SablierStakingState is ISablierStakingState {
     }
 
     /// @inheritdoc ISablierStakingState
+    function status(uint256 poolId) external view override notNull(poolId) returns (Status) {
+        // Return SCHEDULED if the start time is in the future.
+        if (block.timestamp < _pool[poolId].startTime) {
+            return Status.SCHEDULED;
+        }
+
+        // Return ACTIVE if the staking period is active.
+        if (_isActive(poolId)) {
+            return Status.ACTIVE;
+        }
+
+        // Otherwise, return ENDED.
+        return Status.ENDED;
+    }
+
+    /// @inheritdoc ISablierStakingState
     function streamLookup(
         ISablierLockupNFT lockup,
         uint256 streamId
@@ -138,11 +156,6 @@ abstract contract SablierStakingState is ISablierStakingState {
 
         poolId = _streamLookup[lockup][streamId].poolId;
         owner = _streamLookup[lockup][streamId].owner;
-    }
-
-    /// @inheritdoc ISablierStakingState
-    function totalAmountStaked(uint256 poolId) external view notNull(poolId) returns (uint128) {
-        return _totalAmountStaked[poolId];
     }
 
     /// @inheritdoc ISablierStakingState
@@ -203,8 +216,8 @@ abstract contract SablierStakingState is ISablierStakingState {
                             INTERNAL READ-ONLY FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @dev Returns true if the pool is distributing rewards.
-    function _isDistributingRewards(uint256 poolId) internal view returns (bool) {
+    /// @dev Returns true if the pool is active.
+    function _isActive(uint256 poolId) internal view returns (bool) {
         Pool memory pool = _pool[poolId];
         uint40 currentTimestamp = uint40(block.timestamp);
         return pool.startTime <= currentTimestamp && currentTimestamp <= pool.endTime;
@@ -214,12 +227,10 @@ abstract contract SablierStakingState is ISablierStakingState {
                             PRIVATE READ-ONLY FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @dev Reverts if the pool is not distributing rewards.
-    function _revertIfNotDistributingRewards(uint256 poolId) private view {
-        if (!_isDistributingRewards(poolId)) {
-            revert Errors.SablierStakingState_OutsideRewardsPeriod(
-                poolId, _pool[poolId].startTime, _pool[poolId].endTime
-            );
+    /// @dev Reverts if the pool is not active.
+    function _revertIfNotActive(uint256 poolId) private view {
+        if (!_isActive(poolId)) {
+            revert Errors.SablierStakingState_NotActive(poolId);
         }
     }
 

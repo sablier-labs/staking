@@ -78,7 +78,7 @@ contract StakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concret
     /// @dev Helper function to test the staking of ERC20 tokens.
     function _test_StakeERC20Token(uint256 expectedRewardsPerTokenScaled, uint128 expectedUserRewards) private {
         (,, uint128 initialDirectAmountStaked) = sablierStaking.userShares(poolIds.defaultPool, users.recipient);
-        vars.expectedTotalAmountStaked = sablierStaking.totalAmountStaked(poolIds.defaultPool) + DEFAULT_AMOUNT;
+        vars.expectedTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool) + DEFAULT_AMOUNT;
 
         // It should emit {SnapshotRewards}, {Transfer} and {StakeERC20Token} events.
         vm.expectEmit({ emitter: address(sablierStaking) });
@@ -101,7 +101,7 @@ contract StakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concret
         assertEq(vars.actualDirectAmountStaked, initialDirectAmountStaked + DEFAULT_AMOUNT, "directAmountStakedByUser");
 
         // It should increase total amount staked.
-        vars.actualTotalAmountStaked = sablierStaking.totalAmountStaked(poolIds.defaultPool);
+        vars.actualTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool);
         assertEq(vars.actualTotalAmountStaked, vars.expectedTotalAmountStaked, "total amount staked");
 
         // It should update global rewards snapshot.

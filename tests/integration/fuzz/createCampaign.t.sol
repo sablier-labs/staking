@@ -11,8 +11,8 @@ contract CreatePool_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         address admin,
         uint40 endTime,
         address poolCreator,
-        uint40 startTime,
-        uint128 totalRewards
+        uint128 rewardAmount,
+        uint40 startTime
     )
         external
         whenNoDelegateCall
@@ -27,10 +27,10 @@ contract CreatePool_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         vm.assume(admin != address(0) && poolCreator != address(0));
         endTime = boundUint40(endTime, getBlockTimestamp() + 1 seconds, MAX_UINT40);
         startTime = boundUint40(startTime, getBlockTimestamp(), endTime - 1);
-        totalRewards = boundUint128(totalRewards, 1, MAX_UINT128);
+        rewardAmount = boundUint128(rewardAmount, 1, MAX_UINT128);
 
         // Deal reward token to the pool creator.
-        deal({ token: address(rewardToken), to: poolCreator, give: totalRewards });
+        deal({ token: address(rewardToken), to: poolCreator, give: rewardAmount });
         approveContract(address(rewardToken), poolCreator, address(sablierStaking));
 
         // Set the pool creator as the caller.
@@ -40,7 +40,7 @@ contract CreatePool_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
 
         // It should emit {Transfer} and {CreatePool} events.
         vm.expectEmit({ emitter: address(rewardToken) });
-        emit IERC20.Transfer(poolCreator, address(sablierStaking), totalRewards);
+        emit IERC20.Transfer(poolCreator, address(sablierStaking), rewardAmount);
         vm.expectEmit({ emitter: address(sablierStaking) });
         emit ISablierStaking.CreatePool({
             poolId: expectedPoolIds,
@@ -49,7 +49,7 @@ contract CreatePool_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
             rewardToken: rewardToken,
             stakingToken: stakingToken,
             startTime: startTime,
-            totalRewards: totalRewards
+            rewardAmount: rewardAmount
         });
 
         // create the pool.
@@ -59,7 +59,7 @@ contract CreatePool_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
             startTime: startTime,
             endTime: endTime,
             rewardToken: rewardToken,
-            totalRewards: totalRewards
+            rewardAmount: rewardAmount
         });
 
         // It should create the pool.
@@ -73,7 +73,7 @@ contract CreatePool_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         assertEq(sablierStaking.getStakingToken(actualPoolIds), stakingToken, "stakingToken");
         assertEq(sablierStaking.getStartTime(actualPoolIds), startTime, "startTime");
         assertEq(sablierStaking.getEndTime(actualPoolIds), endTime, "endTime");
+        assertEq(sablierStaking.getRewardAmount(actualPoolIds), rewardAmount, "rewardAmount");
         assertEq(sablierStaking.getRewardToken(actualPoolIds), rewardToken, "rewardToken");
-        assertEq(sablierStaking.getTotalRewards(actualPoolIds), totalRewards, "totalRewards");
     }
 }

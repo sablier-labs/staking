@@ -23,9 +23,7 @@ contract UnstakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concr
         warpStateTo(START_TIME);
 
         vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.SablierStaking_AmountExceedsStakedAmount.selector, poolIds.defaultPool, DEFAULT_AMOUNT, 0
-            )
+            abi.encodeWithSelector(Errors.SablierStaking_Overflow.selector, poolIds.defaultPool, DEFAULT_AMOUNT, 0)
         );
         sablierStaking.unstakeERC20Token(poolIds.defaultPool, DEFAULT_AMOUNT);
     }
@@ -40,7 +38,7 @@ contract UnstakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concr
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                Errors.SablierStaking_AmountExceedsStakedAmount.selector,
+                Errors.SablierStaking_Overflow.selector,
                 poolIds.defaultPool,
                 amountToUnstake,
                 DIRECT_AMOUNT_STAKED_BY_RECIPIENT
@@ -68,7 +66,7 @@ contract UnstakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concr
         whenAmountNotExceedDirectStakedAmount
         whenAmountNotZero
     {
-        vars.expectedTotalAmountStaked = sablierStaking.totalAmountStaked(poolIds.defaultPool) - DEFAULT_AMOUNT;
+        vars.expectedTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool) - DEFAULT_AMOUNT;
 
         // It should emit {SnapshotRewards}, {Transfer} and {UnstakeERC20Token} events.
         vm.expectEmit({ emitter: address(sablierStaking) });
@@ -92,7 +90,7 @@ contract UnstakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concr
         assertEq(vars.actualDirectAmountStaked, 0, "directAmountStakedByUser");
 
         // It should decrease total amount staked.
-        vars.actualTotalAmountStaked = sablierStaking.totalAmountStaked(poolIds.defaultPool);
+        vars.actualTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool);
         assertEq(vars.actualTotalAmountStaked, vars.expectedTotalAmountStaked, "total amount staked");
 
         // It should update global rewards snapshot.

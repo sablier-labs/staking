@@ -14,21 +14,13 @@ contract RewardRatePerTokenStaked_Integration_Concrete_Test is Shared_Integratio
     function test_RevertWhen_StartTimeInFuture() external whenNotNull {
         warpStateTo(START_TIME - 1);
 
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.SablierStakingState_OutsideRewardsPeriod.selector, poolIds.defaultPool, START_TIME, END_TIME
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Errors.SablierStakingState_NotActive.selector, poolIds.defaultPool));
         sablierStaking.rewardRatePerTokenStaked(poolIds.defaultPool);
     }
 
     function test_RevertWhen_EndTimeInPast() external whenNotNull whenStartTimeNotInFuture {
         warpStateTo(END_TIME + 1);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.SablierStakingState_OutsideRewardsPeriod.selector, poolIds.defaultPool, START_TIME, END_TIME
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Errors.SablierStakingState_NotActive.selector, poolIds.defaultPool));
         sablierStaking.rewardRatePerTokenStaked(poolIds.defaultPool);
     }
 

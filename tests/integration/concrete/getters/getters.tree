@@ -10,6 +10,12 @@ Getters_Integration_Concrete_Test::getEndTime
 └── when not null
    └── it should return the end time
 
+Getters_Integration_Concrete_Test::getRewardAmount
+├── when null
+│  └── it should revert
+└── when not null
+   └── it should return the reward amount
+
 Getters_Integration_Concrete_Test::getRewardToken
 ├── when null
 │  └── it should revert
@@ -28,11 +34,11 @@ Getters_Integration_Concrete_Test::getStartTime
 └── when not null
    └── it should return the start time
 
-Getters_Integration_Concrete_Test::getTotalRewards
+Getters_Integration_Concrete_Test::getTotalStakedAmount
 ├── when null
 │  └── it should revert
 └── when not null
-   └── it should return the total rewards
+   └── it should return the total staked amount
 
 Getters_Integration_Concrete_Test::globalSnapshot
 ├── when null
@@ -57,6 +63,18 @@ Getters_Integration_Concrete_Test::isLockupWhitelisted
    └── given whitelisted
       └── it should return true
 
+Getters_Integration_Concrete_Test::status
+├── when null
+│  └── it should revert
+└── when not null
+   ├── when start time in future
+   │  └── it should return SCHEDULED
+   └── when start time not in future
+      ├── when end time in past
+      │  └── it should return ENDED
+      └── when end time not in past
+         └── it should return ACTIVE
+
 Getters_Integration_Concrete_Test::streamLookup
 ├── when zero address
 │  └── it should revert
@@ -65,12 +83,6 @@ Getters_Integration_Concrete_Test::streamLookup
    │  └── it should revert
    └── when stream staked
       └── it should return pool id and owner
-
-Getters_Integration_Concrete_Test::totalAmountStaked
-├── when null
-│  └── it should revert
-└── when not null
-   └── it should return the total amount staked
 
 Getters_Integration_Concrete_Test::totalAmountStakedByUser
 ├── when null

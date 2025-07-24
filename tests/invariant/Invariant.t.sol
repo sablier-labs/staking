@@ -81,7 +81,7 @@ contract Invariant_Test is Base_Test, StdInvariant {
                 uint128 totalRewardsEarnedByUser = rewardsClaimed + claimableRewards;
                 rewardsEarnedByAllStakers += totalRewardsEarnedByUser;
             }
-            uint128 poolRewards = sablierStaking.getTotalRewards(poolId);
+            uint128 poolRewards = sablierStaking.getRewardAmount(poolId);
 
             assertLe(
                 rewardsEarnedByAllStakers,
@@ -94,7 +94,7 @@ contract Invariant_Test is Base_Test, StdInvariant {
     function invariant_TotalStakedAmount() external view {
         for (uint256 i = 0; i < handlerStore.totalPools(); ++i) {
             uint256 poolId = handlerStore.poolIds(i);
-            uint128 totalAmountStakedInPool = sablierStaking.totalAmountStaked(poolId);
+            uint128 totalAmountStakedInPool = sablierStaking.getTotalStakedAmount(poolId);
             uint128 totalAmountStakedByUser;
             for (uint256 j = 0; j < handlerStore.totalStakers(poolId); ++j) {
                 address staker = handlerStore.poolStakers(poolId, j);

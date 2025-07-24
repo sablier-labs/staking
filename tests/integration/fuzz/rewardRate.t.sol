@@ -13,11 +13,7 @@ contract RewardRate_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         warpStateTo(timestamp);
 
         // It should revert.
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.SablierStakingState_OutsideRewardsPeriod.selector, poolIds.defaultPool, START_TIME, END_TIME
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Errors.SablierStakingState_NotActive.selector, poolIds.defaultPool));
         sablierStaking.rewardRate(poolIds.defaultPool);
     }
 

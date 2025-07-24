@@ -83,7 +83,7 @@ abstract contract Integration_Test is Base_Test {
 
         // Update global rewards distributed per token scaled.
         rewardsDistributedPerTokenScaled +=
-            getScaledValue(rewardsDistributedSinceLastUpdate) / sablierStaking.totalAmountStaked(poolIds.defaultPool);
+            getScaledValue(rewardsDistributedSinceLastUpdate) / sablierStaking.getTotalStakedAmount(poolIds.defaultPool);
 
         // Get user rewards snapshot.
         (, rewardsEarnedPerTokenScaled, rewards) = sablierStaking.userSnapshot(poolIds.defaultPool, user);
@@ -105,7 +105,7 @@ abstract contract Integration_Test is Base_Test {
             startTime: START_TIME,
             endTime: END_TIME,
             rewardToken: rewardToken,
-            totalRewards: REWARD_AMOUNT
+            rewardAmount: REWARD_AMOUNT
         });
     }
 

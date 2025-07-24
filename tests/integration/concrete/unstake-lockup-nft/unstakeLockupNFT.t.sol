@@ -36,7 +36,7 @@ contract UnstakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concre
     }
 
     function test_WhenCallerNFTOwner() external whenNoDelegateCall givenStakedNFT {
-        vars.expectedTotalAmountStaked = sablierStaking.totalAmountStaked(poolIds.defaultPool) - DEFAULT_AMOUNT;
+        vars.expectedTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool) - DEFAULT_AMOUNT;
 
         // It should emit {SnapshotRewards}, {Transfer} and {UnstakeERC20Token} events.
         vm.expectEmit({ emitter: address(sablierStaking) });
@@ -63,7 +63,7 @@ contract UnstakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concre
         assertEq(vars.actualStreamAmountStaked, STREAM_AMOUNT_18D, "streamAmountStakedByUser");
 
         // It should decrease total amount staked.
-        vars.actualTotalAmountStaked = sablierStaking.totalAmountStaked(poolIds.defaultPool);
+        vars.actualTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool);
         assertEq(vars.actualTotalAmountStaked, vars.expectedTotalAmountStaked, "total amount staked");
 
         // It should update global rewards snapshot.

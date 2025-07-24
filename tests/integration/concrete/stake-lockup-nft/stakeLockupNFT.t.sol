@@ -145,7 +145,7 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
         (uint128 initialStreamsCount, uint128 initialStreamAmountStaked,) =
             sablierStaking.userShares(poolIds.defaultPool, users.recipient);
 
-        vars.expectedTotalAmountStaked = sablierStaking.totalAmountStaked(poolIds.defaultPool) + DEFAULT_AMOUNT;
+        vars.expectedTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool) + DEFAULT_AMOUNT;
 
         // It should emit {SnapshotRewards}, {Transfer} and {StakeLockupNFT} events.
         vm.expectEmit({ emitter: address(sablierStaking) });
@@ -173,7 +173,7 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
         assertEq(vars.actualStreamAmountStaked, initialStreamAmountStaked + DEFAULT_AMOUNT, "streamAmountStakedByUser");
 
         // It should increase total amount staked.
-        vars.actualTotalAmountStaked = sablierStaking.totalAmountStaked(poolIds.defaultPool);
+        vars.actualTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool);
         assertEq(vars.actualTotalAmountStaked, vars.expectedTotalAmountStaked, "total amount staked");
 
         // It should update global rewards snapshot.

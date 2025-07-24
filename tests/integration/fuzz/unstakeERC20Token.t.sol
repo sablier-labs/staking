@@ -37,17 +37,13 @@ contract UnstakeERC20Token_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test
 
         // Check that caller has total staked amount.
         vars.actualTotalAmountStaked = sablierStaking.totalAmountStakedByUser(poolIds.defaultPool, caller);
-        assertEq(vars.actualTotalAmountStaked, STREAM_AMOUNT_18D, "totalAmountStaked");
+        assertEq(vars.actualTotalAmountStaked, STREAM_AMOUNT_18D, "totalStakedAmount");
 
         // Warp EVM state to the given timestamp.
         warpStateTo(timestamp);
 
         // It should revert.
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.SablierStaking_AmountExceedsStakedAmount.selector, poolIds.defaultPool, amount, 0
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Errors.SablierStaking_Overflow.selector, poolIds.defaultPool, amount, 0));
 
         // Try to unstake ERC20 tokens from the pool.
         sablierStaking.unstakeERC20Token(poolIds.defaultPool, amount);
@@ -94,7 +90,7 @@ contract UnstakeERC20Token_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test
 
         (vars.expectedRewardsPerTokenScaled, vars.expectedUserRewards) = calculateLatestRewards(caller);
 
-        vars.expectedTotalAmountStaked = sablierStaking.totalAmountStaked(poolIds.defaultPool) - amount;
+        vars.expectedTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool) - amount;
 
         // It should emit {SnapshotRewards}, {Transfer} and {UnstakeERC20Token} events.
         vm.expectEmit({ emitter: address(sablierStaking) });
@@ -114,7 +110,7 @@ contract UnstakeERC20Token_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test
         assertEq(vars.actualDirectAmountStaked, previousDirectAmountStaked - amount, "directAmountStakedByUser");
 
         // It should decrease total amount staked.
-        vars.actualTotalAmountStaked = sablierStaking.totalAmountStaked(poolIds.defaultPool);
+        vars.actualTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool);
         assertEq(vars.actualTotalAmountStaked, vars.expectedTotalAmountStaked, "total amount staked");
 
         // It should update global rewards snapshot.

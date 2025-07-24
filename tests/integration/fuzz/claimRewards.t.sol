@@ -113,7 +113,7 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         // Caller stakes first and then warp to a new randomized timestamp.
         sablierStaking.stakeERC20Token(poolIds.defaultPool, amountToStake);
 
-        uint128 totalAmountStakedAtStake = sablierStaking.totalAmountStaked(poolIds.defaultPool);
+        uint128 totalAmountStakedAtStake = sablierStaking.getTotalStakedAmount(poolIds.defaultPool);
 
         // Randomly select a timestamp to claim rewards.
         uint40 claimTimestamp = randomUint40({

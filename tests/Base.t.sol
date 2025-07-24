@@ -44,7 +44,7 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
     function setUp() public virtual override {
         EvmUtilsBase.setUp();
 
-        // Deploy the reward token for distributing rewards.
+        // Deploy the reward token.
         rewardToken = new ERC20Mock("Reward Token", "REWARD_TOKEN", 18);
         tokens.push(rewardToken);
 

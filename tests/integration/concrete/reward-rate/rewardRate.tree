@@ -3,9 +3,9 @@ RewardRate_Integration_Concrete_Test
 │  └── it should revert
 └── when not null
    ├── when start time in future
-   │  └── it should return correct reward rate
+   │  └── it should revert
    └── when start time not in future
       ├── when end time in past
-      │  └── it should return correct reward rate
+      │  └── it should revert
       └── when end time not in past
          └── it should return correct reward rate

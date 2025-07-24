@@ -363,24 +363,4 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         );
         assertEq(rewards, REWARDS_EARNED_BY_RECIPIENT_END_TIME, "recipient: rewards");
     }
-
-    /*//////////////////////////////////////////////////////////////////////////
-                                     WAS-CLOSED
-    //////////////////////////////////////////////////////////////////////////*/
-
-    function test_WasClosedRevertWhen_Null() external {
-        expectRevert_Null({ callData: abi.encodeCall(sablierStaking.wasClosed, poolIds.nullPool) });
-    }
-
-    function test_WasClosedGivenNotClosed() external view whenNotNull {
-        // It should return false.
-        bool actualWasClosed = sablierStaking.wasClosed(poolIds.defaultPool);
-        assertFalse(actualWasClosed, "not closed");
-    }
-
-    function test_WasClosedGivenClosed() external view whenNotNull {
-        // It should return true.
-        bool actualWasClosed = sablierStaking.wasClosed(poolIds.closedPool);
-        assertTrue(actualWasClosed, "closed");
-    }
 }

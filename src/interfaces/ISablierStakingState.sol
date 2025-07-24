@@ -52,10 +52,7 @@ interface ISablierStakingState {
     /// @dev Reverts if `lockup` is the zero address.
     function isLockupWhitelisted(ISablierLockupNFT lockup) external view returns (bool);
 
-    /// @notice Returns the role authorized to whitelist the lockup contracts for staking into the pool.
-    function LOCKUP_WHITELIST_ROLE() external view returns (bytes32);
-
-    /// @notice Counter for the next Pool ID, used in launching new pools.
+    /// @notice Counter for the next Pool ID, used in creating new pool.
     function nextPoolId() external view returns (uint256);
 
     /// @notice Lookup from a Lockup stream ID to the Pool ID and original stream owner.
@@ -114,8 +111,4 @@ interface ISablierStakingState {
         external
         view
         returns (uint40 lastUpdateTime, uint256 rewardsEarnedPerTokenScaled, uint128 rewards);
-
-    /// @notice Returns true if the given Pool ID was closed.
-    /// @dev Reverts if `poolId` references a non-existent pool.
-    function wasClosed(uint256 poolId) external view returns (bool);
 }

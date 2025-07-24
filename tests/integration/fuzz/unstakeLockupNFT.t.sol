@@ -36,7 +36,6 @@ contract UnstakeLockupNFT_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test 
         external
         whenNoDelegateCall
         givenStakedNFT
-        givenNotClosed
         whenCallerNFTOwner
     {
         // Bound timestamp so that it is greater than the pool start time but less than the stream end time.
@@ -70,7 +69,6 @@ contract UnstakeLockupNFT_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test 
         external
         whenNoDelegateCall
         givenStakedNFT
-        givenNotClosed
         whenCallerNFTOwner
     {
         // Bound timestamp so that it is greater than the pool start time.

@@ -18,7 +18,6 @@ contract StakeERC20Token_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         external
         whenNoDelegateCall
         whenNotNull
-        givenNotClosed
         whenAmountNotZero
         whenEndTimeInFuture
     {

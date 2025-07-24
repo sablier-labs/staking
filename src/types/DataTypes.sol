@@ -24,7 +24,6 @@ struct GlobalSnapshot {
 /// @param admin The admin of the staking pool. This may be different from the pool creator.
 /// @param rewardToken The address of the ERC20 token to used as staking rewards.
 /// @param stakingToken The address of the ERC20 token that can be staked either directly or through Sablier stream.
-/// @param wasClosed Boolean indicating if the pool was closed.
 /// @param endTime The end time of the rewards period, denoted in UNIX timestamp.
 /// @param startTime The start time of the rewards period, denoted in UNIX timestamp.
 /// @param totalRewards The amount of total rewards to be distributed during the rewards period, denoted in reward
@@ -37,10 +36,17 @@ struct Pool {
     // Slot 2
     IERC20 stakingToken;
     // Slot 3
-    bool wasClosed;
     uint40 endTime;
     uint40 startTime;
     uint128 totalRewards;
+}
+
+/// @notice Enum to represent the different statuses of a staking pool.
+/// @custom:value0 DISTRIBUTING The pool is open and distributing rewards.
+/// @custom:value1 NOT_DISTRIBUTING The pool is open but not distributing rewards.
+enum Status {
+    DISTRIBUTING,
+    NON_DISTRIBUTING
 }
 
 /// @notice A data structure to reverse lookup from a Lockup stream ID to the pool ID and original stream owner.

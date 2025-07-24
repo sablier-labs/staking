@@ -2,10 +2,7 @@ CalculateMinFeeWeiFor_Integration_Concrete_Test
 ├── when null
 │  └── it should revert
 └── when not null
-   ├── given closed
-   │  └── it should revert
-   └── given not closed
-      ├── given custom fee set
-      │  └── it should return the custom fee in wei
-      └── given custom fee not set
-         └── it should return the minimum fee in wei
+   ├── given custom fee set
+   │  └── it should return the custom fee in wei
+   └── given custom fee not set
+      └── it should return the minimum fee in wei

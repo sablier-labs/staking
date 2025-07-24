@@ -42,9 +42,15 @@ contract CreatePool_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         vm.expectEmit({ emitter: address(rewardToken) });
         emit IERC20.Transfer(poolCreator, address(sablierStaking), totalRewards);
         vm.expectEmit({ emitter: address(sablierStaking) });
-        emit ISablierStaking.CreatePool(
-            expectedPoolIds, poolCreator, stakingToken, rewardToken, startTime, endTime, totalRewards
-        );
+        emit ISablierStaking.CreatePool({
+            poolId: expectedPoolIds,
+            admin: poolCreator,
+            endTime: endTime,
+            rewardToken: rewardToken,
+            stakingToken: stakingToken,
+            startTime: startTime,
+            totalRewards: totalRewards
+        });
 
         // create the pool.
         uint256 actualPoolIds = sablierStaking.createPool({
@@ -69,6 +75,5 @@ contract CreatePool_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         assertEq(sablierStaking.getEndTime(actualPoolIds), endTime, "endTime");
         assertEq(sablierStaking.getRewardToken(actualPoolIds), rewardToken, "rewardToken");
         assertEq(sablierStaking.getTotalRewards(actualPoolIds), totalRewards, "totalRewards");
-        assertEq(sablierStaking.wasClosed(actualPoolIds), false, "wasClosed");
     }
 }

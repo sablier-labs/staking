@@ -60,45 +60,7 @@ contract UnstakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concr
         sablierStaking.unstakeERC20Token(poolIds.defaultPool, 0);
     }
 
-    function test_GivenClosed()
-        external
-        whenNoDelegateCall
-        whenNotNull
-        givenDirectStakedAmountNotZero
-        whenAmountNotExceedDirectStakedAmount
-        whenAmountNotZero
-    {
-        // For this test, we use the users.staker because he has staked amount in the closed pool.
-        setMsgSender(users.staker);
-
-        // It should emit {Transfer} and {UnstakeERC20Token} events.
-        vm.expectEmit({ emitter: address(stakingToken) });
-        emit IERC20.Transfer(address(sablierStaking), users.staker, DEFAULT_AMOUNT);
-        vm.expectEmit({ emitter: address(sablierStaking) });
-        emit ISablierStaking.UnstakeERC20Token(poolIds.closedPool, users.staker, DEFAULT_AMOUNT);
-
-        // Unstake from the closed pool.
-        sablierStaking.unstakeERC20Token(poolIds.closedPool, DEFAULT_AMOUNT);
-
-        // It should unstake.
-        (,, vars.actualDirectAmountStaked) = sablierStaking.userShares(poolIds.closedPool, users.staker);
-        assertEq(vars.actualDirectAmountStaked, 0, "directAmountStakedByUser");
-
-        // It should update global rewards snapshot.
-        (vars.actualLastUpdateTime, vars.actualRewardsPerTokenScaled) =
-            sablierStaking.globalSnapshot(poolIds.closedPool);
-        assertEq(vars.actualLastUpdateTime, WARP_40_PERCENT, "globalLastUpdateTime");
-        assertEq(vars.actualRewardsPerTokenScaled, 0, "rewardsDistributedPerTokenScaled");
-
-        // It should update user rewards snapshot.
-        (vars.actualLastUpdateTime, vars.actualRewardsPerTokenScaled, vars.actualUserRewards) =
-            sablierStaking.userSnapshot(poolIds.closedPool, users.staker);
-        assertEq(vars.actualLastUpdateTime, WARP_40_PERCENT, "userLastUpdateTime");
-        assertEq(vars.actualRewardsPerTokenScaled, 0, "rewardsEarnedPerTokenScaled");
-        assertEq(vars.actualUserRewards, 0, "rewards");
-    }
-
-    function test_GivenNotClosed()
+    function test_WhenAmountNotZero()
         external
         whenNoDelegateCall
         whenNotNull

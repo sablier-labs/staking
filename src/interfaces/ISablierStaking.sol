@@ -6,6 +6,7 @@ import { IERC721Receiver } from "@openzeppelin/contracts/token/ERC721/IERC721Rec
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import { IComptrollerable } from "@sablier/evm-utils/src/interfaces/IComptrollerable.sol";
 
+import { Status } from "../types/DataTypes.sol";
 import { ISablierLockupNFT } from "./ISablierLockupNFT.sol";
 import { ISablierStakingState } from "./ISablierStakingState.sol";
 
@@ -24,22 +25,22 @@ interface ISablierStaking is
     /// @notice Emitted when rewards are claimed.
     event ClaimRewards(uint256 indexed poolId, address indexed user, uint256 amountClaimed);
 
-    /// @notice Emitted when a pool is closed before the start time.
-    event ClosePool(uint256 indexed poolId);
-
     /// @notice Emitted when a new pool is created.
     event CreatePool(
         uint256 indexed poolId,
         address indexed admin,
-        IERC20 indexed stakingToken,
-        IERC20 rewardToken,
-        uint40 startTime,
         uint40 endTime,
+        IERC20 rewardToken,
+        IERC20 indexed stakingToken,
+        uint40 startTime,
         uint128 totalRewards
     );
 
     /// @notice Emitted when a Lockup contract is whitelisted.
     event LockupWhitelisted(address indexed comptroller, ISablierLockupNFT indexed lockup);
+
+    /// @notice Emitted when the next staking round is configured.
+    event NextStakingRound(uint256 indexed poolId, uint40 newEndTime, uint40 newStartTime, uint128 totalRewards);
 
     /// @notice Emitted when the rewards snapshot is taken.
     event SnapshotRewards(
@@ -75,12 +76,12 @@ interface ISablierStaking is
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Calculates the minimum fee in wei required to claim rewards from the given pool ID.
-    /// @dev Reverts if `poolId` references a non-existent pool or a closed pool.
+    /// @dev Reverts if `poolId` references a non-existent pool.
     /// @param poolId The pool ID for the query.
     function calculateMinFeeWei(uint256 poolId) external view returns (uint256);
 
     /// @notice Returns the amount of reward ERC20 tokens available to claim by the user.
-    /// @dev Reverts if `poolId` references a non-existent pool or a closed pool, or if `user` is the zero address.
+    /// @dev Reverts if `poolId` references a non-existent pool, or if `user` is the zero address.
     function claimableRewards(uint256 poolId, address user) external view returns (uint128);
 
     /// @notice Reverts on the hook call from the Lockup contract when a withdraw is called on a staked stream
@@ -107,12 +108,12 @@ interface ISablierStaking is
         returns (bytes4 selector);
 
     /// @notice Returns the amount of reward ERC20 tokens distributed every second.
-    /// @dev Reverts if `poolId` references a non-existent pool.
+    /// @dev Reverts if `poolId` references a non-existent pool or is not distributing rewards.
     function rewardRate(uint256 poolId) external view returns (uint128);
 
     /// @notice Returns the amount of reward ERC20 token that each staked ERC20 token is earning every second. Returns 0
     /// if total staked tokens are 0.
-    /// @dev Reverts if `poolId` references a non-existent pool or is inactive (including closed).
+    /// @dev Reverts if `poolId` references a non-existent pool or is not distributing rewards.
     function rewardRatePerTokenStaked(uint256 poolId) external view returns (uint128);
 
     /// @notice Calculates rewards distributed per ERC20 token since the last snapshot.
@@ -120,7 +121,7 @@ interface ISablierStaking is
     /// time.
     ///
     /// Requirements:
-    ///  - `poolId` must not reference a non-existent pool or a closed pool.
+    ///  - `poolId` must not reference a non-existent pool.
     ///  -  The start time must not be in the future.
     function rewardsPerTokenSinceLastSnapshot(uint256 poolId) external view returns (uint128);
 
@@ -129,9 +130,13 @@ interface ISablierStaking is
     /// time.
     ///
     /// Requirements:
-    ///  - `poolId` must not reference a non-existent pool or a closed pool.
+    ///  - `poolId` must not reference a non-existent pool.
     ///  -  The start time must not be in the future.
     function rewardsSinceLastSnapshot(uint256 poolId) external view returns (uint128);
+
+    /// @notice Returns the status of the pool.
+    /// @dev Reverts if `poolId` references a non-existent pool.
+    function status(uint256 poolId) external view returns (Status);
 
     /*//////////////////////////////////////////////////////////////////////////
                               STATE-CHANGING FUNCTIONS
@@ -146,7 +151,7 @@ interface ISablierStaking is
     ///
     /// Requirements:
     ///  - Must not be delegate called.
-    ///  - `poolId` must not reference a non-existent pool or a closed pool.
+    ///  - `poolId` must not reference a non-existent pool.
     ///  - The block timestamp must be greater than or equal to the start time.
     ///  - Claimable rewards must be greater than 0.
     /// - `msg.value` must be greater than or equal to the minimum fee in wei for the pool's admin.
@@ -155,17 +160,31 @@ interface ISablierStaking is
     /// @return rewards The amount of rewards claimed, denoted in reward token's decimals.
     function claimRewards(uint256 poolId) external payable returns (uint128 rewards);
 
-    /// @notice Closes the staking pool and refunds rewards amount to the pool admin.
-    /// @dev Emits a {Transfer} and {closePool} events.
+    /// @notice Configures the next staking round for the specified pool.
+    /// @dev Emits a {NextStakingRound} event.
     ///
     /// Requirements:
-    ///  - Must not be delegate called.
-    ///  - `poolId` must not reference a non-existent pool or a closed pool.
     ///  - `msg.sender` must be the pool admin.
-    ///  - The start time must be in the future.
+    ///  - Must not be delegate called.
+    ///  - `poolId` must not reference a non-existent pool.
+    ///  - The pool end time must be in the past.
+    ///  - `endTime` must be greater than `startTime`.
+    ///  - `startTime` must be greater than or equal to the `block.timestamp`.
+    ///  - `totalRewards` must be greater than 0.
+    ///  - `msg.sender` must have approved this contract to spend the `totalRewards` of reward ERC20 token.
     ///
-    /// @param poolId The Pool ID to close.
-    function closePool(uint256 poolId) external returns (uint128 amountRefunded);
+    /// @param poolId The pool ID for which to configure the next staking round.
+    /// @param newEndTime The end time for the next staking round, denoted in UNIX timestamp.
+    /// @param newStartTime The start time for the next staking round, denoted in UNIX timestamp.
+    /// @param totalRewards The amount of reward tokens to distribute during the next staking round, denoted in reward
+    /// token's decimals.
+    function configureNextRound(
+        uint256 poolId,
+        uint40 newEndTime,
+        uint40 newStartTime,
+        uint128 totalRewards
+    )
+        external;
 
     /// @notice Creates a new staking pool and transfer the total reward amount from `msg.sender` to this contract.
     /// @dev Emits a {Transfer} and {CreatePool} events.
@@ -180,7 +199,7 @@ interface ISablierStaking is
     ///  - `totalRewards` must be greater than 0.
     ///  - `msg.sender` must have approved this contract to spend the `totalRewards` of reward ERC20 token.
     ///
-    /// @param admin The admin of the pool with the ability to close it until the start time.
+    /// @param admin The admin of the pool.
     /// @param stakingToken The ERC20 token permitted for staking either directly or through Lockup streams.
     /// @param startTime The start time of the rewards period, denoted in UNIX timestamp.
     /// @param endTime The end time of the rewards period, denoted in UNIX timestamp.
@@ -231,7 +250,7 @@ interface ISablierStaking is
     ///
     /// Requirements:
     ///  - Must not be delegate called.
-    ///  - `poolId` must not reference a non-existent pool or a closed pool.
+    ///  - `poolId` must not reference a non-existent pool.
     ///  - User must be staking in the pool.
     ///  - User snapshot's last time update must be less than the end time.
     ///
@@ -248,7 +267,7 @@ interface ISablierStaking is
     ///
     /// Requirements:
     ///  - Must not be delegate called.
-    ///  - `poolId` must not reference a non-existent pool or a closed pool.
+    ///  - `poolId` must not reference a non-existent pool.
     ///  - Pool end time must be in the future.
     ///  - `amount` must be greater than 0.
     ///  - `msg.sender` must have approved this contract to spend the ERC20 token.
@@ -265,7 +284,7 @@ interface ISablierStaking is
     ///
     /// Requirements:
     ///  - Must not be delegate called.
-    ///  - `poolId` must not reference a non-existent pool or a closed pool.
+    ///  - `poolId` must not reference a non-existent pool.
     ///  - `lockup` must be a whitelisted Lockup contract.
     ///  - Pool end time must be in the future.
     ///  - Stream's underlying token must be same as the pool's staking token.

@@ -11,12 +11,7 @@ contract RewardRatePerTokenStaked_Integration_Concrete_Test is Shared_Integratio
         expectRevert_Null(callData);
     }
 
-    function test_RevertGiven_Closed() external whenNotNull {
-        vm.expectRevert(abi.encodeWithSelector(Errors.SablierStakingState_PoolClosed.selector, poolIds.closedPool));
-        sablierStaking.rewardRatePerTokenStaked(poolIds.closedPool);
-    }
-
-    function test_RevertWhen_StartTimeInFuture() external whenNotNull givenNotClosed {
+    function test_RevertWhen_StartTimeInFuture() external whenNotNull {
         warpStateTo(START_TIME - 1);
 
         vm.expectRevert(
@@ -27,7 +22,7 @@ contract RewardRatePerTokenStaked_Integration_Concrete_Test is Shared_Integratio
         sablierStaking.rewardRatePerTokenStaked(poolIds.defaultPool);
     }
 
-    function test_RevertWhen_EndTimeInPast() external whenNotNull givenNotClosed whenStartTimeNotInFuture {
+    function test_RevertWhen_EndTimeInPast() external whenNotNull whenStartTimeNotInFuture {
         warpStateTo(END_TIME + 1);
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -37,27 +32,13 @@ contract RewardRatePerTokenStaked_Integration_Concrete_Test is Shared_Integratio
         sablierStaking.rewardRatePerTokenStaked(poolIds.defaultPool);
     }
 
-    function test_GivenTotalStakedZero()
-        external
-        view
-        whenNotNull
-        givenNotClosed
-        whenStartTimeNotInFuture
-        whenEndTimeNotInPast
-    {
+    function test_GivenTotalStakedZero() external view whenNotNull whenStartTimeNotInFuture whenEndTimeNotInPast {
         // It should return zero.
         uint128 actualRewardRatePerTokenStaked = sablierStaking.rewardRatePerTokenStaked(poolIds.freshPool);
         assertEq(actualRewardRatePerTokenStaked, 0, "reward rate per token staked");
     }
 
-    function test_GivenTotalStakedNotZero()
-        external
-        view
-        whenNotNull
-        givenNotClosed
-        whenStartTimeNotInFuture
-        whenEndTimeNotInPast
-    {
+    function test_GivenTotalStakedNotZero() external view whenNotNull whenStartTimeNotInFuture whenEndTimeNotInPast {
         // It should return correct reward rate per token staked.
         uint128 actualRewardRatePerTokenStaked = sablierStaking.rewardRatePerTokenStaked(poolIds.defaultPool);
         uint128 expectedRewardRatePerTokenStaked = REWARD_RATE / TOTAL_STAKED;

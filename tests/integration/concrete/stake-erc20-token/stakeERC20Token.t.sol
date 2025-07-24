@@ -18,17 +18,12 @@ contract StakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concret
         expectRevert_Null(callData);
     }
 
-    function test_RevertGiven_Closed() external whenNoDelegateCall whenNotNull {
-        vm.expectRevert(abi.encodeWithSelector(Errors.SablierStakingState_PoolClosed.selector, poolIds.closedPool));
-        sablierStaking.stakeERC20Token(poolIds.closedPool, DEFAULT_AMOUNT);
-    }
-
-    function test_RevertWhen_AmountZero() external whenNoDelegateCall whenNotNull givenNotClosed {
+    function test_RevertWhen_AmountZero() external whenNoDelegateCall whenNotNull {
         vm.expectRevert(abi.encodeWithSelector(Errors.SablierStaking_StakingZeroAmount.selector, poolIds.defaultPool));
         sablierStaking.stakeERC20Token(poolIds.defaultPool, 0);
     }
 
-    function test_RevertWhen_EndTimeInPast() external whenNoDelegateCall whenNotNull givenNotClosed whenAmountNotZero {
+    function test_RevertWhen_EndTimeInPast() external whenNoDelegateCall whenNotNull whenAmountNotZero {
         warpStateTo(END_TIME + 1);
 
         vm.expectRevert(
@@ -37,13 +32,7 @@ contract StakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concret
         sablierStaking.stakeERC20Token(poolIds.defaultPool, DEFAULT_AMOUNT);
     }
 
-    function test_RevertWhen_EndTimeInPresent()
-        external
-        whenNoDelegateCall
-        whenNotNull
-        givenNotClosed
-        whenAmountNotZero
-    {
+    function test_RevertWhen_EndTimeInPresent() external whenNoDelegateCall whenNotNull whenAmountNotZero {
         warpStateTo(END_TIME);
 
         vm.expectRevert(
@@ -56,7 +45,6 @@ contract StakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concret
         external
         whenNoDelegateCall
         whenNotNull
-        givenNotClosed
         whenAmountNotZero
         whenEndTimeInFuture
     {
@@ -70,7 +58,6 @@ contract StakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concret
         external
         whenNoDelegateCall
         whenNotNull
-        givenNotClosed
         whenAmountNotZero
         whenEndTimeInFuture
     {
@@ -80,14 +67,7 @@ contract StakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concret
         _test_StakeERC20Token({ expectedRewardsPerTokenScaled: 0, expectedUserRewards: 0 });
     }
 
-    function test_WhenStartTimeInPast()
-        external
-        whenNoDelegateCall
-        whenNotNull
-        givenNotClosed
-        whenAmountNotZero
-        whenEndTimeInFuture
-    {
+    function test_WhenStartTimeInPast() external whenNoDelegateCall whenNotNull whenAmountNotZero whenEndTimeInFuture {
         // It should stake tokens.
         _test_StakeERC20Token({
             expectedRewardsPerTokenScaled: REWARDS_DISTRIBUTED_PER_TOKEN_SCALED,

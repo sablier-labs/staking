@@ -9,7 +9,7 @@ import { Shared_Integration_Fuzz_Test } from "./Fuzz.t.sol";
 
 contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
     /// @dev It should revert since the fee does not meet the minimum fee.
-    function testFuzz_RevertWhen_FeeNotPaid(uint256 fee) external whenNoDelegateCall whenNotNull givenNotClosed {
+    function testFuzz_RevertWhen_FeeNotPaid(uint256 fee) external whenNoDelegateCall whenNotNull {
         // Bound fee such that it does not meet the minimum fee.
         fee = bound(fee, 0, STAKING_MIN_FEE_WEI - 1);
 
@@ -25,7 +25,6 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         external
         whenNoDelegateCall
         whenNotNull
-        givenNotClosed
         whenFeePaid
     {
         // Bound timestamp such that the start time is in the future.
@@ -49,7 +48,6 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         external
         whenNoDelegateCall
         whenNotNull
-        givenNotClosed
         whenFeePaid
         whenStartTimeInPast
     {
@@ -86,7 +84,6 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         external
         whenNoDelegateCall
         whenNotNull
-        givenNotClosed
         whenFeePaid
         whenStartTimeInPast
         whenClaimableRewardsNotZero
@@ -139,7 +136,6 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         external
         whenNoDelegateCall
         whenNotNull
-        givenNotClosed
         whenFeePaid
         whenStartTimeInPast
         whenClaimableRewardsNotZero

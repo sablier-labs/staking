@@ -17,12 +17,7 @@ contract SnapshotRewards_Integration_Concrete_Test is Shared_Integration_Concret
         expectRevert_Null(callData);
     }
 
-    function test_RevertGiven_Closed() external whenNoDelegateCall whenNotNull {
-        vm.expectRevert(abi.encodeWithSelector(Errors.SablierStakingState_PoolClosed.selector, poolIds.closedPool));
-        sablierStaking.snapshotRewards(poolIds.closedPool, users.recipient);
-    }
-
-    function test_RevertGiven_StakedAmountZero() external whenNoDelegateCall whenNotNull givenNotClosed {
+    function test_RevertGiven_StakedAmountZero() external whenNoDelegateCall whenNotNull {
         vm.expectRevert(
             abi.encodeWithSelector(Errors.SablierStaking_NoStakedAmount.selector, poolIds.defaultPool, users.eve)
         );
@@ -33,7 +28,6 @@ contract SnapshotRewards_Integration_Concrete_Test is Shared_Integration_Concret
         external
         whenNoDelegateCall
         whenNotNull
-        givenNotClosed
         givenStakedAmountNotZero
     {
         warpStateTo(END_TIME);
@@ -54,7 +48,6 @@ contract SnapshotRewards_Integration_Concrete_Test is Shared_Integration_Concret
         external
         whenNoDelegateCall
         whenNotNull
-        givenNotClosed
         givenStakedAmountNotZero
         givenLastUpdateTimeLessThanEndTime
     {
@@ -65,7 +58,6 @@ contract SnapshotRewards_Integration_Concrete_Test is Shared_Integration_Concret
         external
         whenNoDelegateCall
         whenNotNull
-        givenNotClosed
         givenStakedAmountNotZero
         givenLastUpdateTimeLessThanEndTime
     {
@@ -78,7 +70,6 @@ contract SnapshotRewards_Integration_Concrete_Test is Shared_Integration_Concret
         external
         whenNoDelegateCall
         whenNotNull
-        givenNotClosed
         givenStakedAmountNotZero
         givenLastUpdateTimeLessThanEndTime
     {

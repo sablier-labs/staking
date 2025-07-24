@@ -7,7 +7,6 @@ contract RewardsSinceLastSnapshot_Integration_Fuzz_Test is Shared_Integration_Fu
     function testFuzz_RewardsSinceLastSnapshot_GivenLastTimeUpdateNotLessThanEndTime(uint40 timestamp)
         external
         whenNotNull
-        givenNotClosed
         whenStartTimeNotInFuture
         givenTotalStakedNotZero
     {
@@ -31,7 +30,6 @@ contract RewardsSinceLastSnapshot_Integration_Fuzz_Test is Shared_Integration_Fu
     function testFuzz_RewardsSinceLastSnapshot(uint40 timestamp)
         external
         whenNotNull
-        givenNotClosed
         whenStartTimeNotInFuture
         givenTotalStakedNotZero
         givenLastUpdateTimeLessThanEndTime

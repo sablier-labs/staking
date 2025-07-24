@@ -36,10 +36,6 @@ abstract contract Modifiers is EvmUtilsBase {
         _;
     }
 
-    modifier givenNotClosed() {
-        _;
-    }
-
     modifier givenNotWhitelisted() {
         _;
     }

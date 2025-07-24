@@ -21,12 +21,7 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
         expectRevert_Null(callData);
     }
 
-    function test_RevertGiven_Closed() external whenNoDelegateCall whenNotNull {
-        vm.expectRevert(abi.encodeWithSelector(Errors.SablierStakingState_PoolClosed.selector, poolIds.closedPool));
-        sablierStaking.stakeLockupNFT(poolIds.closedPool, lockup, streamIds.defaultStream);
-    }
-
-    function test_RevertWhen_EndTimeInPast() external whenNoDelegateCall whenNotNull givenNotClosed {
+    function test_RevertWhen_EndTimeInPast() external whenNoDelegateCall whenNotNull {
         warpStateTo(END_TIME + 1);
 
         vm.expectRevert(
@@ -35,7 +30,7 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
         sablierStaking.stakeLockupNFT(poolIds.defaultPool, lockup, streamIds.defaultStream);
     }
 
-    function test_RevertWhen_EndTimeInPresent() external whenNoDelegateCall whenNotNull givenNotClosed {
+    function test_RevertWhen_EndTimeInPresent() external whenNoDelegateCall whenNotNull {
         warpStateTo(END_TIME);
 
         vm.expectRevert(
@@ -44,13 +39,7 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
         sablierStaking.stakeLockupNFT(poolIds.defaultPool, lockup, streamIds.defaultStream);
     }
 
-    function test_RevertGiven_LockupNotWhitelisted()
-        external
-        whenNoDelegateCall
-        whenNotNull
-        givenNotClosed
-        whenEndTimeInFuture
-    {
+    function test_RevertGiven_LockupNotWhitelisted() external whenNoDelegateCall whenNotNull whenEndTimeInFuture {
         // Deploy a new Lockup contract for this test.
         lockup = deployLockup();
 
@@ -63,7 +52,6 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
         external
         whenNoDelegateCall
         whenNotNull
-        givenNotClosed
         whenEndTimeInFuture
         givenLockupWhitelisted
     {
@@ -77,7 +65,6 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
         external
         whenNoDelegateCall
         whenNotNull
-        givenNotClosed
         whenEndTimeInFuture
         givenLockupWhitelisted
         whenStreamTokenMatchesStakingToken
@@ -90,7 +77,6 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
         external
         whenNoDelegateCall
         whenNotNull
-        givenNotClosed
         whenEndTimeInFuture
         givenLockupWhitelisted
         whenStreamTokenMatchesStakingToken
@@ -112,7 +98,6 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
         external
         whenNoDelegateCall
         whenNotNull
-        givenNotClosed
         whenEndTimeInFuture
         givenLockupWhitelisted
         whenStreamTokenMatchesStakingToken
@@ -128,7 +113,6 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
         external
         whenNoDelegateCall
         whenNotNull
-        givenNotClosed
         whenEndTimeInFuture
         givenLockupWhitelisted
         whenStreamTokenMatchesStakingToken
@@ -144,7 +128,6 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
         external
         whenNoDelegateCall
         whenNotNull
-        givenNotClosed
         whenEndTimeInFuture
         givenLockupWhitelisted
         whenStreamTokenMatchesStakingToken

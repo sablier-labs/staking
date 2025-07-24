@@ -106,12 +106,3 @@ Getters_Integration_Concrete_Test::userSnapshot
          │  └── it should return correct return values
          └── when end time not in future
             └── it should return correct return values
-
-Getters_Integration_Concrete_Test::wasClosed
-├── when null
-│  └── it should revert
-└── when not null
-   ├── given not closed
-   │  └── it should return false
-   └── given closed
-      └── it should return true

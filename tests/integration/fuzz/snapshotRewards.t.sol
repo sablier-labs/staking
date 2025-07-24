@@ -14,7 +14,6 @@ contract SnapshotRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         external
         whenNoDelegateCall
         whenNotNull
-        givenNotClosed
         givenStakedAmountNotZero
     {
         // Pick a user based on the seed.
@@ -48,7 +47,6 @@ contract SnapshotRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         external
         whenNoDelegateCall
         whenNotNull
-        givenNotClosed
         givenStakedAmountNotZero
         givenLastUpdateTimeLessThanEndTime
     {

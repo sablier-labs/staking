@@ -18,7 +18,6 @@ contract StakeLockupNFT_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         external
         whenNoDelegateCall
         whenNotNull
-        givenNotClosed
         whenEndTimeInFuture
         givenLockupWhitelisted
         whenStreamTokenMatchesStakingToken

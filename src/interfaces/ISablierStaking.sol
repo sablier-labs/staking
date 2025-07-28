@@ -24,6 +24,9 @@ interface ISablierStaking is
     /// @notice Emitted when rewards are claimed.
     event ClaimRewards(uint256 indexed poolId, address indexed user, uint256 amountClaimed);
 
+    /// @notice Emitted when a new staking round is configured on an existing pool.
+    event ConfigureNextRound(uint256 indexed poolId, uint40 newEndTime, uint40 newStartTime, uint128 newRewardAmount);
+
     /// @notice Emitted when a new pool is created.
     event CreatePool(
         uint256 indexed poolId,
@@ -37,9 +40,6 @@ interface ISablierStaking is
 
     /// @notice Emitted when a Lockup contract is whitelisted.
     event LockupWhitelisted(address indexed comptroller, ISablierLockupNFT indexed lockup);
-
-    /// @notice Emitted when the next staking round is configured.
-    event NextStakingRound(uint256 indexed poolId, uint40 newEndTime, uint40 newStartTime, uint128 newRewardAmount);
 
     /// @notice Emitted when the rewards snapshot is taken.
     event SnapshotRewards(
@@ -156,28 +156,28 @@ interface ISablierStaking is
     function claimRewards(uint256 poolId) external payable returns (uint128 rewards);
 
     /// @notice Configures the next staking round for the specified pool.
-    /// @dev Emits a {NextStakingRound} event.
+    /// @dev Emits a {SnapshotRewards} and {ConfigureNextRound} events.
     ///
     /// Requirements:
     ///  - Must not be delegate called.
     ///  - `poolId` must not reference a non-existent pool.
     ///  - `msg.sender` must be the pool admin.
-    ///  - Pool end time must be in the past.
-    ///  - New `startTime` must be greater than or equal to the `block.timestamp`.
-    ///  - New `endTime` must be greater than new `startTime`.
+    ///  - End time must be in the past.
+    ///  - `newStartTime` must be greater than or equal to the `block.timestamp`.
+    ///  - `newEndTime` must be greater than new `startTime`.
     ///  - `rewardAmount` must be greater than 0.
     ///  - `msg.sender` must have approved this contract to spend the `rewardAmount` of reward ERC20 token.
     ///
     /// @param poolId The pool ID for which to configure the next staking round.
-    /// @param newEndTime The end time for the next staking round, denoted in UNIX timestamp.
-    /// @param newStartTime The start time for the next staking round, denoted in UNIX timestamp.
-    /// @param rewardAmount The amount of reward tokens to distribute during the next staking round, denoted in reward
-    /// token's decimals.
+    /// @param newEndTime The end time for the next rewards period, denoted in UNIX timestamp.
+    /// @param newStartTime The start time for the next rewards period, denoted in UNIX timestamp.
+    /// @param newRewardAmount The amount of reward tokens to distribute during the next rewards period, denoted in
+    /// reward token's decimals.
     function configureNextRound(
         uint256 poolId,
         uint40 newEndTime,
         uint40 newStartTime,
-        uint128 rewardAmount
+        uint128 newRewardAmount
     )
         external;
 

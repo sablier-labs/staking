@@ -71,6 +71,52 @@ contract StakingHandler is BaseHandler {
         handlerStore.addRewardsClaimed(selectedPoolId, selectedStaker, rewards);
     }
 
+    function configureNextRound(
+        uint256 timeJump,
+        uint256 poolIdIndex,
+        uint40 newEndTime,
+        uint128 newRewardAmount
+    )
+        external
+        adjustTimestamp(timeJump)
+        useFuzzedPool(poolIdIndex)
+        updateHandlerStoreForAllPools
+        instrument("configureNextRound")
+    {
+        // Do nothing if the staking pool is active.
+        if (sablierStaking.getEndTime(selectedPoolId) >= getBlockTimestamp()) {
+            return;
+        }
+
+        // Set the new start time to the current block timestamp.
+        uint40 newStartTime = getBlockTimestamp();
+
+        // Bound the new end time.
+        newEndTime = boundUint40(newEndTime, newStartTime + 1 seconds, newStartTime + 365 days);
+
+        // Bound the new reward amount.
+        IERC20 rewardToken = sablierStaking.getRewardToken(selectedPoolId);
+        newRewardAmount = boundUint128({
+            x: newRewardAmount,
+            min: amountInWeiForToken(100, rewardToken),
+            max: amountInWeiForToken(20_000_000_000, rewardToken)
+        });
+
+        address poolAdmin = sablierStaking.getAdmin(selectedPoolId);
+
+        // Deal tokens to the caller and approve the staking pool.
+        deal({ token: address(rewardToken), to: poolAdmin, give: newRewardAmount });
+
+        setMsgSender(poolAdmin);
+        rewardToken.approve(address(sablierStaking), newRewardAmount);
+
+        // Configure next round.
+        sablierStaking.configureNextRound(selectedPoolId, newEndTime, newStartTime, newRewardAmount);
+
+        // Update handler store.
+        handlerStore.addTotalRewardsDeposited(selectedPoolId, newRewardAmount);
+    }
+
     function createPool(
         uint256 timeJump,
         CreateParams memory createParams
@@ -89,7 +135,7 @@ contract StakingHandler is BaseHandler {
         uint40 startTime = getBlockTimestamp();
 
         // Bound variables to valid values.
-        createParams.endTime = boundUint40(createParams.endTime, startTime + 1 seconds, startTime + 3650 days);
+        createParams.endTime = boundUint40(createParams.endTime, startTime + 1 seconds, startTime + 365 days);
         createParams.rewardTokenIndex = bound(createParams.rewardTokenIndex, 0, tokens.length - 1);
         createParams.stakingTokenIndex = bound(createParams.stakingTokenIndex, 0, tokens.length - 1);
 
@@ -99,8 +145,8 @@ contract StakingHandler is BaseHandler {
         // Bound the reward amount.
         createParams.rewardAmount = boundUint128({
             x: createParams.rewardAmount,
-            min: amountInWei(100, rewardToken),
-            max: amountInWei(20_000_000_000, rewardToken)
+            min: amountInWeiForToken(100, rewardToken),
+            max: amountInWeiForToken(20_000_000_000, rewardToken)
         });
 
         // Deal tokens to the caller and approve the staking pool.
@@ -120,6 +166,9 @@ contract StakingHandler is BaseHandler {
 
         // Add the pool ID to the handler store.
         handlerStore.addPoolId(poolId);
+
+        // Update handler store.
+        handlerStore.addTotalRewardsDeposited(poolId, createParams.rewardAmount);
     }
 
     function snapshotRewards(
@@ -174,7 +223,7 @@ contract StakingHandler is BaseHandler {
         }
 
         IERC20 stakingToken = sablierStaking.getStakingToken(selectedPoolId);
-        amount = boundUint128(amount, 1, amountInWei(1_000_000_000, stakingToken));
+        amount = boundUint128(amount, 1, amountInWeiForToken(1_000_000_000, stakingToken));
 
         // Deal tokens to the staker and approve the staking pool.
         deal({ token: address(stakingToken), to: selectedStaker, give: amount });

@@ -212,7 +212,7 @@ contract SablierStaking is
         uint256 poolId,
         uint40 newEndTime,
         uint40 newStartTime,
-        uint128 rewardAmount
+        uint128 newRewardAmount
     )
         external
         override
@@ -242,21 +242,25 @@ contract SablierStaking is
             revert Errors.SablierStaking_StartTimeNotLessThanEndTime(newStartTime, newEndTime);
         }
 
-        // Check: the reward amount is greater than 0.
-        if (rewardAmount == 0) {
+        // Check: the new reward amount is greater than 0.
+        if (newRewardAmount == 0) {
             revert Errors.SablierStaking_RewardAmountZero();
         }
 
         // Effect: snapshot rewards.
         _snapshotRewards(poolId, msg.sender);
 
-        // Effect: configure the next staking round.
+        // Effect: set the next staking round parameters.
         _pool[poolId].endTime = newEndTime;
         _pool[poolId].startTime = newStartTime;
-        _pool[poolId].rewardAmount = rewardAmount;
+        _pool[poolId].rewardAmount = newRewardAmount;
+
+        // Interaction: transfer the reward amount from the `msg.sender` to this contract.
+        IERC20 rewardToken = _pool[poolId].rewardToken;
+        rewardToken.safeTransferFrom({ from: msg.sender, to: address(this), value: newRewardAmount });
 
         // Log the event.
-        emit NextStakingRound(poolId, newEndTime, newStartTime, rewardAmount);
+        emit ConfigureNextRound(poolId, newEndTime, newStartTime, newRewardAmount);
     }
 
     /// @inheritdoc ISablierStaking

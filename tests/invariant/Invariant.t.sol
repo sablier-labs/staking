@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.26;
 
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { StdInvariant } from "forge-std/src/StdInvariant.sol";
 
 import { Base_Test } from "../Base.t.sol";
@@ -70,6 +71,47 @@ contract Invariant_Test is Base_Test, StdInvariant {
         }
     }
 
+    function invariant_ContractBalanceEqInMinusOut() external view {
+        for (uint256 i = 0; i < tokens.length; ++i) {
+            IERC20 token = tokens[i];
+
+            // Get the contract balance of the token.
+            uint256 contractBalance = token.balanceOf(address(sablierStaking));
+
+            uint128 totalRewardsDeposited;
+            uint128 totalRewardsClaimed;
+            uint128 totalDirectStaked;
+
+            for (uint256 j = 0; j < handlerStore.totalPools(); ++j) {
+                uint256 poolId = handlerStore.poolIds(j);
+
+                // If the pool's reward token is the same as the token, calculate the total rewards deposited and
+                // total rewards claimed.
+                if (sablierStaking.getRewardToken(handlerStore.poolIds(j)) == token) {
+                    totalRewardsDeposited += handlerStore.totalRewardsDeposited(poolId);
+                    for (uint256 u = 0; u < handlerStore.totalStakers(poolId); ++u) {
+                        address staker = handlerStore.poolStakers(poolId, u);
+                        totalRewardsClaimed += handlerStore.rewardsClaimed(poolId, staker);
+                    }
+                }
+
+                // If the pool's staking token is the same as the token, calculate the total direct staked.
+                if (sablierStaking.getStakingToken(handlerStore.poolIds(j)) == token) {
+                    for (uint256 u = 0; u < handlerStore.totalStakers(poolId); ++u) {
+                        address staker = handlerStore.poolStakers(poolId, u);
+                        totalDirectStaked += handlerStore.amountStaked(poolId, staker);
+                    }
+                }
+            }
+
+            assertEq(
+                contractBalance,
+                totalRewardsDeposited + totalDirectStaked - totalRewardsClaimed,
+                "Invariant violation: contract balance != total rewards deposited + total direct staked - total rewards claimed"
+            );
+        }
+    }
+
     function invariant_PoolRewardsEqClaimedPlusClaimable() external view {
         for (uint256 i = 0; i < handlerStore.totalPools(); ++i) {
             uint256 poolId = handlerStore.poolIds(i);
@@ -81,12 +123,12 @@ contract Invariant_Test is Base_Test, StdInvariant {
                 uint128 totalRewardsEarnedByUser = rewardsClaimed + claimableRewards;
                 rewardsEarnedByAllStakers += totalRewardsEarnedByUser;
             }
-            uint128 poolRewards = sablierStaking.getRewardAmount(poolId);
+            uint128 rewardsDeposited = handlerStore.totalRewardsDeposited(poolId);
 
             assertLe(
                 rewardsEarnedByAllStakers,
-                poolRewards,
-                "Invariant violation: rewardsClaimed + claimableRewards > total rewards distributed"
+                rewardsDeposited,
+                "Invariant violation: rewardsClaimed + claimableRewards > total rewards deposited"
             );
         }
     }

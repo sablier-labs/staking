@@ -12,7 +12,7 @@ abstract contract Utils is Constants, BaseUtils {
     using SafeCast for uint256;
 
     /// @dev Returns the amount in wei using the token's decimals.
-    function amountInWei(uint128 amount, IERC20 token) internal view returns (uint128) {
+    function amountInWeiForToken(uint128 amount, IERC20 token) internal view returns (uint128) {
         return (amount * 10 ** IERC20Metadata(address(token)).decimals()).toUint128();
     }
 

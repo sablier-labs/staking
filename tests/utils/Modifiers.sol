@@ -110,11 +110,23 @@ abstract contract Modifiers is EvmUtilsBase {
         _;
     }
 
+    modifier whenEndTimeInPast() {
+        _;
+    }
+
     modifier whenEndTimeNotInPast() {
         _;
     }
 
     modifier whenFeePaid() {
+        _;
+    }
+
+    modifier whenNewEndTimeGreaterThanNewStartTime() {
+        _;
+    }
+
+    modifier whenNewStartTimeNotInPast() {
         _;
     }
 

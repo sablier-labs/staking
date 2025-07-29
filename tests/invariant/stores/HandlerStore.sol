@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.26;
 
+import { Status } from "src/types/DataTypes.sol";
+
 /// @dev Storage variables needed for handlers.
 contract HandlerStore {
     /*//////////////////////////////////////////////////////////////////////////
@@ -30,6 +32,9 @@ contract HandlerStore {
 
     /// @dev Tracks rewards distribution period for each pool.
     mapping(uint256 poolId => uint40 rewards) public rewardDistributionPeriod;
+
+    /// @dev Tracks the status of each pool.
+    mapping(uint256 poolId => Status status) public status;
 
     /// @dev Tracks the total rewards deposited across all rounds for each pool.
     mapping(uint256 poolId => uint128 totalRewardsDeposited) public totalRewardsDeposited;
@@ -95,6 +100,10 @@ contract HandlerStore {
 
     function updateRewardsPeriodUpdatedAt(uint40 time) external {
         rewardsPeriodUpdatedAt = time;
+    }
+
+    function updateStatus(uint256 poolId, Status currentStatus) external {
+        status[poolId] = currentStatus;
     }
 
     function updateUserSnapshot(uint256 poolId, address staker, uint40 time, uint256 rewardsPerTokenScaled) external {

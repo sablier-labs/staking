@@ -124,11 +124,6 @@ contract SablierStaking is
         notNull(poolId)
         returns (uint128)
     {
-        // Check: the start time is not in the future.
-        if (_pool[poolId].startTime > uint40(block.timestamp)) {
-            revert Errors.SablierStaking_StartTimeInFuture(poolId, _pool[poolId].startTime);
-        }
-
         // Get the rewards distributed since the last snapshot.
         uint128 rewardsDistributedSinceLastSnapshot = _rewardsDistributedSinceLastSnapshot(poolId);
 
@@ -143,11 +138,6 @@ contract SablierStaking is
 
     /// @inheritdoc ISablierStaking
     function rewardsSinceLastSnapshot(uint256 poolId) external view override notNull(poolId) returns (uint128) {
-        // Check: the start time is not in the future.
-        if (_pool[poolId].startTime > uint40(block.timestamp)) {
-            revert Errors.SablierStaking_StartTimeInFuture(poolId, _pool[poolId].startTime);
-        }
-
         return _rewardsDistributedSinceLastSnapshot(poolId);
     }
 
@@ -175,11 +165,6 @@ contract SablierStaking is
         // Check: fee paid is at least the minimum fee.
         if (msg.value < minFeeWei) {
             revert Errors.SablierStaking_InsufficientFeePayment(msg.value, minFeeWei);
-        }
-
-        // Check: the current timestamp is greater than or equal to the start time.
-        if (block.timestamp < _pool[poolId].startTime) {
-            revert Errors.SablierStaking_StartTimeInFuture(poolId, _pool[poolId].startTime);
         }
 
         // Effect: snapshot rewards data to the latest values.
@@ -227,13 +212,15 @@ contract SablierStaking is
             revert Errors.SablierStaking_CallerNotPoolAdmin(poolId, msg.sender, pool.admin);
         }
 
+        uint40 blockTimestamp = uint40(block.timestamp);
+
         // Check: pool end time is in the past.
-        if (pool.endTime >= uint40(block.timestamp)) {
-            revert Errors.SablierStaking_Active(poolId);
+        if (pool.endTime >= blockTimestamp) {
+            revert Errors.SablierStaking_EndTimeNotInPast(poolId, pool.endTime);
         }
 
         // Check: the new start time is greater than or equal to the current block timestamp.
-        if (newStartTime < uint40(block.timestamp)) {
+        if (newStartTime < blockTimestamp) {
             revert Errors.SablierStaking_StartTimeInPast(newStartTime);
         }
 

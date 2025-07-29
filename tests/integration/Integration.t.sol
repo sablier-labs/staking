@@ -97,6 +97,18 @@ abstract contract Integration_Test is Base_Test {
         rewards += getDescaledValue(rewardsEarnedPerTokenScaledDelta * totalAmountStakedByUser);
     }
 
+    /// @notice Configures the next round.
+    function configureNextRound() internal {
+        setMsgSender(users.poolCreator);
+
+        sablierStaking.configureNextRound({
+            poolId: poolIds.defaultPool,
+            newEndTime: END_TIME + 365 days,
+            newStartTime: END_TIME + 10 days,
+            newRewardAmount: REWARD_AMOUNT
+        });
+    }
+
     /// @notice Creates a default pool.
     function createDefaultPool() internal returns (uint256 poolId) {
         return sablierStaking.createPool({

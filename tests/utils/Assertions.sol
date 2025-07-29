@@ -15,4 +15,9 @@ abstract contract Assertions is StdAssertions {
     function assertEq(Status a, Status b, string memory err) internal pure {
         assertEq(uint256(a), uint256(b), err);
     }
+
+    /// @dev Compares two {Status} values.
+    function assertNotEq(Status a, Status b, string memory err) internal pure {
+        assertNotEq(uint256(a), uint256(b), err);
+    }
 }

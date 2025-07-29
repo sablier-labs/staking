@@ -9,19 +9,15 @@ import { Status } from "src/types/DataTypes.sol";
 import { Shared_Integration_Concrete_Test } from "../Concrete.t.sol";
 
 contract ConfigureNextRound_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
-    uint40 internal newEndTime;
-    uint40 internal newStartTime;
-    uint128 internal newRewardAmount;
+    uint40 internal newEndTime = END_TIME + 365 days;
+    uint40 internal newStartTime = END_TIME + 10 days;
+    uint128 internal newRewardAmount = REWARD_AMOUNT;
 
     function setUp() public override {
         Shared_Integration_Concrete_Test.setUp();
 
-        newEndTime = END_TIME + 365 days;
-        newStartTime = END_TIME + 10 days;
-        newRewardAmount = REWARD_AMOUNT;
-
-        // Warp to 1 second after the end time.
-        vm.warp(END_TIME + 1 seconds);
+        // Warp EVM state to 1 second after the end time.
+        warpStateTo(END_TIME + 1 seconds);
 
         setMsgSender(users.poolCreator);
     }
@@ -51,9 +47,11 @@ contract ConfigureNextRound_Integration_Concrete_Test is Shared_Integration_Conc
     }
 
     function test_RevertWhen_EndTimeNotInPast() external whenNoDelegateCall whenNotNull whenCallerPoolAdmin {
-        vm.warp(END_TIME);
+        warpStateTo(END_TIME);
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.SablierStaking_Active.selector, poolIds.defaultPool));
+        vm.expectRevert(
+            abi.encodeWithSelector(Errors.SablierStaking_EndTimeNotInPast.selector, poolIds.defaultPool, END_TIME)
+        );
         sablierStaking.configureNextRound(poolIds.defaultPool, newEndTime, newStartTime, newRewardAmount);
     }
 
@@ -113,7 +111,11 @@ contract ConfigureNextRound_Integration_Concrete_Test is Shared_Integration_Conc
         // It should emit {SnapshotRewards}, {Transfer} and {ConfigureNextRound} events.
         vm.expectEmit({ emitter: address(sablierStaking) });
         emit ISablierStaking.SnapshotRewards(
-            poolIds.defaultPool, END_TIME + 1, REWARDS_DISTRIBUTED_PER_TOKEN_END_TIME_SCALED, users.poolCreator, 0
+            poolIds.defaultPool,
+            END_TIME + 1 seconds,
+            REWARDS_DISTRIBUTED_PER_TOKEN_END_TIME_SCALED,
+            users.poolCreator,
+            0
         );
         vm.expectEmit({ emitter: address(rewardToken) });
         emit IERC20.Transfer(users.poolCreator, address(sablierStaking), newRewardAmount);

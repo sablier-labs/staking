@@ -20,26 +20,6 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         sablierStaking.claimRewards{ value: fee }(poolIds.defaultPool);
     }
 
-    /// @dev It should revert since the start time is in the future.
-    function testFuzz_RevertWhen_StartTimeInFuture(uint40 timestamp)
-        external
-        whenNoDelegateCall
-        whenNotNull
-        whenFeePaid
-    {
-        // Bound timestamp such that the start time is in the future.
-        timestamp = boundUint40(timestamp, 0, START_TIME - 1);
-
-        // Warp the EVM state to the given timestamp.
-        warpStateTo(timestamp);
-
-        // It should revert.
-        vm.expectRevert(
-            abi.encodeWithSelector(Errors.SablierStaking_StartTimeInFuture.selector, poolIds.defaultPool, START_TIME)
-        );
-        sablierStaking.claimRewards{ value: STAKING_MIN_FEE_WEI }(poolIds.defaultPool);
-    }
-
     /// @dev It should revert.
     function testFuzz_RevertWhen_CallerNotStaker(
         address caller,
@@ -49,7 +29,6 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         whenNoDelegateCall
         whenNotNull
         whenFeePaid
-        whenStartTimeInPast
     {
         // Make sure caller is not a staker.
         vm.assume(caller != users.staker && caller != users.recipient);
@@ -85,7 +64,6 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         whenNoDelegateCall
         whenNotNull
         whenFeePaid
-        whenStartTimeInPast
         whenClaimableRewardsNotZero
     {
         // Bound fee such that it meets the minimum fee.
@@ -137,7 +115,6 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         whenNoDelegateCall
         whenNotNull
         whenFeePaid
-        whenStartTimeInPast
         whenClaimableRewardsNotZero
     {
         // Bound fee such that it meets the minimum fee.

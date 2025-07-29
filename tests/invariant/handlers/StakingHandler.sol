@@ -19,6 +19,7 @@ contract StakingHandler is BaseHandler {
     /// @dev Create parameter struct to avoid stack too deep error.
     struct CreateParams {
         uint40 endTime;
+        uint40 startTime;
         address poolAdmin;
         uint128 rewardAmount;
         uint256 rewardTokenIndex;
@@ -75,6 +76,7 @@ contract StakingHandler is BaseHandler {
         uint256 timeJump,
         uint256 poolIdIndex,
         uint40 newEndTime,
+        uint40 newStartTime,
         uint128 newRewardAmount
     )
         external
@@ -83,16 +85,16 @@ contract StakingHandler is BaseHandler {
         updateHandlerStoreForAllPools
         instrument("configureNextRound")
     {
-        // Do nothing if the staking pool is active.
+        // Do nothing if the end time is not in the past.
         if (sablierStaking.getEndTime(selectedPoolId) >= getBlockTimestamp()) {
             return;
         }
 
-        // Set the new start time to the current block timestamp.
-        uint40 newStartTime = getBlockTimestamp();
+        // Bound the new start time.
+        newStartTime = boundUint40(newStartTime, getBlockTimestamp(), getBlockTimestamp() + 30 days);
 
         // Bound the new end time.
-        newEndTime = boundUint40(newEndTime, newStartTime + 1 seconds, newStartTime + 365 days);
+        newEndTime = boundUint40(newEndTime, newStartTime + 30 days, newStartTime + 365 days);
 
         // Bound the new reward amount.
         IERC20 rewardToken = sablierStaking.getRewardToken(selectedPoolId);
@@ -131,11 +133,12 @@ contract StakingHandler is BaseHandler {
         // Ensure that number of pools created does not exceed the maximum number of pools.
         vm.assume(handlerStore.totalPools() < MAX_POOL_COUNT);
 
-        // Set the start time to the current block timestamp.
-        uint40 startTime = getBlockTimestamp();
+        // Bound the start time.
+        createParams.startTime = boundUint40(createParams.startTime, getBlockTimestamp(), getBlockTimestamp() + 30 days);
 
         // Bound variables to valid values.
-        createParams.endTime = boundUint40(createParams.endTime, startTime + 1 seconds, startTime + 365 days);
+        createParams.endTime =
+            boundUint40(createParams.endTime, createParams.startTime + 30 days, createParams.startTime + 365 days);
         createParams.rewardTokenIndex = bound(createParams.rewardTokenIndex, 0, tokens.length - 1);
         createParams.stakingTokenIndex = bound(createParams.stakingTokenIndex, 0, tokens.length - 1);
 
@@ -161,7 +164,7 @@ contract StakingHandler is BaseHandler {
             rewardAmount: createParams.rewardAmount,
             rewardToken: rewardToken,
             stakingToken: stakingToken,
-            startTime: startTime
+            startTime: createParams.startTime
         });
 
         // Add the pool ID to the handler store.

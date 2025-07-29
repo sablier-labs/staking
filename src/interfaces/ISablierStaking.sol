@@ -116,21 +116,11 @@ interface ISablierStaking is
     function rewardRatePerTokenStaked(uint256 poolId) external view returns (uint128);
 
     /// @notice Calculates rewards distributed per ERC20 token since the last snapshot.
-    /// @dev Returns 0 if the total staked tokens are 0 or the last time update is greater than or equal to the end
-    /// time.
-    ///
-    /// Requirements:
-    ///  - `poolId` must not reference a non-existent pool.
-    ///  -  The start time must not be in the future.
+    /// @dev Reverts if `poolId` references a non-existent pool.
     function rewardsPerTokenSinceLastSnapshot(uint256 poolId) external view returns (uint128);
 
     /// @notice Calculates rewards distributed since the last snapshot.
-    /// @dev Returns 0 if the total staked tokens are 0 or the last time update is greater than or equal to the end
-    /// time.
-    ///
-    /// Requirements:
-    ///  - `poolId` must not reference a non-existent pool.
-    ///  -  The start time must not be in the future.
+    /// @dev Reverts if `poolId` references a non-existent pool.
     function rewardsSinceLastSnapshot(uint256 poolId) external view returns (uint128);
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -147,7 +137,6 @@ interface ISablierStaking is
     /// Requirements:
     ///  - Must not be delegate called.
     ///  - `poolId` must not reference a non-existent pool.
-    ///  - The block timestamp must be greater than or equal to the start time.
     ///  - Claimable rewards must be greater than 0.
     /// - `msg.value` must be greater than or equal to the minimum fee in wei for the pool's admin.
     ///

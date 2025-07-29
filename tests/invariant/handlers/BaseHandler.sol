@@ -83,6 +83,9 @@ contract BaseHandler is Utils, StdCheats {
                 sablierStaking.globalSnapshot(poolId);
             handlerStore.updateGlobalSnapshot(poolId, globalSnapshotTime, rewardsDistributedPerTokenScaled);
 
+            // Update status.
+            handlerStore.updateStatus(poolId, sablierStaking.status(poolId));
+
             // Loop over all stakers in the pool.
             for (uint256 j = 0; j < handlerStore.totalStakers(poolId); ++j) {
                 address staker = handlerStore.poolStakers(poolId, j);

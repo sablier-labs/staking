@@ -213,19 +213,15 @@ abstract contract SablierStakingState is ISablierStakingState {
     }
 
     /*//////////////////////////////////////////////////////////////////////////
-                            INTERNAL READ-ONLY FUNCTIONS
+                            PRIVATE READ-ONLY FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev Returns true if the pool is active.
-    function _isActive(uint256 poolId) internal view returns (bool) {
+    function _isActive(uint256 poolId) private view returns (bool) {
         Pool memory pool = _pool[poolId];
         uint40 currentTimestamp = uint40(block.timestamp);
         return pool.startTime <= currentTimestamp && currentTimestamp <= pool.endTime;
     }
-
-    /*//////////////////////////////////////////////////////////////////////////
-                            PRIVATE READ-ONLY FUNCTIONS
-    //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev Reverts if the pool is not active.
     function _revertIfNotActive(uint256 poolId) private view {

@@ -48,6 +48,9 @@ library Errors {
     /// @notice Thrown when staking into a pool when end time is not in the future.
     error SablierStaking_EndTimeNotInFuture(uint256 poolId, uint40 endTime);
 
+    /// @notice Thrown when staking into a pool when end time is not in the past.
+    error SablierStaking_EndTimeNotInPast(uint256 poolId, uint40 endTime);
+
     /// @notice Thrown when the fee paid is less than the minimum fee.
     error SablierStaking_InsufficientFeePayment(uint256 feePaid, uint256 minFee);
 
@@ -80,9 +83,6 @@ library Errors {
 
     /// @notice Thrown when staking into a pool with zero amount.
     error SablierStaking_StakingZeroAmount(uint256 poolId);
-
-    /// @notice Thrown when an unauthorized action is attempted on a pool when start time is in the future.
-    error SablierStaking_StartTimeInFuture(uint256 poolId, uint40 startTime);
 
     /// @notice Thrown when start time is in the past.
     error SablierStaking_StartTimeInPast(uint40 startTime);

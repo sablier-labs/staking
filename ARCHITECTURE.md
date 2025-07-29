@@ -93,3 +93,82 @@ R_u(e) = R_u(e_{last}) + \text{pending rewards}
 - **Scaling Factor**: Amounts are scaled to 1e20 decimals for higher precision during divisions, preventing precision
   loss in reward calculations regardless of the token decimals.
 - **No Staking**: No rewards are distributed when no tokens are staked
+
+## Diagrams
+
+### Statuses
+
+| Status      | Description                                                   |
+| ----------- | ------------------------------------------------------------- |
+| `SCHEDULED` | When start time is in the future.                             |
+| `ACTIVE`    | When current timestamp is in between start time and end time. |
+| `ENDED`     | When end time is in the past.                                 |
+
+### Statuses diagram
+
+```mermaid
+stateDiagram-v2
+    direction LR
+
+    NULL --> SCHEDULED : createPool(startTime > now)
+    NULL --> ACTIVE : createPool(startTime = now)
+    SCHEDULED --> ACTIVE : time
+    ACTIVE --> ENDED : time
+    ENDED --> SCHEDULED : configureNextRound(startTime > now)
+    ENDED --> ACTIVE : configureNextRound(startTime = now)
+
+    NULL:::grey
+    SCHEDULED:::lightYellow
+    ACTIVE:::lightGreen
+    ENDED:::lightRed
+
+    classDef grey fill:#b0b0b0,stroke:#333,stroke-width:2px;
+    classDef lightGreen fill:#98FB98;
+    classDef lightYellow fill:#ffff99;
+    classDef lightRed fill:#ff4e4e;
+```
+
+### Function calls
+
+```mermaid
+flowchart LR
+    subgraph Statuses
+        NULL((NULL)):::grey
+        ACTIVE((ACTIVE)):::green
+        SCHEDULED((SCHEDULED)):::yellow
+        ENDED((ENDED)):::red
+    end
+
+    subgraph Functions
+        CLAIM_REWARDS([claimRewards])
+        CONFIGURE([configureNextRound])
+        CREATE([createPool])
+        SNAPSHOT([snapshotRewards])
+        STAKE([stakeERC20Token / stakeLockupNFT])
+        UNSTAKE([unstakeERC20Token / unstakeLockupNFT])
+    end
+
+    ALL((  )):::black
+    AS((  )):::black
+
+    classDef black fill:#000000,stroke:#333,stroke-width:2px;
+    classDef green fill:#32cd32,stroke:#333,stroke-width:2px;
+    classDef grey fill:#b0b0b0,stroke:#333,stroke-width:2px;
+    classDef yellow fill:#ffff99,stroke:#333,stroke-width:2px;
+    classDef red fill:#ff4e4e,stroke:#333,stroke-width:2px;
+
+    ALL --> ACTIVE & SCHEDULED & ENDED
+    AS --> ACTIVE & SCHEDULED
+
+    CREATE  --> NULL
+
+    CONFIGURE -- "Take snapshot" -->  ENDED
+
+    CLAIM_REWARDS -- "Take snapshot" -->  ALL
+
+    SNAPSHOT -- "Take snapshot" -->  ALL
+
+    STAKE -- "Take snapshot" -->  AS
+
+    UNSTAKE -- "Take snapshot" -->  ALL
+```

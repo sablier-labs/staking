@@ -3,6 +3,7 @@ pragma solidity >=0.8.26;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { StdInvariant } from "forge-std/src/StdInvariant.sol";
+import { Status } from "src/types/DataTypes.sol";
 
 import { Base_Test } from "../Base.t.sol";
 import { StakingHandler } from "./handlers/StakingHandler.sol";
@@ -39,10 +40,6 @@ contract Invariant_Test is Base_Test, StdInvariant {
         excludeSender(address(sablierStaking));
         excludeSender(address(stakingHandler));
     }
-
-    /*//////////////////////////////////////////////////////////////////////////
-                              UNCONDITIONAL INVARIANTS
-    //////////////////////////////////////////////////////////////////////////*/
 
     function invariant_NextPoolId() external view {
         if (handlerStore.totalPools() == 0) {
@@ -216,10 +213,6 @@ contract Invariant_Test is Base_Test, StdInvariant {
         }
     }
 
-    /*//////////////////////////////////////////////////////////////////////////
-                               CONDITIONAL INVARIANTS
-    //////////////////////////////////////////////////////////////////////////*/
-
     function invariant_AmountStaked_WhenUnstakeNotCalled() external view {
         for (uint256 i = 0; i < handlerStore.totalPools(); ++i) {
             uint256 poolId = handlerStore.poolIds(i);
@@ -270,6 +263,20 @@ contract Invariant_Test is Base_Test, StdInvariant {
 
                     assertGe(directAmountStaked, 0, "invariant violation: directAmountStaked != 0");
                 }
+            }
+        }
+    }
+
+    function invariant_StatusTransitions() external view {
+        for (uint256 i = 0; i < handlerStore.totalPools(); ++i) {
+            uint256 poolId = handlerStore.poolIds(i);
+
+            Status previousStatus = handlerStore.status(poolId);
+            Status currentStatus = sablierStaking.status(poolId);
+            if (previousStatus == Status.SCHEDULED) {
+                assertNotEq(currentStatus, Status.ENDED, "invariant violation: scheduled pool turned ended");
+            } else if (previousStatus == Status.ACTIVE) {
+                assertNotEq(currentStatus, Status.SCHEDULED, "invariant violation: active pool turned scheduled");
             }
         }
     }

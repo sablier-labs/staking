@@ -37,60 +37,16 @@ contract UnstakeERC20Token_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test
 
         // Check that caller has total staked amount.
         vars.actualTotalAmountStaked = sablierStaking.totalAmountStakedByUser(poolIds.defaultPool, caller);
-        assertEq(vars.actualTotalAmountStaked, STREAM_AMOUNT_18D, "totalAmountStaked");
+        assertEq(vars.actualTotalAmountStaked, STREAM_AMOUNT_18D, "totalStakedAmount");
 
         // Warp EVM state to the given timestamp.
         warpStateTo(timestamp);
 
         // It should revert.
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.SablierStaking_AmountExceedsStakedAmount.selector, poolIds.defaultPool, amount, 0
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Errors.SablierStaking_Overflow.selector, poolIds.defaultPool, amount, 0));
 
         // Try to unstake ERC20 tokens from the pool.
         sablierStaking.unstakeERC20Token(poolIds.defaultPool, amount);
-    }
-
-    /// @dev Given enough fuzz runs, all of the following scenarios will be fuzzed:
-    /// - Unstaking from a closed pool.
-    /// - Different non-zero values for the amount.
-    /// - Multiple values for the block timestamp from pool create time.
-    function testFuzz_UnstakeERC20Token_GivenClosed(
-        uint128 amount,
-        uint40 timestamp
-    )
-        external
-        whenNoDelegateCall
-        whenNotNull
-        givenDirectStakedAmountNotZero
-        whenAmountNotExceedDirectStakedAmount
-        whenAmountNotZero
-    {
-        // Bound timestamp so that it is greater than the pool create time.
-        timestamp = boundUint40(timestamp, FEB_1_2025, END_TIME + 365 days);
-
-        // Warp amount so that it does not exceed direct staked amount.
-        amount = boundUint128(amount, 1, DEFAULT_AMOUNT);
-
-        // Warp EVM state to the given timestamp.
-        warpStateTo(timestamp);
-
-        setMsgSender(users.staker);
-
-        // It should emit {Transfer} and {UnstakeERC20Token} events.
-        vm.expectEmit({ emitter: address(stakingToken) });
-        emit IERC20.Transfer(address(sablierStaking), users.staker, amount);
-        vm.expectEmit({ emitter: address(sablierStaking) });
-        emit ISablierStaking.UnstakeERC20Token(poolIds.closedPool, users.staker, amount);
-
-        // Unstake from the closed pool.
-        sablierStaking.unstakeERC20Token(poolIds.closedPool, amount);
-
-        // It should unstake.
-        (,, vars.actualDirectAmountStaked) = sablierStaking.userShares(poolIds.closedPool, users.staker);
-        assertEq(vars.actualDirectAmountStaked, DEFAULT_AMOUNT - amount, "directAmountStakedByUser");
     }
 
     /// @dev Given enough fuzz runs, all of the following scenarios will be fuzzed:
@@ -106,7 +62,6 @@ contract UnstakeERC20Token_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test
         external
         whenNoDelegateCall
         whenNotNull
-        givenNotClosed
         givenDirectStakedAmountNotZero
         whenAmountNotExceedDirectStakedAmount
         whenAmountNotZero
@@ -135,7 +90,7 @@ contract UnstakeERC20Token_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test
 
         (vars.expectedRewardsPerTokenScaled, vars.expectedUserRewards) = calculateLatestRewards(caller);
 
-        vars.expectedTotalAmountStaked = sablierStaking.totalAmountStaked(poolIds.defaultPool) - amount;
+        vars.expectedTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool) - amount;
 
         // It should emit {SnapshotRewards}, {Transfer} and {UnstakeERC20Token} events.
         vm.expectEmit({ emitter: address(sablierStaking) });
@@ -155,7 +110,7 @@ contract UnstakeERC20Token_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test
         assertEq(vars.actualDirectAmountStaked, previousDirectAmountStaked - amount, "directAmountStakedByUser");
 
         // It should decrease total amount staked.
-        vars.actualTotalAmountStaked = sablierStaking.totalAmountStaked(poolIds.defaultPool);
+        vars.actualTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool);
         assertEq(vars.actualTotalAmountStaked, vars.expectedTotalAmountStaked, "total amount staked");
 
         // It should update global rewards snapshot.

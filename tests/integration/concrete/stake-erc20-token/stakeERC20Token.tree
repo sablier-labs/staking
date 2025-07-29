@@ -5,24 +5,21 @@ StakeERC20Token_Integration_Concrete_Test
    ├── when null
    │  └── it should revert
    └── when not null
-      ├── given closed
+      ├── when amount zero
       │  └── it should revert
-      └── given not closed
-         ├── when amount zero
+      └── when amount not zero
+         ├── when end time in past
          │  └── it should revert
-         └── when amount not zero
-            ├── when end time in past
-            │  └── it should revert
-            ├── when end time in present
-            │  └── it should revert
-            └── when end time in future
-               ├── when start time in future
-               │  └── it should stake tokens
-               ├── when start time in present
-               │  └── it should stake tokens
-               └── when start time in past
-                  ├── it should stake tokens
-                  ├── it should increase total amount staked
-                  ├── it should update global rewards snapshot
-                  ├── it should update user rewards snapshot
-                  └── it should emit {SnapshotRewards}, {Transfer} and {StakeERC20Token} events
+         ├── when end time in present
+         │  └── it should revert
+         └── when end time in future
+            ├── when start time in future
+            │  └── it should stake tokens
+            ├── when start time in present
+            │  └── it should stake tokens
+            └── when start time in past
+               ├── it should stake tokens
+               ├── it should increase total amount staked
+               ├── it should update global rewards snapshot
+               ├── it should update user rewards snapshot
+               └── it should emit {SnapshotRewards}, {Transfer} and {StakeERC20Token} events

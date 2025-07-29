@@ -10,7 +10,6 @@ contract ClaimableRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test 
     )
         external
         whenNotNull
-        givenNotClosed
         whenUserNotZeroAddress
         whenClaimableRewardsNotZero
     {

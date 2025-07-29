@@ -4,10 +4,12 @@
 
 1. Next pool ID = Current pool ID + 1.
 2. Global rewards distributed per token and snapshot time should never decrease over time.
-3. In a pool:
-   - Total rewards claimed + Total claimable rewards $`\le`$ Total pool rewards.
+3. For a token, contract balance = $`\sum_{pools}`$ (Total rewards deposited + Total direct staked - Total rewards
+   claimed).
+4. In a pool:
+   - Total rewards claimed + Total claimable rewards $`\le`$ Total rewards deposited.
    - Total staked amount = $`\sum`$ Total staked amount by each user.
-4. For any user in a pool:
+5. For any user in a pool:
    - Rewards earned per token and snapshot time should never decrease over time.
    - Rewards earned per tokens and snapshot time should never exceed global rewards distributed per token.
    - Staked amount should equal direct staked + stream amount staked.

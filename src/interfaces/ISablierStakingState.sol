@@ -3,6 +3,7 @@ pragma solidity >=0.8.26;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+import { Status } from "../types/DataTypes.sol";
 import { ISablierLockupNFT } from "./ISablierLockupNFT.sol";
 
 /// @title ISablierStakingState
@@ -21,6 +22,10 @@ interface ISablierStakingState {
     /// @dev Reverts if `poolId` references a non-existent pool.
     function getEndTime(uint256 poolId) external view returns (uint40);
 
+    /// @notice Returns the reward amount of the given Pool ID, denoted in token's decimals.
+    /// @dev Reverts if `poolId` references a non-existent pool.
+    function getRewardAmount(uint256 poolId) external view returns (uint128);
+
     /// @notice Returns the reward token of the given Pool ID, denoted in token's decimals.
     /// @dev Reverts if `poolId` references a non-existent pool.
     function getRewardToken(uint256 poolId) external view returns (IERC20);
@@ -33,9 +38,10 @@ interface ISablierStakingState {
     /// @dev Reverts if `poolId` references a non-existent pool.
     function getStartTime(uint256 poolId) external view returns (uint40);
 
-    /// @notice Returns the total rewards of the given Pool ID, denoted in token's decimals.
+    /// @notice Returns the total amount of tokens staked (both direct staking and through Sablier streams), denoted in
+    /// staking token's decimals.
     /// @dev Reverts if `poolId` references a non-existent pool.
-    function getTotalRewards(uint256 poolId) external view returns (uint128);
+    function getTotalStakedAmount(uint256 poolId) external view returns (uint128);
 
     /// @notice Retrieves the global rewards snapshot for the given Pool ID.
     /// @dev Reverts if `poolId` references a non-existent pool.
@@ -52,11 +58,12 @@ interface ISablierStakingState {
     /// @dev Reverts if `lockup` is the zero address.
     function isLockupWhitelisted(ISablierLockupNFT lockup) external view returns (bool);
 
-    /// @notice Returns the role authorized to whitelist the lockup contracts for staking into the pool.
-    function LOCKUP_WHITELIST_ROLE() external view returns (bytes32);
-
-    /// @notice Counter for the next Pool ID, used in launching new pools.
+    /// @notice Counter for the next Pool ID, used in creating new pool.
     function nextPoolId() external view returns (uint256);
+
+    /// @notice Returns the status of the pool.
+    /// @dev Reverts if `poolId` references a non-existent pool.
+    function status(uint256 poolId) external view returns (Status);
 
     /// @notice Lookup from a Lockup stream ID to the Pool ID and original stream owner.
     /// @dev Reverts if the lockup is the zero address or the stream ID is not staked in any pool.
@@ -71,11 +78,6 @@ interface ISablierStakingState {
         external
         view
         returns (uint256 poolId, address owner);
-
-    /// @notice Returns the total amount of tokens staked (both direct staking and through Sablier streams), denoted in
-    /// staking token's decimals.
-    /// @dev Reverts if `poolId` references a non-existent pool.
-    function totalAmountStaked(uint256 poolId) external view returns (uint128);
 
     /// @notice Returns the total amount of tokens staked by a user (both direct staking and through Sablier streams) in
     /// the given pool, denoted in staking token's decimals.
@@ -114,8 +116,4 @@ interface ISablierStakingState {
         external
         view
         returns (uint40 lastUpdateTime, uint256 rewardsEarnedPerTokenScaled, uint128 rewards);
-
-    /// @notice Returns true if the given Pool ID was closed.
-    /// @dev Reverts if `poolId` references a non-existent pool.
-    function wasClosed(uint256 poolId) external view returns (bool);
 }

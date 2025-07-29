@@ -10,28 +10,17 @@ contract ClaimableRewards_Integration_Concrete_Test is Shared_Integration_Concre
         expectRevert_Null(callData);
     }
 
-    function test_RevertGiven_Closed() external whenNotNull {
-        vm.expectRevert(abi.encodeWithSelector(Errors.SablierStakingState_PoolClosed.selector, poolIds.closedPool));
-        sablierStaking.claimableRewards(poolIds.closedPool, users.recipient);
-    }
-
-    function test_RevertWhen_UserZeroAddress() external whenNotNull givenNotClosed {
+    function test_RevertWhen_UserZeroAddress() external whenNotNull {
         vm.expectRevert(Errors.SablierStaking_UserZeroAddress.selector);
         sablierStaking.claimableRewards(poolIds.defaultPool, address(0));
     }
 
-    function test_GivenStakedAmountZero() external view whenNotNull givenNotClosed whenUserNotZeroAddress {
+    function test_GivenStakedAmountZero() external view whenNotNull whenUserNotZeroAddress {
         uint128 actualRewards = sablierStaking.claimableRewards(poolIds.defaultPool, users.eve);
         assertEq(actualRewards, 0, "rewards");
     }
 
-    function test_WhenClaimableRewardsZero()
-        external
-        whenNotNull
-        givenNotClosed
-        whenUserNotZeroAddress
-        givenStakedAmountNotZero
-    {
+    function test_WhenClaimableRewardsZero() external whenNotNull whenUserNotZeroAddress givenStakedAmountNotZero {
         warpStateTo(START_TIME);
 
         uint128 actualRewards = sablierStaking.claimableRewards(poolIds.defaultPool, users.recipient);
@@ -42,7 +31,6 @@ contract ClaimableRewards_Integration_Concrete_Test is Shared_Integration_Concre
         external
         view
         whenNotNull
-        givenNotClosed
         whenUserNotZeroAddress
         givenStakedAmountNotZero
         whenClaimableRewardsNotZero
@@ -54,7 +42,6 @@ contract ClaimableRewards_Integration_Concrete_Test is Shared_Integration_Concre
     function test_WhenCurrentTimeExceedsLastUpdateTime()
         external
         whenNotNull
-        givenNotClosed
         whenUserNotZeroAddress
         givenStakedAmountNotZero
         whenClaimableRewardsNotZero

@@ -65,7 +65,7 @@ contract BaseHandler is Utils, StdCheats {
             uint40 endTime = sablierStaking.getEndTime(poolId);
 
             // Do nothing if end time has passed or there are no stakers.
-            if (previousCalculationTime < endTime && sablierStaking.totalAmountStaked(poolId) > 0) {
+            if (previousCalculationTime < endTime && sablierStaking.getTotalStakedAmount(poolId) > 0) {
                 uint40 durationSinceLastCalculation;
                 // Keep in mind the pool end time for the duration calculation.
                 if (getBlockTimestamp() > endTime) {

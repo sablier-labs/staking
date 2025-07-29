@@ -3,6 +3,7 @@ pragma solidity >=0.8.26;
 
 import { ISablierLockupNFT } from "src/interfaces/ISablierLockupNFT.sol";
 import { Errors } from "src/libraries/Errors.sol";
+import { Status } from "src/types/DataTypes.sol";
 
 import { Shared_Integration_Concrete_Test } from "../Concrete.t.sol";
 
@@ -29,6 +30,18 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
 
     function test_GetEndTimeWhenNotNull() external view {
         assertEq(sablierStaking.getEndTime(poolIds.defaultPool), END_TIME, "getEndTime");
+    }
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                 GET-REWARD-AMOUNT
+    //////////////////////////////////////////////////////////////////////////*/
+
+    function test_GetRewardAmountRevertWhen_Null() external {
+        expectRevert_Null({ callData: abi.encodeCall(sablierStaking.getRewardAmount, poolIds.nullPool) });
+    }
+
+    function test_GetRewardAmountWhenNotNull() external view {
+        assertEq(sablierStaking.getRewardAmount(poolIds.defaultPool), REWARD_AMOUNT, "getRewardAmount");
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -68,15 +81,18 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     }
 
     /*//////////////////////////////////////////////////////////////////////////
-                                 GET-TOTAL-REWARDS
+                              GET-TOTAL-STAKED-AMOUNT
     //////////////////////////////////////////////////////////////////////////*/
 
-    function test_GetTotalRewardsRevertWhen_Null() external {
-        expectRevert_Null({ callData: abi.encodeCall(sablierStaking.getTotalRewards, poolIds.nullPool) });
+    function test_GetTotalStakedAmountRevertWhen_Null() external {
+        expectRevert_Null({ callData: abi.encodeCall(sablierStaking.getTotalStakedAmount, poolIds.nullPool) });
     }
 
-    function test_GetTotalRewardsWhenNotNull() external view {
-        assertEq(sablierStaking.getTotalRewards(poolIds.defaultPool), REWARD_AMOUNT, "getTotalRewards");
+    function test_GetTotalStakedAmountWhenNotNull() external {
+        warpStateTo(END_TIME);
+        assertEq(
+            sablierStaking.getTotalStakedAmount(poolIds.defaultPool), TOTAL_STAKED_END_TIME, "getTotalStakedAmount"
+        );
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -99,7 +115,9 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         assertEq(rewardsPerTokenScaled, 0, "rewardsPerTokenScaled");
 
         // It should return correct total amount staked.
-        assertEq(sablierStaking.totalAmountStaked(poolIds.defaultPool), TOTAL_STAKED_PRE_START, "totalAmountStaked");
+        assertEq(
+            sablierStaking.getTotalStakedAmount(poolIds.defaultPool), TOTAL_STAKED_PRE_START, "getTotalStakedAmount"
+        );
     }
 
     function test_GlobalSnapshotWhenStartTimeInPresent() external whenNotNull {
@@ -114,7 +132,9 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         assertEq(rewardsPerTokenScaled, 0, "rewardsPerTokenScaled");
 
         // It should return correct total amount staked.
-        assertEq(sablierStaking.totalAmountStaked(poolIds.defaultPool), TOTAL_STAKED_START_TIME, "totalAmountStaked");
+        assertEq(
+            sablierStaking.getTotalStakedAmount(poolIds.defaultPool), TOTAL_STAKED_START_TIME, "getTotalStakedAmount"
+        );
     }
 
     function test_GlobalSnapshotWhenEndTimeInFuture() external view whenNotNull whenStartTimeInPast {
@@ -128,7 +148,7 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         assertEq(rewardsPerTokenScaled, expectedRewardsPerTokenScaled, "rewardsPerTokenScaled");
 
         // It should return correct total amount staked.
-        assertEq(sablierStaking.totalAmountStaked(poolIds.defaultPool), TOTAL_STAKED, "totalAmountStaked");
+        assertEq(sablierStaking.getTotalStakedAmount(poolIds.defaultPool), TOTAL_STAKED, "getTotalStakedAmount");
     }
 
     function test_GlobalSnapshotWhenEndTimeNotInFuture() external whenNotNull whenStartTimeInPast {
@@ -147,7 +167,9 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         assertEq(rewardsPerTokenScaled, expectedRewardsPerTokenScaled, "rewardsPerTokenScaled");
 
         // It should return correct total amount staked.
-        assertEq(sablierStaking.totalAmountStaked(poolIds.defaultPool), TOTAL_STAKED_END_TIME, "totalAmountStaked");
+        assertEq(
+            sablierStaking.getTotalStakedAmount(poolIds.defaultPool), TOTAL_STAKED_END_TIME, "getTotalStakedAmount"
+        );
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -169,6 +191,28 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         // It should return true.
         bool actualIsLockupWhitelisted = sablierStaking.isLockupWhitelisted(lockup);
         assertTrue(actualIsLockupWhitelisted, "not whitelisted");
+    }
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                       STATUS
+    //////////////////////////////////////////////////////////////////////////*/
+
+    function test_StatusRevertWhen_Null() external {
+        expectRevert_Null({ callData: abi.encodeCall(sablierStaking.status, poolIds.nullPool) });
+    }
+
+    function test_StatusWhenStartTimeInFuture() external whenNotNull {
+        warpStateTo(START_TIME - 1);
+        assertEq(sablierStaking.status(poolIds.defaultPool), Status.SCHEDULED, "status");
+    }
+
+    function test_StatusWhenEndTimeInPast() external whenNotNull whenStartTimeNotInFuture {
+        warpStateTo(END_TIME + 1);
+        assertEq(sablierStaking.status(poolIds.defaultPool), Status.ENDED, "status");
+    }
+
+    function test_StatusWhenEndTimeNotInPast() external view whenNotNull whenStartTimeNotInFuture {
+        assertEq(sablierStaking.status(poolIds.defaultPool), Status.ACTIVE, "status");
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -194,19 +238,6 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
             sablierStaking.streamLookup(lockup, streamIds.defaultStakedStream);
         assertEq(actualPoolIds, poolIds.defaultPool, "poolId");
         assertEq(actualOwner, users.recipient, "owner");
-    }
-
-    /*//////////////////////////////////////////////////////////////////////////
-                                TOTAL-AMOUNT-STAKED
-    //////////////////////////////////////////////////////////////////////////*/
-
-    function test_TotalAmountStakedRevertWhen_Null() external {
-        expectRevert_Null({ callData: abi.encodeCall(sablierStaking.totalAmountStaked, poolIds.nullPool) });
-    }
-
-    function test_TotalAmountStakedWhenNotNull() external {
-        warpStateTo(END_TIME);
-        assertEq(sablierStaking.totalAmountStaked(poolIds.defaultPool), TOTAL_STAKED_END_TIME, "totalAmountStaked");
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -362,25 +393,5 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
             "recipient: rewardsPerTokenScaled"
         );
         assertEq(rewards, REWARDS_EARNED_BY_RECIPIENT_END_TIME, "recipient: rewards");
-    }
-
-    /*//////////////////////////////////////////////////////////////////////////
-                                     WAS-CLOSED
-    //////////////////////////////////////////////////////////////////////////*/
-
-    function test_WasClosedRevertWhen_Null() external {
-        expectRevert_Null({ callData: abi.encodeCall(sablierStaking.wasClosed, poolIds.nullPool) });
-    }
-
-    function test_WasClosedGivenNotClosed() external view whenNotNull {
-        // It should return false.
-        bool actualWasClosed = sablierStaking.wasClosed(poolIds.defaultPool);
-        assertFalse(actualWasClosed, "not closed");
-    }
-
-    function test_WasClosedGivenClosed() external view whenNotNull {
-        // It should return true.
-        bool actualWasClosed = sablierStaking.wasClosed(poolIds.closedPool);
-        assertTrue(actualWasClosed, "closed");
     }
 }

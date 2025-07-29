@@ -2,46 +2,24 @@
 pragma solidity >=0.8.26;
 
 import { Errors } from "src/libraries/Errors.sol";
-
 import { Shared_Integration_Fuzz_Test } from "./Fuzz.t.sol";
 
 contract RewardRatePerTokenStaked_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
-    function testFuzz_RevertWhen_StartTimeInFuture(uint40 timestamp) external whenNotNull givenNotClosed {
-        // Bound timestamp such that the start time is in the future.
-        timestamp = boundUint40(timestamp, 0, START_TIME - 1);
+    function testFuzz_RevertWhen_OutsideRewardsPeriod(uint40 timestamp) external whenNotNull {
+        // Bound timestamp such that its outside the rewards period.
+        vm.assume(timestamp < START_TIME || timestamp > END_TIME);
 
         // Warp the EVM state to the given timestamp.
         warpStateTo(timestamp);
 
         // It should revert.
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.SablierStakingState_OutsideRewardsPeriod.selector, poolIds.defaultPool, START_TIME, END_TIME
-            )
-        );
-        sablierStaking.rewardRatePerTokenStaked(poolIds.defaultPool);
-    }
-
-    function testFuzz_RevertWhen_EndTimeInPast(uint40 timestamp) external whenNotNull givenNotClosed {
-        // Bound timestamp such that the end time is in the past.
-        timestamp = boundUint40(timestamp, END_TIME + 1, type(uint40).max);
-
-        // Warp the EVM state to the given timestamp.
-        warpStateTo(timestamp);
-
-        // It should revert.
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.SablierStakingState_OutsideRewardsPeriod.selector, poolIds.defaultPool, START_TIME, END_TIME
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Errors.SablierStakingState_NotActive.selector, poolIds.defaultPool));
         sablierStaking.rewardRatePerTokenStaked(poolIds.defaultPool);
     }
 
     function testFuzz_RewardRatePerTokenStaked(uint40 timestamp)
         external
         whenNotNull
-        givenNotClosed
         whenStartTimeNotInFuture
         whenEndTimeNotInPast
         givenTotalStakedNotZero

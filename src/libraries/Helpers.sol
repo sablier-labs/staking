@@ -11,7 +11,7 @@ library Helpers {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @notice A scale factor of 1e20 is chosen to increase the precision of the rewards calculation.
-    /// @dev This is regardless of the token decimals.
+    /// @dev This is irrespective of the token decimals.
     uint256 private constant SCALE_FACTOR = 1e20;
 
     /*//////////////////////////////////////////////////////////////////////////

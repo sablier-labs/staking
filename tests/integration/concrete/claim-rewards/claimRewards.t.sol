@@ -18,19 +18,14 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
         expectRevert_Null(callData);
     }
 
-    function test_RevertGiven_Closed() external whenNoDelegateCall whenNotNull {
-        vm.expectRevert(abi.encodeWithSelector(Errors.SablierStakingState_PoolClosed.selector, poolIds.closedPool));
-        sablierStaking.claimRewards{ value: STAKING_MIN_FEE_WEI }(poolIds.closedPool);
-    }
-
-    function test_RevertWhen_FeeNotPaid() external whenNoDelegateCall whenNotNull givenNotClosed {
+    function test_RevertWhen_FeeNotPaid() external whenNoDelegateCall whenNotNull {
         vm.expectRevert(
             abi.encodeWithSelector(Errors.SablierStaking_InsufficientFeePayment.selector, 0, STAKING_MIN_FEE_WEI)
         );
         sablierStaking.claimRewards(poolIds.defaultPool);
     }
 
-    function test_RevertWhen_StartTimeInFuture() external whenNoDelegateCall whenNotNull givenNotClosed whenFeePaid {
+    function test_RevertWhen_StartTimeInFuture() external whenNoDelegateCall whenNotNull whenFeePaid {
         warpStateTo(START_TIME - 1);
 
         vm.expectRevert(
@@ -39,7 +34,7 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
         sablierStaking.claimRewards{ value: STAKING_MIN_FEE_WEI }(poolIds.defaultPool);
     }
 
-    function test_RevertWhen_StartTimeInPresent() external whenNoDelegateCall whenNotNull givenNotClosed whenFeePaid {
+    function test_RevertWhen_StartTimeInPresent() external whenNoDelegateCall whenNotNull whenFeePaid {
         warpStateTo(START_TIME);
 
         // It should revert.
@@ -55,7 +50,6 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
         external
         whenNoDelegateCall
         whenNotNull
-        givenNotClosed
         whenFeePaid
         whenStartTimeInPast
     {
@@ -73,7 +67,6 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
         external
         whenNoDelegateCall
         whenNotNull
-        givenNotClosed
         whenFeePaid
         whenStartTimeInPast
     {

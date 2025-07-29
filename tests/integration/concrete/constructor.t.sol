@@ -24,9 +24,6 @@ contract Constructor_Integration_Concrete_Test is Shared_Integration_Concrete_Te
         ISablierComptroller expectedComptroller = comptroller;
         assertEq(address(actualComptroller), address(expectedComptroller), "comptroller");
 
-        // {SablierStaking.LOCKUP_WHITELIST_ROLE}
-        assertEq(constructedProtocol.LOCKUP_WHITELIST_ROLE(), keccak256("LOCKUP_WHITELIST_ROLE"), "whitelist role");
-
         // {SablierStaking.nextPoolId}
         uint256 actualPoolIds = constructedProtocol.nextPoolId();
         uint256 expectedPoolIds = 1;

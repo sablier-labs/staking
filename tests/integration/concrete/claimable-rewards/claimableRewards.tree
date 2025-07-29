@@ -2,19 +2,16 @@ ClaimableRewards_Integration_Concrete_Test
 ├── when null
 │  └── it should revert
 └── when not null
-   ├── given closed
+   ├── when user zero address
    │  └── it should revert
-   └── given not closed
-      ├── when user zero address
-      │  └── it should revert
-      └── when user not zero address
-         ├── given staked amount zero
+   └── when user not zero address
+      ├── given staked amount zero
+      │  └── it should return zero
+      └── given staked amount not zero
+         ├── when claimable rewards zero
          │  └── it should return zero
-         └── given staked amount not zero
-            ├── when claimable rewards zero
-            │  └── it should return zero
-            └── when claimable rewards not zero
-               ├── when current time equals last update time
-               │  └── it should return correct rewards
-               └── when current time exceeds last update time
-                  └── it should return correct rewards
+         └── when claimable rewards not zero
+            ├── when current time equals last update time
+            │  └── it should return correct rewards
+            └── when current time exceeds last update time
+               └── it should return correct rewards

@@ -3,12 +3,10 @@ pragma solidity >=0.8.26;
 
 /// @notice A struct to manage the Pool IDs.
 /// @param defaultPool The default pool.
-/// @param closedPool A pool that has been closed before the start time.
 /// @param freshPool A pool that has been created but not staked into.
 /// @param nullPool A Pool ID that does not exist.
 struct PoolIds {
     uint256 defaultPool;
-    uint256 closedPool;
     uint256 freshPool;
     uint256 nullPool;
 }

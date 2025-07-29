@@ -21,10 +21,10 @@ CreatePool_Integration_Concrete_Test
                ├── when reward token zero address
                │  └── it should revert
                └── when reward token not zero address
-                  ├── when total rewards zero
+                  ├── when reward amount zero
                   │  └── it should revert
-                  └── when total rewards not zero
+                  └── when reward amount not zero
                      ├── it should create the pool
                      ├── it should bump next pool id
-                     ├── it should transfer total rewards amount to this contract
+                     ├── it should transfer reward amount to this contract
                      └── it should emit {Transfer} and {CreatePool} events

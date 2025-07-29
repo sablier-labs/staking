@@ -2,16 +2,13 @@ RewardsPerTokenSinceLastSnapshot_Integration_Concrete_Test
 ├── when null
 │  └── it should revert
 └── when not null
-   ├── given closed
+   ├── when start time in future
    │  └── it should revert
-   └── given not closed
-      ├── when start time in future
-      │  └── it should revert
-      └── when start time not in future
-         ├── given total staked zero
+   └── when start time not in future
+      ├── given total staked zero
+      │  └── it should return zero
+      └── given total staked not zero
+         ├── given last update time not less than end time
          │  └── it should return zero
-         └── given total staked not zero
-            ├── given last update time not less than end time
-            │  └── it should return zero
-            └── given last update time less than end time
-               └── it should return correct rewards per token since last snapshot
+         └── given last update time less than end time
+            └── it should return correct rewards per token since last snapshot

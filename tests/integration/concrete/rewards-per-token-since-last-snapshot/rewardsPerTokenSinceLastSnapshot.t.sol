@@ -11,12 +11,7 @@ contract RewardsPerTokenSinceLastSnapshot_Integration_Concrete_Test is Shared_In
         expectRevert_Null(callData);
     }
 
-    function test_RevertGiven_Closed() external whenNotNull {
-        vm.expectRevert(abi.encodeWithSelector(Errors.SablierStakingState_PoolClosed.selector, poolIds.closedPool));
-        sablierStaking.rewardsPerTokenSinceLastSnapshot(poolIds.closedPool);
-    }
-
-    function test_RevertWhen_StartTimeInFuture() external whenNotNull givenNotClosed {
+    function test_RevertWhen_StartTimeInFuture() external whenNotNull {
         warpStateTo(START_TIME - 1);
 
         vm.expectRevert(
@@ -27,7 +22,7 @@ contract RewardsPerTokenSinceLastSnapshot_Integration_Concrete_Test is Shared_In
         sablierStaking.rewardsPerTokenSinceLastSnapshot(poolIds.defaultPool);
     }
 
-    function test_GivenTotalStakedZero() external view whenNotNull givenNotClosed whenStartTimeNotInFuture {
+    function test_GivenTotalStakedZero() external view whenNotNull whenStartTimeNotInFuture {
         // It should return zero.
         uint128 actualRewardRatePerTokenStaked = sablierStaking.rewardsPerTokenSinceLastSnapshot(poolIds.freshPool);
         assertEq(actualRewardRatePerTokenStaked, 0, "rewardsPerTokenSinceLastSnapshot");
@@ -36,7 +31,6 @@ contract RewardsPerTokenSinceLastSnapshot_Integration_Concrete_Test is Shared_In
     function test_GivenLastUpdateTimeNotLessThanEndTime()
         external
         whenNotNull
-        givenNotClosed
         whenStartTimeNotInFuture
         givenTotalStakedNotZero
     {
@@ -53,7 +47,6 @@ contract RewardsPerTokenSinceLastSnapshot_Integration_Concrete_Test is Shared_In
     function test_GivenLastUpdateTimeLessThanEndTime()
         external
         whenNotNull
-        givenNotClosed
         whenStartTimeNotInFuture
         givenTotalStakedNotZero
     {

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.26;
 
+import { Errors } from "src/libraries/Errors.sol";
 import { Shared_Integration_Concrete_Test } from "../Concrete.t.sol";
 
 contract RewardRate_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
@@ -9,20 +10,18 @@ contract RewardRate_Integration_Concrete_Test is Shared_Integration_Concrete_Tes
         expectRevert_Null(callData);
     }
 
-    function test_WhenStartTimeInFuture() external whenNotNull {
+    function test_RevertWhen_StartTimeInFuture() external whenNotNull {
         warpStateTo(START_TIME - 1);
 
-        // It should return correct reward rate.
-        uint128 actualRewardRate = sablierStaking.rewardRate(poolIds.defaultPool);
-        assertEq(actualRewardRate, REWARD_RATE, "reward rate");
+        vm.expectRevert(abi.encodeWithSelector(Errors.SablierStakingState_NotActive.selector, poolIds.defaultPool));
+        sablierStaking.rewardRate(poolIds.defaultPool);
     }
 
-    function test_WhenEndTimeInPast() external whenNotNull whenStartTimeNotInFuture {
+    function test_RevertWhen_EndTimeInPast() external whenNotNull whenStartTimeNotInFuture {
         warpStateTo(END_TIME + 1);
 
-        // It should return correct reward rate.
-        uint128 actualRewardRate = sablierStaking.rewardRate(poolIds.defaultPool);
-        assertEq(actualRewardRate, REWARD_RATE, "reward rate");
+        vm.expectRevert(abi.encodeWithSelector(Errors.SablierStakingState_NotActive.selector, poolIds.defaultPool));
+        sablierStaking.rewardRate(poolIds.defaultPool);
     }
 
     function test_WhenEndTimeNotInPast() external view whenNotNull whenStartTimeNotInFuture {

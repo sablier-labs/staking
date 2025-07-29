@@ -83,7 +83,7 @@ abstract contract Integration_Test is Base_Test {
 
         // Update global rewards distributed per token scaled.
         rewardsDistributedPerTokenScaled +=
-            getScaledValue(rewardsDistributedSinceLastUpdate) / sablierStaking.totalAmountStaked(poolIds.defaultPool);
+            getScaledValue(rewardsDistributedSinceLastUpdate) / sablierStaking.getTotalStakedAmount(poolIds.defaultPool);
 
         // Get user rewards snapshot.
         (, rewardsEarnedPerTokenScaled, rewards) = sablierStaking.userSnapshot(poolIds.defaultPool, user);
@@ -105,7 +105,7 @@ abstract contract Integration_Test is Base_Test {
             startTime: START_TIME,
             endTime: END_TIME,
             rewardToken: rewardToken,
-            totalRewards: REWARD_AMOUNT
+            rewardAmount: REWARD_AMOUNT
         });
     }
 
@@ -115,9 +115,6 @@ abstract contract Integration_Test is Base_Test {
 
         // Default pool.
         poolIds.defaultPool = createDefaultPool();
-
-        // Closed pool.
-        poolIds.closedPool = createDefaultPool();
 
         // Fresh pool.
         poolIds.freshPool = createDefaultPool();
@@ -132,12 +129,6 @@ abstract contract Integration_Test is Base_Test {
         // First snapshot after the pools are created and the staker stakes direct tokens immediately.
         setMsgSender(users.staker);
         sablierStaking.stakeERC20Token(poolIds.defaultPool, DEFAULT_AMOUNT);
-        sablierStaking.stakeERC20Token(poolIds.closedPool, DEFAULT_AMOUNT);
-
-        // Close the `poolIds.closedPool` before snapshot.
-        setMsgSender(users.poolCreator);
-        sablierStaking.closePool(poolIds.closedPool);
-
         snapshotState(); // snapshot ID = 0
 
         // Second snapshot when the rewards period starts: Recipient stakes a stream.

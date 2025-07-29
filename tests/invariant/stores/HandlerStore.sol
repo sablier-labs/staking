@@ -31,6 +31,9 @@ contract HandlerStore {
     /// @dev Tracks rewards distribution period for each pool.
     mapping(uint256 poolId => uint40 rewards) public rewardDistributionPeriod;
 
+    /// @dev Tracks the total rewards deposited across all rounds for each pool.
+    mapping(uint256 poolId => uint128 totalRewardsDeposited) public totalRewardsDeposited;
+
     /// @dev Stores previous values for user rewards per token for each pool.
     mapping(uint256 poolId => mapping(address staker => uint256 rewardsPerTokenScaled)) public userRewardsPerTokenScaled;
 
@@ -71,6 +74,10 @@ contract HandlerStore {
 
     function addRewardDistributionPeriod(uint256 poolId, uint40 period) external {
         rewardDistributionPeriod[poolId] += period;
+    }
+
+    function addTotalRewardsDeposited(uint256 poolId, uint128 amount) external {
+        totalRewardsDeposited[poolId] += amount;
     }
 
     function addUserStake(uint256 poolId, address staker, uint128 amount) external {

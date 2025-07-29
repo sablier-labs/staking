@@ -6,7 +6,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ISablierLockupNFT } from "../interfaces/ISablierLockupNFT.sol";
 import { ISablierStakingState } from "../interfaces/ISablierStakingState.sol";
 import { Errors } from "../libraries/Errors.sol";
-import { GlobalSnapshot, Pool, StreamLookup, UserShares, UserSnapshot } from "../types/DataTypes.sol";
+import { GlobalSnapshot, Pool, Status, StreamLookup, UserShares, UserSnapshot } from "../types/DataTypes.sol";
 
 /// @title SablierStakingState
 /// @notice See the documentation in {ISablierStakingState}.
@@ -16,14 +16,7 @@ abstract contract SablierStakingState is ISablierStakingState {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc ISablierStakingState
-    bytes32 public constant override LOCKUP_WHITELIST_ROLE = keccak256("LOCKUP_WHITELIST_ROLE");
-
-    /// @inheritdoc ISablierStakingState
     uint256 public override nextPoolId;
-
-    /// @notice The Pool parameters mapped by the Pool ID.
-    /// @dev See the documentation for Pool in {DataTypes}.
-    mapping(uint256 poolId => Pool pool) internal _pool;
 
     /// @notice Tracks the global rewards data and total staked amount for a given pool.
     /// @dev See the documentation for GlobalSnapshot in {DataTypes}.
@@ -32,12 +25,13 @@ abstract contract SablierStakingState is ISablierStakingState {
     /// @notice Indicates whether the Lockup contract is whitelisted to stake into this contract.
     mapping(ISablierLockupNFT lockup => bool isWhitelisted) internal _lockupWhitelist;
 
+    /// @notice The Pool parameters mapped by the Pool ID.
+    /// @dev See the documentation for Pool in {DataTypes}.
+    mapping(uint256 poolId => Pool pool) internal _pool;
+
     /// @notice Get the Pool ID and the original owner of the staked stream.
     /// @dev See the documentation for StreamLookup in {DataTypes}.
     mapping(ISablierLockupNFT lockup => mapping(uint256 streamId => StreamLookup lookup)) internal _streamLookup;
-
-    /// @notice The total amount of tokens staked in a pool (both direct staking and through Sablier streams).
-    mapping(uint256 poolId => uint128 amount) internal _totalAmountStaked;
 
     /// @notice The user's shares of tokens staked in a pool.
     /// @dev See the documentation for UserShares in {DataTypes}.
@@ -51,21 +45,13 @@ abstract contract SablierStakingState is ISablierStakingState {
                                      MODIFIERS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice Checks that the pool is active by checking that it was not closed and that the current time is between
-    /// the pool's start and end times.
+    /// @notice Modifier that checks that the pool is active.
     modifier isActive(uint256 poolId) {
-        _revertIfClosed(poolId);
-        _revertIfOutsideRewardsPeriod(poolId);
+        _revertIfNotActive(poolId);
         _;
     }
 
-    /// @notice Checks that the pool was not closed by the admin.
-    modifier notClosed(uint256 poolId) {
-        _revertIfClosed(poolId);
-        _;
-    }
-
-    /// @notice Checks that `poolId` does not reference to a non-existent pool.
+    /// @notice Modifier that checks that `poolId` does not reference to a non-existent pool.
     modifier notNull(uint256 poolId) {
         _revertIfNull(poolId);
         _;
@@ -101,8 +87,13 @@ abstract contract SablierStakingState is ISablierStakingState {
     }
 
     /// @inheritdoc ISablierStakingState
-    function getTotalRewards(uint256 poolId) external view notNull(poolId) returns (uint128) {
-        return _pool[poolId].totalRewards;
+    function getRewardAmount(uint256 poolId) external view notNull(poolId) returns (uint128) {
+        return _pool[poolId].rewardAmount;
+    }
+
+    /// @inheritdoc ISablierStakingState
+    function getTotalStakedAmount(uint256 poolId) external view notNull(poolId) returns (uint128) {
+        return _pool[poolId].totalStakedAmount;
     }
 
     /// @inheritdoc ISablierStakingState
@@ -129,6 +120,22 @@ abstract contract SablierStakingState is ISablierStakingState {
     }
 
     /// @inheritdoc ISablierStakingState
+    function status(uint256 poolId) external view override notNull(poolId) returns (Status) {
+        // Return SCHEDULED if the start time is in the future.
+        if (block.timestamp < _pool[poolId].startTime) {
+            return Status.SCHEDULED;
+        }
+
+        // Return ACTIVE if the staking period is active.
+        if (_isActive(poolId)) {
+            return Status.ACTIVE;
+        }
+
+        // Otherwise, return ENDED.
+        return Status.ENDED;
+    }
+
+    /// @inheritdoc ISablierStakingState
     function streamLookup(
         ISablierLockupNFT lockup,
         uint256 streamId
@@ -149,11 +156,6 @@ abstract contract SablierStakingState is ISablierStakingState {
 
         poolId = _streamLookup[lockup][streamId].poolId;
         owner = _streamLookup[lockup][streamId].owner;
-    }
-
-    /// @inheritdoc ISablierStakingState
-    function totalAmountStaked(uint256 poolId) external view notNull(poolId) returns (uint128) {
-        return _totalAmountStaked[poolId];
     }
 
     /// @inheritdoc ISablierStakingState
@@ -210,19 +212,25 @@ abstract contract SablierStakingState is ISablierStakingState {
         rewards = snapshot.rewards;
     }
 
-    /// @inheritdoc ISablierStakingState
-    function wasClosed(uint256 poolId) external view notNull(poolId) returns (bool) {
-        return _pool[poolId].wasClosed;
+    /*//////////////////////////////////////////////////////////////////////////
+                            INTERNAL READ-ONLY FUNCTIONS
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @dev Returns true if the pool is active.
+    function _isActive(uint256 poolId) internal view returns (bool) {
+        Pool memory pool = _pool[poolId];
+        uint40 currentTimestamp = uint40(block.timestamp);
+        return pool.startTime <= currentTimestamp && currentTimestamp <= pool.endTime;
     }
 
     /*//////////////////////////////////////////////////////////////////////////
                             PRIVATE READ-ONLY FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @dev Reverts if the pool was closed by the admin.
-    function _revertIfClosed(uint256 poolId) private view {
-        if (_pool[poolId].wasClosed) {
-            revert Errors.SablierStakingState_PoolClosed(poolId);
+    /// @dev Reverts if the pool is not active.
+    function _revertIfNotActive(uint256 poolId) private view {
+        if (!_isActive(poolId)) {
+            revert Errors.SablierStakingState_NotActive(poolId);
         }
     }
 
@@ -230,18 +238,6 @@ abstract contract SablierStakingState is ISablierStakingState {
     function _revertIfNull(uint256 poolId) private view {
         if (_pool[poolId].admin == address(0)) {
             revert Errors.SablierStakingState_PoolDoesNotExist(poolId);
-        }
-    }
-
-    /// @dev Reverts if the current timestamp is not between the start and end times.
-    function _revertIfOutsideRewardsPeriod(uint256 poolId) private view {
-        Pool memory pool = _pool[poolId];
-        uint40 currentTimestamp = uint40(block.timestamp);
-
-        // Check: the timestamp is between the start and end times.
-        bool isRewardsPeriodActive = pool.startTime <= currentTimestamp && currentTimestamp <= pool.endTime;
-        if (!isRewardsPeriodActive) {
-            revert Errors.SablierStakingState_OutsideRewardsPeriod(poolId, pool.startTime, pool.endTime);
         }
     }
 }

@@ -33,7 +33,7 @@ contract CreatePool_Integration_Concrete_Test is Shared_Integration_Concrete_Tes
             startTime: START_TIME,
             endTime: END_TIME,
             rewardToken: rewardToken,
-            totalRewards: REWARD_AMOUNT
+            rewardAmount: REWARD_AMOUNT
         });
     }
 
@@ -45,7 +45,7 @@ contract CreatePool_Integration_Concrete_Test is Shared_Integration_Concrete_Tes
             startTime: FEB_1_2025 - 1,
             endTime: END_TIME,
             rewardToken: rewardToken,
-            totalRewards: REWARD_AMOUNT
+            rewardAmount: REWARD_AMOUNT
         });
     }
 
@@ -58,9 +58,15 @@ contract CreatePool_Integration_Concrete_Test is Shared_Integration_Concrete_Tes
         vm.expectEmit({ emitter: address(rewardToken) });
         emit IERC20.Transfer(users.poolCreator, address(sablierStaking), REWARD_AMOUNT);
         vm.expectEmit({ emitter: address(sablierStaking) });
-        emit ISablierStaking.CreatePool(
-            expectedPoolIds, users.poolCreator, stakingToken, rewardToken, currentTime, END_TIME, REWARD_AMOUNT
-        );
+        emit ISablierStaking.CreatePool({
+            poolId: expectedPoolIds,
+            admin: users.poolCreator,
+            endTime: END_TIME,
+            rewardToken: rewardToken,
+            stakingToken: stakingToken,
+            startTime: currentTime,
+            rewardAmount: REWARD_AMOUNT
+        });
 
         // It should create the pool.
         uint256 actualPoolIds = sablierStaking.createPool({
@@ -69,7 +75,7 @@ contract CreatePool_Integration_Concrete_Test is Shared_Integration_Concrete_Tes
             startTime: currentTime,
             endTime: END_TIME,
             rewardToken: rewardToken,
-            totalRewards: REWARD_AMOUNT
+            rewardAmount: REWARD_AMOUNT
         });
 
         // It should create the pool.
@@ -87,7 +93,7 @@ contract CreatePool_Integration_Concrete_Test is Shared_Integration_Concrete_Tes
     {
         vm.expectRevert(
             abi.encodeWithSelector(
-                Errors.SablierStaking_EndTimeNotGreaterThanStartTime.selector, START_TIME, START_TIME - 1
+                Errors.SablierStaking_StartTimeNotLessThanEndTime.selector, START_TIME, START_TIME - 1
             )
         );
         sablierStaking.createPool({
@@ -96,7 +102,7 @@ contract CreatePool_Integration_Concrete_Test is Shared_Integration_Concrete_Tes
             startTime: START_TIME,
             endTime: START_TIME - 1,
             rewardToken: rewardToken,
-            totalRewards: REWARD_AMOUNT
+            rewardAmount: REWARD_AMOUNT
         });
     }
 
@@ -107,9 +113,7 @@ contract CreatePool_Integration_Concrete_Test is Shared_Integration_Concrete_Tes
         whenStartTimeInFuture
     {
         vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.SablierStaking_EndTimeNotGreaterThanStartTime.selector, START_TIME, START_TIME
-            )
+            abi.encodeWithSelector(Errors.SablierStaking_StartTimeNotLessThanEndTime.selector, START_TIME, START_TIME)
         );
         sablierStaking.createPool({
             admin: users.poolCreator,
@@ -117,7 +121,7 @@ contract CreatePool_Integration_Concrete_Test is Shared_Integration_Concrete_Tes
             startTime: START_TIME,
             endTime: START_TIME,
             rewardToken: rewardToken,
-            totalRewards: REWARD_AMOUNT
+            rewardAmount: REWARD_AMOUNT
         });
     }
 
@@ -135,7 +139,7 @@ contract CreatePool_Integration_Concrete_Test is Shared_Integration_Concrete_Tes
             startTime: START_TIME,
             endTime: END_TIME,
             rewardToken: rewardToken,
-            totalRewards: REWARD_AMOUNT
+            rewardAmount: REWARD_AMOUNT
         });
     }
 
@@ -154,11 +158,11 @@ contract CreatePool_Integration_Concrete_Test is Shared_Integration_Concrete_Tes
             startTime: START_TIME,
             endTime: END_TIME,
             rewardToken: IERC20(address(0)),
-            totalRewards: REWARD_AMOUNT
+            rewardAmount: REWARD_AMOUNT
         });
     }
 
-    function test_RevertWhen_TotalRewardsZero()
+    function test_RevertWhen_RewardAmountZero()
         external
         whenNoDelegateCall
         whenAdminNotZeroAddress
@@ -174,11 +178,11 @@ contract CreatePool_Integration_Concrete_Test is Shared_Integration_Concrete_Tes
             startTime: START_TIME,
             endTime: END_TIME,
             rewardToken: rewardToken,
-            totalRewards: 0
+            rewardAmount: 0
         });
     }
 
-    function test_WhenTotalRewardsNotZero()
+    function test_WhenRewardAmountNotZero()
         external
         whenNoDelegateCall
         whenAdminNotZeroAddress
@@ -193,9 +197,15 @@ contract CreatePool_Integration_Concrete_Test is Shared_Integration_Concrete_Tes
         vm.expectEmit({ emitter: address(rewardToken) });
         emit IERC20.Transfer(users.poolCreator, address(sablierStaking), REWARD_AMOUNT);
         vm.expectEmit({ emitter: address(sablierStaking) });
-        emit ISablierStaking.CreatePool(
-            expectedPoolIds, users.poolCreator, stakingToken, rewardToken, START_TIME, END_TIME, REWARD_AMOUNT
-        );
+        emit ISablierStaking.CreatePool({
+            poolId: expectedPoolIds,
+            admin: users.poolCreator,
+            endTime: END_TIME,
+            rewardToken: rewardToken,
+            stakingToken: stakingToken,
+            startTime: START_TIME,
+            rewardAmount: REWARD_AMOUNT
+        });
 
         // It should create the pool.
         uint256 actualPoolIds = sablierStaking.createPool({
@@ -204,7 +214,7 @@ contract CreatePool_Integration_Concrete_Test is Shared_Integration_Concrete_Tes
             startTime: START_TIME,
             endTime: END_TIME,
             rewardToken: rewardToken,
-            totalRewards: REWARD_AMOUNT
+            rewardAmount: REWARD_AMOUNT
         });
 
         // It should create the pool.
@@ -218,7 +228,6 @@ contract CreatePool_Integration_Concrete_Test is Shared_Integration_Concrete_Tes
         assertEq(sablierStaking.getStakingToken(actualPoolIds), stakingToken, "stakingToken");
         assertEq(sablierStaking.getStartTime(actualPoolIds), START_TIME, "startTime");
         assertEq(sablierStaking.getEndTime(actualPoolIds), END_TIME, "endTime");
-        assertEq(sablierStaking.getTotalRewards(actualPoolIds), REWARD_AMOUNT, "totalRewards");
-        assertEq(sablierStaking.wasClosed(actualPoolIds), false, "wasClosed");
+        assertEq(sablierStaking.getRewardAmount(actualPoolIds), REWARD_AMOUNT, "rewardAmount");
     }
 }

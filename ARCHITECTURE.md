@@ -88,14 +88,7 @@ R_u(e) = R_u(e_{last}) + \text{pending rewards}
 - Prevents withdrawal from staked streams
 - Handles stream cancellation events
 
-### 3. Lifecycle
-
-A staking pool comes to its end when one of the following two events occur:
-
-- Pool creator closes it before the start time
-- Pool reaches its end time
-
-### 4. Other Considerations
+### 3. Other Considerations
 
 - **Scaling Factor**: Amounts are scaled to 1e20 decimals for higher precision during divisions, preventing precision
   loss in reward calculations regardless of the token decimals.

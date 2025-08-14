@@ -128,7 +128,7 @@ contract StakingHandler is BaseHandler {
         updateHandlerStoreForAllPools
         instrument("createPool")
     {
-        vm.assume(createParams.poolAdmin != address(0));
+        vm.assume(createParams.poolAdmin != address(0) && createParams.poolAdmin != address(sablierStaking));
 
         // Ensure that number of pools created does not exceed the maximum number of pools.
         vm.assume(handlerStore.totalPools() < MAX_POOL_COUNT);
@@ -152,7 +152,7 @@ contract StakingHandler is BaseHandler {
             max: amountInWeiForToken(20_000_000_000, rewardToken)
         });
 
-        // Deal tokens to the caller and approve the staking pool.
+        // Deal tokens to the pool admin and approve the staking pool.
         deal({ token: address(rewardToken), to: createParams.poolAdmin, give: createParams.rewardAmount });
 
         setMsgSender(createParams.poolAdmin);
@@ -219,7 +219,7 @@ contract StakingHandler is BaseHandler {
 
         if (isNewStaker) {
             // Create a new user.
-            selectedStaker = vm.randomAddress();
+            selectedStaker = createRandomAddress();
 
             // Update handler store.
             handlerStore.addStaker(selectedPoolId, selectedStaker);

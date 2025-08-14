@@ -28,7 +28,7 @@ contract HandlerStore {
     mapping(uint256 poolId => uint40 time) public globalSnapshotTime;
 
     /// @dev Tracks rewards claimed by each staker in each pool.
-    mapping(uint256 poolId => mapping(address staker => uint128 rewards)) public rewardsClaimed;
+    mapping(uint256 poolId => mapping(address staker => uint256 rewards)) public rewardsClaimed;
 
     /// @dev Tracks rewards distribution period for each pool.
     mapping(uint256 poolId => uint40 rewards) public rewardDistributionPeriod;
@@ -37,7 +37,7 @@ contract HandlerStore {
     mapping(uint256 poolId => Status status) public status;
 
     /// @dev Tracks the total rewards deposited across all rounds for each pool.
-    mapping(uint256 poolId => uint128 totalRewardsDeposited) public totalRewardsDeposited;
+    mapping(uint256 poolId => uint256 totalRewardsDeposited) public totalRewardsDeposited;
 
     /// @dev Stores previous values for user rewards per token for each pool.
     mapping(uint256 poolId => mapping(address staker => uint256 rewardsPerTokenScaled)) public userRewardsPerTokenScaled;

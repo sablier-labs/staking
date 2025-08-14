@@ -75,8 +75,8 @@ contract Invariant_Test is Base_Test, StdInvariant {
             // Get the contract balance of the token.
             uint256 contractBalance = token.balanceOf(address(sablierStaking));
 
-            uint128 totalRewardsDeposited;
-            uint128 totalRewardsClaimed;
+            uint256 totalRewardsDeposited;
+            uint256 totalRewardsClaimed;
             uint128 totalDirectStaked;
 
             for (uint256 j = 0; j < handlerStore.totalPools(); ++j) {
@@ -84,7 +84,7 @@ contract Invariant_Test is Base_Test, StdInvariant {
 
                 // If the pool's reward token is the same as the token, calculate the total rewards deposited and
                 // total rewards claimed.
-                if (sablierStaking.getRewardToken(handlerStore.poolIds(j)) == token) {
+                if (sablierStaking.getRewardToken(poolId) == token) {
                     totalRewardsDeposited += handlerStore.totalRewardsDeposited(poolId);
                     for (uint256 u = 0; u < handlerStore.totalStakers(poolId); ++u) {
                         address staker = handlerStore.poolStakers(poolId, u);
@@ -93,7 +93,7 @@ contract Invariant_Test is Base_Test, StdInvariant {
                 }
 
                 // If the pool's staking token is the same as the token, calculate the total direct staked.
-                if (sablierStaking.getStakingToken(handlerStore.poolIds(j)) == token) {
+                if (sablierStaking.getStakingToken(poolId) == token) {
                     for (uint256 u = 0; u < handlerStore.totalStakers(poolId); ++u) {
                         address staker = handlerStore.poolStakers(poolId, u);
                         totalDirectStaked += handlerStore.amountStaked(poolId, staker);
@@ -112,15 +112,15 @@ contract Invariant_Test is Base_Test, StdInvariant {
     function invariant_PoolRewardsEqClaimedPlusClaimable() external view {
         for (uint256 i = 0; i < handlerStore.totalPools(); ++i) {
             uint256 poolId = handlerStore.poolIds(i);
-            uint128 rewardsEarnedByAllStakers;
+            uint256 rewardsEarnedByAllStakers;
             for (uint256 j = 0; j < handlerStore.totalStakers(poolId); ++j) {
                 address staker = handlerStore.poolStakers(poolId, j);
-                uint128 rewardsClaimed = handlerStore.rewardsClaimed(poolId, staker);
+                uint256 rewardsClaimed = handlerStore.rewardsClaimed(poolId, staker);
                 uint128 claimableRewards = sablierStaking.claimableRewards(poolId, staker);
-                uint128 totalRewardsEarnedByUser = rewardsClaimed + claimableRewards;
+                uint256 totalRewardsEarnedByUser = rewardsClaimed + claimableRewards;
                 rewardsEarnedByAllStakers += totalRewardsEarnedByUser;
             }
-            uint128 rewardsDeposited = handlerStore.totalRewardsDeposited(poolId);
+            uint256 rewardsDeposited = handlerStore.totalRewardsDeposited(poolId);
 
             assertLe(
                 rewardsEarnedByAllStakers,

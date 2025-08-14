@@ -126,7 +126,7 @@ contract BaseHandler is Utils, StdCheats {
 
         // Create if there are no stakers.
         if (totalStakers == 0) {
-            selectedStaker = vm.randomAddress();
+            selectedStaker = createRandomAddress();
             handlerStore.addStaker(selectedPoolId, selectedStaker);
         } else {
             stakerIndex = bound(stakerIndex, 0, totalStakers - 1);
@@ -146,6 +146,17 @@ contract BaseHandler is Utils, StdCheats {
 
         for (uint256 i = 0; i < tokens_.length; ++i) {
             tokens.push(tokens_[i]);
+        }
+    }
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                     UTILITIES
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @dev Creates a random address and ensures that it is not the Sablier staking contract.
+    function createRandomAddress() internal returns (address newAddress) {
+        while (newAddress == address(0) || newAddress == address(sablierStaking)) {
+            newAddress = vm.randomAddress();
         }
     }
 }

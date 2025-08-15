@@ -11,7 +11,7 @@
       "devDependencies": {
         "@sablier/devkit": "github:sablier-labs/devkit",
         "@sablier/lockup": "github:sablier-labs/lockup",
-        "forge-std": "github:foundry-rs/forge-std#v1.9.7",
+        "forge-std": "github:foundry-rs/forge-std#v1.10.0",
         "husky": "^9.1",
         "lint-staged": "^16.1",
         "prettier": "^3.5",
@@ -384,7 +384,7 @@
 
     "for-each": ["for-each@0.3.5", "", { "dependencies": { "is-callable": "^1.2.7" } }, "sha512-dKx12eRCVIzqCxFGplyFKJMPvLEWgmNtUrpTiJIR5u97zEhRG8ySrtboPHZXx7daLxQVrl643cTzbab2tkQjxg=="],
 
-    "forge-std": ["forge-std@github:foundry-rs/forge-std#77041d2", {}, "foundry-rs-forge-std-77041d2"],
+    "forge-std": ["forge-std@github:foundry-rs/forge-std#8bbcf6e", {}, "foundry-rs-forge-std-8bbcf6e"],
 
     "form-data-encoder": ["form-data-encoder@2.1.4", "", {}, "sha512-yDYSgNMraqvnxiEXO4hi88+YZxaHC6QKzb5N84iRCTDeRO7ZALpir/lVmf/uXUhnwUr2O4HU8s/n6x+yNjQkHw=="],
 

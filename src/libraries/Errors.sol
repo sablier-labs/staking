@@ -2,6 +2,7 @@
 pragma solidity >=0.8.26;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { UD60x18 } from "@prb/math/src/UD60x18.sol";
 
 import { ISablierLockupNFT } from "../interfaces/ISablierLockupNFT.sol";
 
@@ -51,6 +52,9 @@ library Errors {
     /// @notice Thrown when staking into a pool when end time is not in the past.
     error SablierStaking_EndTimeNotInPast(uint256 poolId, uint40 endTime);
 
+    /// @notice Thrown when the fee on rewards exceeds the maximum fee.
+    error SablierStaking_FeeOnRewardsTooHigh(UD60x18 feeOnRewards, UD60x18 maxFeeOnRewards);
+
     /// @notice Thrown when the fee paid is less than the minimum fee.
     error SablierStaking_InsufficientFeePayment(uint256 feePaid, uint256 minFee);
 
@@ -62,6 +66,9 @@ library Errors {
 
     /// @notice Thrown when whitelisting the zero address.
     error SablierStaking_LockupZeroAddress(uint256 index);
+
+    /// @notice Thrown if the min fee transfer fails.
+    error SablierStaking_MinFeeTransferFailed(address comptroller, uint256 feePaid);
 
     /// @notice Thrown when snapshotting rewards for a user when the user has no staked amount.
     error SablierStaking_NoStakedAmount(uint256 poolId, address user);

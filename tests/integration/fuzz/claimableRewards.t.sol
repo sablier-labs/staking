@@ -11,7 +11,7 @@ contract ClaimableRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test 
         external
         whenNotNull
         whenUserNotZeroAddress
-        whenClaimableRewardsNotZero
+        givenClaimableRewardsNotZero
     {
         // Bound caller to either be recipient or staker.
         address caller = isRecipient ? users.recipient : users.staker;

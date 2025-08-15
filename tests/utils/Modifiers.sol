@@ -24,6 +24,10 @@ abstract contract Modifiers is EvmUtilsBase {
         _;
     }
 
+    modifier givenClaimableRewardsNotZero() {
+        _;
+    }
+
     modifier givenDirectStakedAmountNotZero() {
         _;
     }
@@ -98,10 +102,6 @@ abstract contract Modifiers is EvmUtilsBase {
         _;
     }
 
-    modifier whenClaimableRewardsNotZero() {
-        _;
-    }
-
     modifier whenEndTimeGreaterThanStartTime() {
         _;
     }
@@ -118,7 +118,11 @@ abstract contract Modifiers is EvmUtilsBase {
         _;
     }
 
-    modifier whenFeePaid() {
+    modifier whenFeeOnRewardsNotTooHigh() {
+        _;
+    }
+
+    modifier whenMinFeePaid() {
         _;
     }
 

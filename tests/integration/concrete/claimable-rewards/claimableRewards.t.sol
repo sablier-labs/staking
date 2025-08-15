@@ -20,7 +20,7 @@ contract ClaimableRewards_Integration_Concrete_Test is Shared_Integration_Concre
         assertEq(actualRewards, 0, "rewards");
     }
 
-    function test_WhenClaimableRewardsZero() external whenNotNull whenUserNotZeroAddress givenStakedAmountNotZero {
+    function test_GivenClaimableRewardsZero() external whenNotNull whenUserNotZeroAddress givenStakedAmountNotZero {
         warpStateTo(START_TIME);
 
         uint128 actualRewards = sablierStaking.claimableRewards(poolIds.defaultPool, users.recipient);
@@ -33,7 +33,7 @@ contract ClaimableRewards_Integration_Concrete_Test is Shared_Integration_Concre
         whenNotNull
         whenUserNotZeroAddress
         givenStakedAmountNotZero
-        whenClaimableRewardsNotZero
+        givenClaimableRewardsNotZero
     {
         uint128 actualRewards = sablierStaking.claimableRewards(poolIds.defaultPool, users.recipient);
         assertEq(actualRewards, REWARDS_EARNED_BY_RECIPIENT, "rewards");
@@ -44,7 +44,7 @@ contract ClaimableRewards_Integration_Concrete_Test is Shared_Integration_Concre
         whenNotNull
         whenUserNotZeroAddress
         givenStakedAmountNotZero
-        whenClaimableRewardsNotZero
+        givenClaimableRewardsNotZero
     {
         // Warp the EVM state to 20% through the rewards period.
         warpStateTo(WARP_20_PERCENT);

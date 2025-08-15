@@ -2,6 +2,7 @@
 pragma solidity >=0.8.26;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { ud, UD60x18, ZERO } from "@prb/math/src/UD60x18.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { ERC721Holder } from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
@@ -151,30 +152,40 @@ contract SablierStaking is
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc ISablierStaking
-    function claimRewards(uint256 poolId)
+    function claimRewards(
+        uint256 poolId,
+        UD60x18 feeOnRewards
+    )
         external
         payable
         override
         noDelegateCall
         notNull(poolId)
-        returns (uint128 rewards)
+        returns (uint128 amountClaimed)
     {
         // Get minimum fee in wei for the pool admin.
         uint256 minFeeWei = comptroller.calculateMinFeeWeiFor(ISablierComptroller.Protocol.Staking, _pool[poolId].admin);
 
+        uint256 feePaid = msg.value;
+
         // Check: fee paid is at least the minimum fee.
-        if (msg.value < minFeeWei) {
-            revert Errors.SablierStaking_InsufficientFeePayment(msg.value, minFeeWei);
+        if (feePaid < minFeeWei) {
+            revert Errors.SablierStaking_InsufficientFeePayment(feePaid, minFeeWei);
+        }
+
+        // Check: the fee on rewards does not exceed the maximum fee.
+        if (feeOnRewards > MAX_FEE_ON_REWARDS) {
+            revert Errors.SablierStaking_FeeOnRewardsTooHigh(feeOnRewards, MAX_FEE_ON_REWARDS);
         }
 
         // Effect: snapshot rewards data to the latest values.
         _snapshotRewards(poolId, msg.sender);
 
         // Load rewards from storage.
-        rewards = _userSnapshot[msg.sender][poolId].rewards;
+        amountClaimed = _userSnapshot[msg.sender][poolId].rewards;
 
         // Check: `msg.sender` has rewards to claim.
-        if (rewards == 0) {
+        if (amountClaimed == 0) {
             revert Errors.SablierStaking_ZeroClaimableRewards(poolId, msg.sender);
         }
 
@@ -184,12 +195,35 @@ contract SablierStaking is
         // Effect: update the last update time.
         _userSnapshot[msg.sender][poolId].lastUpdateTime = uint40(block.timestamp);
 
-        // Interaction: transfer the reward to `msg.sender`.
+        // Interaction: transfer the fee paid to comptroller if it's greater than 0.
+        if (feePaid > 0) {
+            (bool success,) = address(comptroller).call{ value: feePaid }("");
+
+            // Revert if the transfer fails.
+            if (!success) {
+                revert Errors.SablierStaking_MinFeeTransferFailed(address(comptroller), feePaid);
+            }
+        }
+
+        // Get the reward token.
         IERC20 rewardToken = _pool[poolId].rewardToken;
-        rewardToken.safeTransfer({ to: msg.sender, value: rewards });
+
+        // Interaction: calculate and transfer the fee in reward token if it's greater than 0.
+        if (feeOnRewards > ZERO) {
+            uint128 feeInRewardToken = ud(amountClaimed).mul(feeOnRewards).intoUint128();
+
+            // Interaction: transfer the fee to comptroller.
+            rewardToken.safeTransfer({ to: address(comptroller), value: feeInRewardToken });
+
+            // Adjust the amount to claim.
+            amountClaimed -= feeInRewardToken;
+        }
+
+        // Interaction: transfer the amount `msg.sender`.
+        rewardToken.safeTransfer({ to: msg.sender, value: amountClaimed });
 
         // Log the event.
-        emit ClaimRewards(poolId, msg.sender, rewards);
+        emit ClaimRewards(poolId, msg.sender, amountClaimed);
     }
 
     /// @inheritdoc ISablierStaking

@@ -2,6 +2,7 @@
 pragma solidity >=0.8.26;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { UD60x18 } from "@prb/math/src/UD60x18.sol";
 
 import { Status } from "../types/DataTypes.sol";
 import { ISablierLockupNFT } from "./ISablierLockupNFT.sol";
@@ -13,6 +14,11 @@ interface ISablierStakingState {
     /*//////////////////////////////////////////////////////////////////////////
                                 READ-ONLY FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
+
+    /// @notice The maximum fee that can be deducted from rewards claimed, denoted as fixed-point number where 1e18 is
+    /// 100%.
+    /// @dev This is a constant variable.
+    function MAX_FEE_ON_REWARDS() external view returns (UD60x18);
 
     /// @notice Returns the admin of the given Pool ID.
     /// @dev Reverts if `poolId` references a non-existent pool.

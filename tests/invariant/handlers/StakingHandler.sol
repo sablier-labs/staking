@@ -3,6 +3,7 @@ pragma solidity >=0.8.26;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import { ud } from "@prb/math/src/UD60x18.sol";
 import { ISablierStaking } from "src/interfaces/ISablierStaking.sol";
 import { HandlerStore } from "../stores/HandlerStore.sol";
 
@@ -64,12 +65,15 @@ contract StakingHandler is BaseHandler {
         vm.assume(claimableRewards > 0);
 
         setMsgSender(selectedStaker);
-        uint128 rewards = sablierStaking.claimRewards{ value: STAKING_MIN_FEE_WEI }(selectedPoolId);
+        uint128 amountClaimed =
+            sablierStaking.claimRewards{ value: STAKING_MIN_FEE_WEI }(selectedPoolId, FEE_ON_REWARDS);
 
-        assert(rewards == claimableRewards);
+        uint128 feeDeducted = ud(claimableRewards).mul(FEE_ON_REWARDS).intoUint128();
+
+        assert(amountClaimed + feeDeducted == claimableRewards);
 
         // Update handler store.
-        handlerStore.addRewardsClaimed(selectedPoolId, selectedStaker, rewards);
+        handlerStore.addRewardsClaimed(selectedPoolId, selectedStaker, claimableRewards);
     }
 
     function configureNextRound(

@@ -79,8 +79,8 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
 
         assumeNoExcludedCallers(caller);
 
-        // Ensure caller is neither a staker nor a recipient for this test.
-        vm.assume(caller != users.staker && caller != users.recipient);
+        // Ensure caller is not a staker, recipient or comptroller for this test.
+        vm.assume(caller != users.staker && caller != users.recipient && caller != address(comptroller));
 
         // Bound timestamp between the start and 40% through the rewards period.
         uint40 stakingTimestamp = boundUint40(timestamp, START_TIME + 1 seconds, WARP_40_PERCENT);

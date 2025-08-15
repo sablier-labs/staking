@@ -36,6 +36,7 @@ contract Invariant_Test is Base_Test, StdInvariant {
         targetContract(address(stakingHandler));
 
         // Prevent these contracts from being fuzzed as `msg.sender`.
+        excludeSender(address(comptroller));
         excludeSender(address(handlerStore));
         excludeSender(address(sablierStaking));
         excludeSender(address(stakingHandler));

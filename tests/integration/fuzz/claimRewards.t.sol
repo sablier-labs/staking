@@ -2,6 +2,7 @@
 pragma solidity >=0.8.26;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { ud, UD60x18, ZERO } from "@prb/math/src/UD60x18.sol";
 import { ISablierStaking } from "src/interfaces/ISablierStaking.sol";
 import { Errors } from "src/libraries/Errors.sol";
 
@@ -9,7 +10,7 @@ import { Shared_Integration_Fuzz_Test } from "./Fuzz.t.sol";
 
 contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
     /// @dev It should revert since the fee does not meet the minimum fee.
-    function testFuzz_RevertWhen_FeeNotPaid(uint256 fee) external whenNoDelegateCall whenNotNull {
+    function testFuzz_RevertWhen_MinFeeNotPaid(uint256 fee) external whenNoDelegateCall whenNotNull {
         // Bound fee such that it does not meet the minimum fee.
         fee = bound(fee, 0, STAKING_MIN_FEE_WEI - 1);
 
@@ -17,7 +18,7 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         vm.expectRevert(
             abi.encodeWithSelector(Errors.SablierStaking_InsufficientFeePayment.selector, fee, STAKING_MIN_FEE_WEI)
         );
-        sablierStaking.claimRewards{ value: fee }(poolIds.defaultPool);
+        sablierStaking.claimRewards{ value: fee }(poolIds.defaultPool, FEE_ON_REWARDS);
     }
 
     /// @dev It should revert.
@@ -28,7 +29,7 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         external
         whenNoDelegateCall
         whenNotNull
-        whenFeePaid
+        whenMinFeePaid
     {
         // Make sure caller is not a staker.
         vm.assume(caller != users.staker && caller != users.recipient);
@@ -46,7 +47,7 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         vm.expectRevert(
             abi.encodeWithSelector(Errors.SablierStaking_ZeroClaimableRewards.selector, poolIds.defaultPool, caller)
         );
-        sablierStaking.claimRewards{ value: STAKING_MIN_FEE_WEI }(poolIds.defaultPool);
+        sablierStaking.claimRewards{ value: STAKING_MIN_FEE_WEI }(poolIds.defaultPool, FEE_ON_REWARDS);
     }
 
     /// @dev It should run tests for a multiple callers when caller is staking for the first time.
@@ -58,24 +59,28 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         uint128 amountToStake,
         address caller,
         uint256 fee,
+        UD60x18 feeOnRewards,
         uint40 timestamp
     )
         external
         whenNoDelegateCall
         whenNotNull
-        whenFeePaid
-        whenClaimableRewardsNotZero
+        whenMinFeePaid
+        givenClaimableRewardsNotZero
     {
         // Bound fee such that it meets the minimum fee.
         fee = bound(fee, STAKING_MIN_FEE_WEI, 1 ether);
+
+        // Bound fee on rewards such that it is less than the maximum fee on rewards.
+        feeOnRewards = bound(feeOnRewards, 0, MAX_FEE_ON_REWARDS);
 
         // Bound amount to stake such that there are always rewards to claim.
         amountToStake = boundUint128(amountToStake, 1e18, MAX_UINT128 - MAX_AMOUNT_STAKED);
 
         assumeNoExcludedCallers(caller);
 
-        // Ensure caller is neither a staker nor a recipient for this test.
-        vm.assume(caller != users.staker && caller != users.recipient);
+        // Ensure caller is not a staker, recipient or comptroller for this test.
+        vm.assume(caller != users.staker && caller != users.recipient && caller != address(comptroller));
 
         // Bound timestamp between the start and 40% through the rewards period.
         uint40 stakingTimestamp = boundUint40(timestamp, START_TIME + 1 seconds, WARP_40_PERCENT);
@@ -103,22 +108,26 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         vm.warp(claimTimestamp);
 
         // Test claim rewards.
-        _test_ClaimRewards(caller, fee, claimTimestamp);
+        _test_ClaimRewards(caller, fee, feeOnRewards, claimTimestamp);
     }
 
     /// @dev It should run tests for existing stakers at multiple values for timestamp.
     function testFuzz_ClaimRewards(
         uint256 fee,
+        UD60x18 feeOnRewards,
         uint40 timestamp
     )
         external
         whenNoDelegateCall
         whenNotNull
-        whenFeePaid
-        whenClaimableRewardsNotZero
+        whenMinFeePaid
+        givenClaimableRewardsNotZero
     {
         // Bound fee such that it meets the minimum fee.
         fee = bound(fee, STAKING_MIN_FEE_WEI, 1 ether);
+
+        // Bound fee on rewards such that it is less than the maximum fee on rewards.
+        feeOnRewards = bound(feeOnRewards, 0, MAX_FEE_ON_REWARDS);
 
         // Change the caller.
         setMsgSender(users.recipient);
@@ -130,27 +139,36 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         warpStateTo(timestamp);
 
         // Test claim rewards.
-        _test_ClaimRewards(users.recipient, fee, timestamp);
+        _test_ClaimRewards(users.recipient, fee, feeOnRewards, timestamp);
     }
 
-    function _test_ClaimRewards(address caller, uint256 fee, uint40 timestamp) private {
+    function _test_ClaimRewards(address caller, uint256 fee, UD60x18 feeOnRewards, uint40 timestamp) private {
+        uint256 initialComptrollerEthBalance = address(comptroller).balance;
+
         (uint256 expectedRewardsPerTokenScaled, uint128 expectedUserRewards) = calculateLatestRewards(caller);
 
-        // It should emit {SnapshotRewards}, {Transfer} and {ClaimRewards} events.
+        uint128 expectedRewardsTransferredToComptroller = ud(expectedUserRewards).mul(feeOnRewards).intoUint128();
+        uint128 expectedRewardsTransferredToRecipient = expectedUserRewards - expectedRewardsTransferredToComptroller;
+
+        // It should emit 1 {SnapshotRewards}, 2 {Transfer} and 1 {ClaimRewards} events.
         vm.expectEmit({ emitter: address(sablierStaking) });
         emit ISablierStaking.SnapshotRewards(
             poolIds.defaultPool, timestamp, expectedRewardsPerTokenScaled, caller, expectedUserRewards
         );
+        if (feeOnRewards > ZERO) {
+            vm.expectEmit({ emitter: address(rewardToken) });
+            emit IERC20.Transfer(address(sablierStaking), address(comptroller), expectedRewardsTransferredToComptroller);
+        }
         vm.expectEmit({ emitter: address(rewardToken) });
-        emit IERC20.Transfer(address(sablierStaking), caller, expectedUserRewards);
+        emit IERC20.Transfer(address(sablierStaking), caller, expectedRewardsTransferredToRecipient);
         vm.expectEmit({ emitter: address(sablierStaking) });
-        emit ISablierStaking.ClaimRewards(poolIds.defaultPool, caller, expectedUserRewards);
+        emit ISablierStaking.ClaimRewards(poolIds.defaultPool, caller, expectedRewardsTransferredToRecipient);
 
         // Claim the rewards.
-        uint128 actualRewards = sablierStaking.claimRewards{ value: fee }(poolIds.defaultPool);
+        uint128 actualRewards = sablierStaking.claimRewards{ value: fee }(poolIds.defaultPool, feeOnRewards);
 
         // It should return the rewards.
-        assertEq(actualRewards, expectedUserRewards, "return value");
+        assertEq(actualRewards, expectedRewardsTransferredToRecipient, "return value");
 
         (uint40 actualLastUpdateTime, uint256 actualRewardsPerTokenScaled,) =
             sablierStaking.userSnapshot(poolIds.defaultPool, caller);
@@ -164,7 +182,7 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         // It should set the rewards earned per token.
         assertEq(actualRewardsPerTokenScaled, expectedRewardsPerTokenScaled, "rewardsEarnedPerTokenScaled");
 
-        // It should deposit fee into the staking pool.
-        assertEq(address(sablierStaking).balance, fee, "staking pool balance");
+        // It should transfer the min fee to comptroller.
+        assertEq(address(comptroller).balance, initialComptrollerEthBalance + fee, "comptroller ETH balance");
     }
 }

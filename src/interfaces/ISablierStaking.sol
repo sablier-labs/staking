@@ -4,6 +4,7 @@ pragma solidity >=0.8.26;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IERC721Receiver } from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import { UD60x18 } from "@prb/math/src/UD60x18.sol";
 import { IComptrollerable } from "@sablier/evm-utils/src/interfaces/IComptrollerable.sol";
 
 import { ISablierLockupNFT } from "./ISablierLockupNFT.sol";
@@ -22,7 +23,7 @@ interface ISablierStaking is
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Emitted when rewards are claimed.
-    event ClaimRewards(uint256 indexed poolId, address indexed user, uint256 amountClaimed);
+    event ClaimRewards(uint256 indexed poolId, address indexed user, uint128 amountClaimed);
 
     /// @notice Emitted when a new staking round is configured on an existing pool.
     event ConfigureNextRound(uint256 indexed poolId, uint40 newEndTime, uint40 newStartTime, uint128 newRewardAmount);
@@ -139,10 +140,13 @@ interface ISablierStaking is
     ///  - `poolId` must not reference a non-existent pool.
     ///  - Claimable rewards must be greater than 0.
     /// - `msg.value` must be greater than or equal to the minimum fee in wei for the pool's admin.
+    /// - `feeOnRewards` must be less than or equal to {MAX_FEE_ON_REWARDS}.
     ///
     /// @param poolId The Pool ID to claim rewards from.
+    /// @param feeOnRewards An optional fee to be deducted from the rewards claimed, denoted as fixed-point number where
+    /// 1e18 is 100%.
     /// @return rewards The amount of rewards claimed, denoted in reward token's decimals.
-    function claimRewards(uint256 poolId) external payable returns (uint128 rewards);
+    function claimRewards(uint256 poolId, UD60x18 feeOnRewards) external payable returns (uint128 rewards);
 
     /// @notice Configures the next staking round for the specified pool.
     /// @dev Emits a {SnapshotRewards} and {ConfigureNextRound} events.

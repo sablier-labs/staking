@@ -2,6 +2,7 @@
 pragma solidity >=0.8.26;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { UD60x18 } from "@prb/math/src/UD60x18.sol";
 
 import { ISablierLockupNFT } from "../interfaces/ISablierLockupNFT.sol";
 import { ISablierStakingState } from "../interfaces/ISablierStakingState.sol";
@@ -14,6 +15,10 @@ abstract contract SablierStakingState is ISablierStakingState {
     /*//////////////////////////////////////////////////////////////////////////
                                   STATE VARIABLES
     //////////////////////////////////////////////////////////////////////////*/
+
+    /// @inheritdoc ISablierStakingState
+    /// @dev 0.1e18 represents 10%.
+    UD60x18 public constant override MAX_FEE_ON_REWARDS = UD60x18.wrap(0.1e18);
 
     /// @inheritdoc ISablierStakingState
     uint256 public override nextPoolId;

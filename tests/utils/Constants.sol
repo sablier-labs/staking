@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity >=0.8.26;
 
+import { UD60x18 } from "@prb/math/src/UD60x18.sol";
 import { BaseConstants } from "@sablier/evm-utils/src/tests/BaseConstants.sol";
 
 abstract contract Constants is BaseConstants {
     // Pool Parameters
     uint40 internal constant END_TIME = START_TIME + REWARD_PERIOD;
+    UD60x18 internal constant FEE_ON_REWARDS = UD60x18.wrap(0.05e18); // 5%
+    UD60x18 internal constant MAX_FEE_ON_REWARDS = UD60x18.wrap(0.1e18); // 10%
     uint128 internal constant REWARD_AMOUNT = 10_000_000e18; // Fixed 10M rewards
     uint40 internal constant REWARD_PERIOD = ONE_MONTH * 10; // 10 months = 300 days
     uint128 internal constant REWARD_RATE = 0.385802469135802469e18; // 10M / 300 days

@@ -5,10 +5,10 @@
       "name": "@sablier/staking",
       "dependencies": {
         "@openzeppelin/contracts": "5.3.0",
+        "@prb/math": "4.1.0",
         "@sablier/evm-utils": "1.0.0-beta.1",
       },
       "devDependencies": {
-        "@prb/math": "4.1.0",
         "@sablier/devkit": "github:sablier-labs/devkit",
         "@sablier/lockup": "github:sablier-labs/lockup",
         "forge-std": "github:foundry-rs/forge-std#v1.9.7",
@@ -813,6 +813,8 @@
     "@openzeppelin/upgrades-core/minimatch": ["minimatch@9.0.5", "", { "dependencies": { "brace-expansion": "^2.0.1" } }, "sha512-G6T0ZX48xgozx7587koeX9Ys2NYy6Gmv//P89sEte9V9whIapMNF4idKxnW2QtCcLiTWlb/wfCabAtAFWhhBow=="],
 
     "@pnpm/network.ca-file/graceful-fs": ["graceful-fs@4.2.10", "", {}, "sha512-9ByhssR2fPVsNZj478qUUbKfmL0+t5BDVyjShtyZZLiK7ZDAArFFfopyOTj0M05wE2tJPisA4iTnnXl2YoPvOA=="],
+
+    "@sablier/evm-utils/forge-std": ["forge-std@github:foundry-rs/forge-std#77041d2", {}, "foundry-rs-forge-std-77041d2"],
 
     "@sablier/lockup/@openzeppelin/contracts": ["@openzeppelin/contracts@5.0.2", "", {}, "sha512-ytPc6eLGcHHnapAZ9S+5qsdomhjo6QBHTDRRBFfTxXIpsicMhVPouPgmUPebZZZGX7vt9USA+Z+0M0dSVtSUEA=="],
 

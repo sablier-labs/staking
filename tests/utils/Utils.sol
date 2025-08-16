@@ -35,7 +35,7 @@ abstract contract Utils is Constants, BaseUtils, PRBMathUtils {
     }
 
     /// @dev Returns a random uint40 between `min` and `max`.
-    function randomUint40(uint40 min, uint40 max) internal returns (uint40) {
+    function randomUint40(uint40 min, uint40 max) internal view returns (uint40) {
         return (vm.randomUint({ min: min, max: max })).toUint40();
     }
 

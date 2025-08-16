@@ -154,7 +154,7 @@ contract BaseHandler is Utils, StdCheats {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev Creates a random address and ensures that it is not the Sablier staking contract.
-    function createRandomAddress() internal returns (address newAddress) {
+    function createRandomAddress() internal view returns (address newAddress) {
         while (newAddress == address(0) || newAddress == address(sablierStaking)) {
             newAddress = vm.randomAddress();
         }

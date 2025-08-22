@@ -530,16 +530,11 @@ contract SablierStaking is
             revert Errors.SablierStaking_Overflow(poolId, amount, userShares.directAmountStaked);
         }
 
-        uint40 blockTimestamp = uint40(block.timestamp);
-
         // Effect: update rewards.
         _snapshotRewards(poolId, msg.sender);
 
         // Effect: reduce total staked amount in the pool.
         _pool[poolId].totalStakedAmount -= amount;
-
-        // Effect: update the global last update time.
-        _globalSnapshot[poolId].lastUpdateTime = blockTimestamp;
 
         // Safe to use `unchecked` because `amount` would not exceed `userShares.directAmountStaked`.
         unchecked {

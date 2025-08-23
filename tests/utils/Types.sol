@@ -43,7 +43,6 @@ struct Vars {
     uint128 actualDirectAmountStaked;
     uint256 actualRewardsPerTokenScaled;
     uint128 actualStreamAmountStaked;
-    uint128 actualStreamCount;
     uint128 actualTotalAmountStaked;
     uint40 actualLastUpdateTime;
     uint128 actualUserRewards;

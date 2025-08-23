@@ -279,15 +279,12 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     function test_UserSharesWhenNotZeroAddress() external whenNotNull {
         warpStateTo(END_TIME);
 
-        (uint128 streamsCount, uint128 streamAmountStaked, uint128 directAmountStaked) =
+        (uint128 streamAmountStaked, uint128 directAmountStaked) =
             sablierStaking.userShares(poolIds.defaultPool, users.staker);
-        assertEq(streamsCount, 0, "staker: streamsCount");
         assertEq(streamAmountStaked, 0, "staker: streamAmountStaked");
         assertEq(directAmountStaked, DIRECT_AMOUNT_STAKED_BY_STAKER_END_TIME, "staker: directAmountStaked");
 
-        (streamsCount, streamAmountStaked, directAmountStaked) =
-            sablierStaking.userShares(poolIds.defaultPool, users.recipient);
-        assertEq(streamsCount, STREAMS_COUNT_FOR_RECIPIENT_END_TIME, "recipient: streamsCount");
+        (streamAmountStaked, directAmountStaked) = sablierStaking.userShares(poolIds.defaultPool, users.recipient);
         assertEq(streamAmountStaked, 2 * STREAM_AMOUNT_18D, "recipient: streamAmountStaked");
         assertEq(directAmountStaked, DIRECT_AMOUNT_STAKED_BY_RECIPIENT_END_TIME, "recipient: directAmountStaked");
     }

@@ -76,11 +76,11 @@ contract UnstakeERC20Token_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test
         warpStateTo(timestamp);
 
         // If direct amount staked is 0, forward time to 20% through the rewards period.
-        (,, uint128 previousDirectAmountStaked) = sablierStaking.userShares(poolIds.defaultPool, caller);
+        (, uint128 previousDirectAmountStaked) = sablierStaking.userShares(poolIds.defaultPool, caller);
         if (previousDirectAmountStaked == 0) {
             timestamp = boundUint40(timestamp, WARP_20_PERCENT, END_TIME + 365 days);
             warpStateTo(timestamp);
-            (,, previousDirectAmountStaked) = sablierStaking.userShares(poolIds.defaultPool, caller);
+            (, previousDirectAmountStaked) = sablierStaking.userShares(poolIds.defaultPool, caller);
         }
 
         // Warp amount so that it does not exceed direct staked amount.
@@ -106,7 +106,7 @@ contract UnstakeERC20Token_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test
         sablierStaking.unstakeERC20Token(poolIds.defaultPool, amount);
 
         // It should unstake.
-        (,, vars.actualDirectAmountStaked) = sablierStaking.userShares(poolIds.defaultPool, caller);
+        (, vars.actualDirectAmountStaked) = sablierStaking.userShares(poolIds.defaultPool, caller);
         assertEq(vars.actualDirectAmountStaked, previousDirectAmountStaked - amount, "directAmountStakedByUser");
 
         // It should decrease total amount staked.

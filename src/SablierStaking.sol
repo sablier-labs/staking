@@ -502,9 +502,6 @@ contract SablierStaking is
         // Effect: update stream amount staked by `msg.sender`.
         _userShares[msg.sender][poolId].streamAmountStaked = userShares.streamAmountStaked + amountInStream;
 
-        // Effect: update the number of streams staked by `msg.sender`.
-        _userShares[msg.sender][poolId].streamsCount = userShares.streamsCount + 1;
-
         // Effect: update the `StreamLookup` mapping.
         _streamLookup[lockup][streamId] = StreamLookup({ poolId: poolId, owner: msg.sender });
 
@@ -583,9 +580,6 @@ contract SablierStaking is
 
         // Effect: reduce stream amount staked by `msg.sender`.
         _userShares[msg.sender][poolId].streamAmountStaked = userShares.streamAmountStaked - amountInStream;
-
-        // Effect: reduce the number of streams staked by `msg.sender`.
-        _userShares[msg.sender][poolId].streamsCount = userShares.streamsCount - 1;
 
         // Effect: delete the `StreamLookup` mapping.
         delete _streamLookup[lockup][streamId];

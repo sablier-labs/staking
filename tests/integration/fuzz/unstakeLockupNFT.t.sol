@@ -83,8 +83,7 @@ contract UnstakeLockupNFT_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test 
 
     /// @dev A shared private function to test the unstaking of a Lockup NFT.
     function _test_UnstakeLockupNFT(uint40 timestamp, uint128 amountUnstaked) private {
-        (uint128 previousStreamsCount, uint128 previousStreamAmountStaked,) =
-            sablierStaking.userShares(poolIds.defaultPool, users.recipient);
+        (uint128 previousStreamAmountStaked,) = sablierStaking.userShares(poolIds.defaultPool, users.recipient);
 
         (vars.expectedRewardsPerTokenScaled, vars.expectedUserRewards) = calculateLatestRewards(users.recipient);
 
@@ -111,9 +110,7 @@ contract UnstakeLockupNFT_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test 
         sablierStaking.unstakeLockupNFT(lockup, streamIds.defaultStakedStream);
 
         // It should unstake NFT.
-        (vars.actualStreamCount, vars.actualStreamAmountStaked,) =
-            sablierStaking.userShares(poolIds.defaultPool, users.recipient);
-        assertEq(vars.actualStreamCount, previousStreamsCount - 1, "streamsCount");
+        (vars.actualStreamAmountStaked,) = sablierStaking.userShares(poolIds.defaultPool, users.recipient);
         assertEq(vars.actualStreamAmountStaked, previousStreamAmountStaked - amountUnstaked, "streamAmountStakedByUser");
 
         // It should decrease total amount staked.

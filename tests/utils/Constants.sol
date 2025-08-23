@@ -34,7 +34,6 @@ abstract contract Constants is BaseConstants {
     uint128 internal constant AMOUNT_STAKED_BY_STAKER_PRE_START = 10_000e18;
     uint128 internal constant DIRECT_AMOUNT_STAKED_BY_RECIPIENT_PRE_START = 0;
     uint128 internal constant DIRECT_AMOUNT_STAKED_BY_STAKER_PRE_START = 10_000e18;
-    uint8 internal constant STREAMS_COUNT_FOR_RECIPIENT_PRE_START = 0;
     uint128 internal constant TOTAL_STAKED_PRE_START = 10_000e18;
 
     // 0% through the rewards period
@@ -42,7 +41,6 @@ abstract contract Constants is BaseConstants {
     uint128 internal constant AMOUNT_STAKED_BY_STAKER_START_TIME = 10_000e18;
     uint128 internal constant DIRECT_AMOUNT_STAKED_BY_RECIPIENT_START_TIME = 0;
     uint128 internal constant DIRECT_AMOUNT_STAKED_BY_STAKER_START_TIME = 10_000e18;
-    uint8 internal constant STREAMS_COUNT_FOR_RECIPIENT_START_TIME = 1;
     uint128 internal constant TOTAL_STAKED_START_TIME =
         AMOUNT_STAKED_BY_RECIPIENT_START_TIME + AMOUNT_STAKED_BY_STAKER_START_TIME;
 
@@ -55,7 +53,6 @@ abstract contract Constants is BaseConstants {
     uint128 internal constant REWARDS_DISTRIBUTED_PER_TOKEN_20_PERCENT = 100; // 2M / 20k
     uint128 internal constant REWARDS_EARNED_BY_RECIPIENT_20_PERCENT = 1_000_000e18;
     uint128 internal constant REWARDS_EARNED_BY_STAKER_20_PERCENT = 1_000_000e18;
-    uint8 internal constant STREAMS_COUNT_FOR_RECIPIENT_20_PERCENT = 2;
     uint128 internal constant TOTAL_STAKED_20_PERCENT =
         AMOUNT_STAKED_BY_RECIPIENT_20_PERCENT + AMOUNT_STAKED_BY_STAKER_20_PERCENT;
     uint40 internal constant WARP_20_PERCENT = START_TIME + 60 days;
@@ -84,6 +81,5 @@ abstract contract Constants is BaseConstants {
         REWARDS_DISTRIBUTED_PER_TOKEN_END_TIME * SCALE_FACTOR;
     uint128 internal constant REWARDS_EARNED_BY_RECIPIENT_END_TIME = REWARDS_EARNED_BY_RECIPIENT + 3_600_000e18;
     uint128 internal constant REWARDS_EARNED_BY_STAKER_END_TIME = REWARDS_EARNED_BY_STAKER + 2_400_000e18;
-    uint8 internal constant STREAMS_COUNT_FOR_RECIPIENT_END_TIME = 2;
     uint128 internal constant TOTAL_STAKED_END_TIME = AMOUNT_STAKED_BY_RECIPIENT + AMOUNT_STAKED_BY_STAKER;
 }

@@ -94,7 +94,6 @@ interface ISablierStakingState {
     /// @dev Reverts if `poolId` references a non-existent pool or `user` is the zero address.
     /// @param poolId The Pool ID for the query.
     /// @param user The user address for the query.
-    /// @return streamsCount The number of Sablier streams that the user has staked.
     /// @return streamAmountStaked The total amount of ERC20 tokens staked through Sablier streams, denoted in staking
     /// token's decimals.
     /// @return directAmountStaked The total amount of ERC20 tokens staked directly by the user, denoted in staking
@@ -105,7 +104,7 @@ interface ISablierStakingState {
     )
         external
         view
-        returns (uint128 streamsCount, uint128 streamAmountStaked, uint128 directAmountStaked);
+        returns (uint128 streamAmountStaked, uint128 directAmountStaked);
 
     /// @notice Retrieves the rewards snapshot of a user for the given Pool ID.
     /// @dev Reverts if `poolId` references a non-existent pool or `user` is the zero address.

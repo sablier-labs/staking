@@ -65,16 +65,13 @@ struct StreamLookup {
 }
 
 /// @notice A data structure to store a user's shares of tokens staked in a pool.
-/// @param streamsCount The number of Sablier streams that the user has staked.
 /// @param directAmountStaked The total amount of ERC20 tokens staked directly by the user, denoted in staking token's
 /// decimals.
 /// @param streamAmountStaked The total amount of ERC20 tokens staked through Sablier streams, denoted in staking
 /// token's decimals.
 struct UserShares {
     // Slot 0
-    uint128 streamsCount;
     uint128 streamAmountStaked;
-    // Slot 1
     uint128 directAmountStaked;
 }
 

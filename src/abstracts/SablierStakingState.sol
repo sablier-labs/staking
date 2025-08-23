@@ -183,7 +183,7 @@ abstract contract SablierStakingState is ISablierStakingState {
         external
         view
         notNull(poolId)
-        returns (uint128 streamsCount, uint128 streamAmountStaked, uint128 directAmountStaked)
+        returns (uint128 streamAmountStaked, uint128 directAmountStaked)
     {
         // Check: the user is not the zero address.
         if (user == address(0)) {
@@ -192,7 +192,7 @@ abstract contract SablierStakingState is ISablierStakingState {
 
         UserShares memory shares = _userShares[user][poolId];
 
-        return (shares.streamsCount, shares.streamAmountStaked, shares.directAmountStaked);
+        return (shares.streamAmountStaked, shares.directAmountStaked);
     }
 
     /// @inheritdoc ISablierStakingState

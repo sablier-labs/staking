@@ -54,7 +54,7 @@ contract OnSablierLockupCancel_Integration_Concrete_Test is Shared_Integration_C
     function test_GivenStreamStaked() external whenNoDelegateCall whenCallerLockup givenLockupWhitelisted {
         uint128 amountToRefund = ISablierLockup(address(lockup)).refundableAmountOf(streamIds.defaultStakedStream);
         uint128 expectedGlobalStakedAmount = sablierStaking.getTotalStakedAmount(poolIds.defaultPool) - amountToRefund;
-        (uint128 previousStreamsCount, uint128 previousStreamAmount, uint128 previousDirectAmount) =
+        (uint128 previousStreamAmount, uint128 previousDirectAmount) =
             sablierStaking.userShares(poolIds.defaultPool, users.recipient);
 
         // It should emit {SnapshotRewards} event.
@@ -80,10 +80,9 @@ contract OnSablierLockupCancel_Integration_Concrete_Test is Shared_Integration_C
         );
 
         // It should adjust user staked amount.
-        (uint128 streamCount, uint128 streamAmountStaked, uint128 directAmountStaked) =
+        (uint128 streamAmountStaked, uint128 directAmountStaked) =
             sablierStaking.userShares(poolIds.defaultPool, users.recipient);
 
-        assertEq(streamCount, previousStreamsCount, "user streams count");
         assertEq(directAmountStaked, previousDirectAmount, "user direct staked amount");
         assertEq(streamAmountStaked, previousStreamAmount - amountToRefund, "user stream staked amount");
     }

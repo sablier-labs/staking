@@ -192,9 +192,6 @@ contract SablierStaking is
         // Effect: set the rewards to 0.
         _userSnapshot[msg.sender][poolId].rewards = 0;
 
-        // Effect: update the last update time.
-        _userSnapshot[msg.sender][poolId].lastUpdateTime = uint40(block.timestamp);
-
         // Interaction: transfer the fee paid to comptroller if it's greater than 0.
         if (feePaid > 0) {
             (bool success,) = address(comptroller).call{ value: feePaid }("");
@@ -408,13 +405,6 @@ contract SablierStaking is
         // Check: the total amount staked by user is not zero.
         if (userShares.directAmountStaked + userShares.streamAmountStaked == 0) {
             revert Errors.SablierStaking_NoStakedAmount(poolId, user);
-        }
-
-        uint40 lastUpdateTime = _userSnapshot[user][poolId].lastUpdateTime;
-
-        // Check: the last update time is less than the end time.
-        if (lastUpdateTime >= _pool[poolId].endTime) {
-            revert Errors.SablierStaking_SnapshotNotAllowed(poolId, user, lastUpdateTime);
         }
 
         // Effect: snapshot rewards data to the latest values for `user`.
@@ -757,7 +747,7 @@ contract SablierStaking is
         uint256 rewardsPerTokenScaled = _updateGlobalSnapshot(poolId);
 
         // Update the user snapshot.
-        uint128 userRewards = _updateUserSnapshot(poolId, user, rewardsPerTokenScaled);
+        uint128 userRewards = _updateUserRewardsPerTokenScaled(poolId, user, rewardsPerTokenScaled);
 
         // Log the event.
         emit SnapshotRewards({
@@ -782,7 +772,7 @@ contract SablierStaking is
     }
 
     /// @dev Private function to update the user snapshot.
-    function _updateUserSnapshot(
+    function _updateUserRewardsPerTokenScaled(
         uint256 poolId,
         address user,
         uint256 rewardsPerTokenScaled
@@ -796,31 +786,25 @@ contract SablierStaking is
         // Calculate the total amount staked by the user.
         uint128 userTotalAmountStaked = userShares.directAmountStaked + userShares.streamAmountStaked;
 
-        // Update the user snapshot if the last time update is less than the end time.
-        if (userSnapshot.lastUpdateTime < _pool[poolId].endTime) {
-            // If the user has tokens staked, update the user rewards earned.
-            if (userTotalAmountStaked > 0) {
-                // Compute the rewards earned per ERC20 token by the user since the previous snapshot.
-                uint256 userRewardsPerTokenSinceLastSnapshotScaled =
-                    rewardsPerTokenScaled - userSnapshot.rewardsEarnedPerTokenScaled;
+        // If the user has tokens staked, update the user rewards earned.
+        if (userTotalAmountStaked > 0) {
+            // Compute the rewards earned per ERC20 token by the user since the previous snapshot.
+            uint256 userRewardsPerTokenSinceLastSnapshotScaled =
+                rewardsPerTokenScaled - userSnapshot.rewardsEarnedPerTokenScaled;
 
-                // Compute the new rewards earned by the user since the last snapshot.
-                uint256 userRewardsSinceLastSnapshotScaled =
-                    userRewardsPerTokenSinceLastSnapshotScaled * userTotalAmountStaked;
+            // Compute the new rewards earned by the user since the last snapshot.
+            uint256 userRewardsSinceLastSnapshotScaled =
+                userRewardsPerTokenSinceLastSnapshotScaled * userTotalAmountStaked;
 
-                // Scale down the rewards earned by the user since the last snapshot.
-                uint128 userRewardsSinceLastSnapshot = userRewardsSinceLastSnapshotScaled.scaleDown().toUint128();
+            // Scale down the rewards earned by the user since the last snapshot.
+            uint128 userRewardsSinceLastSnapshot = userRewardsSinceLastSnapshotScaled.scaleDown().toUint128();
 
-                // Effect: update the rewards earned by the user.
-                userRewards = userSnapshot.rewards + userRewardsSinceLastSnapshot;
-                _userSnapshot[user][poolId].rewards = userRewards;
-            }
-
-            // Effect: update the rewards earned per ERC20 token by the user.
-            _userSnapshot[user][poolId].rewardsEarnedPerTokenScaled = rewardsPerTokenScaled;
-
-            // Effect: update the last time update.
-            _userSnapshot[user][poolId].lastUpdateTime = uint40(block.timestamp);
+            // Effect: update the rewards earned by the user.
+            userRewards = userSnapshot.rewards + userRewardsSinceLastSnapshot;
+            _userSnapshot[user][poolId].rewards = userRewards;
         }
+
+        // Effect: update the rewards earned per ERC20 token by the user.
+        _userSnapshot[user][poolId].rewardsEarnedPerTokenScaled = rewardsPerTokenScaled;
     }
 }

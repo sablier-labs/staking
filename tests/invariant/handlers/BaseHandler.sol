@@ -90,8 +90,8 @@ contract BaseHandler is Utils, StdCheats {
             for (uint256 j = 0; j < handlerStore.totalStakers(poolId); ++j) {
                 address staker = handlerStore.poolStakers(poolId, j);
                 // Update user rewards per token in handler store.
-                (uint40 userSnapshotTime, uint256 rewardsPerTokenScaled,) = sablierStaking.userSnapshot(poolId, staker);
-                handlerStore.updateUserSnapshot(poolId, staker, userSnapshotTime, rewardsPerTokenScaled);
+                (uint256 rewardsPerTokenScaled,) = sablierStaking.userSnapshot(poolId, staker);
+                handlerStore.updateUserRewardsPerTokenScaled(poolId, staker, rewardsPerTokenScaled);
             }
         }
 

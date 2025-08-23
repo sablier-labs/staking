@@ -110,7 +110,6 @@ interface ISablierStakingState {
     /// @dev Reverts if `poolId` references a non-existent pool or `user` is the zero address.
     /// @param poolId The Pool ID for the query.
     /// @param user The user address for the query.
-    /// @return lastUpdateTime The last time this snapshot was updated, denoted in UNIX timestamp.
     /// @return rewardsEarnedPerTokenScaled The amount of rewards earned per staking token, scaled by
     /// {Helpers.SCALE_FACTOR} to minimize precision loss.
     /// @return rewards The amount of rewards earned by the user until last snapshot, denoted in token's decimals.
@@ -120,5 +119,5 @@ interface ISablierStakingState {
     )
         external
         view
-        returns (uint40 lastUpdateTime, uint256 rewardsEarnedPerTokenScaled, uint128 rewards);
+        returns (uint256 rewardsEarnedPerTokenScaled, uint128 rewards);
 }

@@ -32,7 +32,6 @@ contract RewardsSinceLastSnapshot_Integration_Fuzz_Test is Shared_Integration_Fu
         whenNotNull
         whenStartTimeNotInFuture
         givenTotalStakedNotZero
-        givenLastUpdateTimeLessThanEndTime
     {
         // Bound timestamp such that last time update is less than end time.
         timestamp = boundUint40(timestamp, START_TIME, END_TIME - 1);

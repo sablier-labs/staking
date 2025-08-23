@@ -24,55 +24,17 @@ contract SnapshotRewards_Integration_Concrete_Test is Shared_Integration_Concret
         sablierStaking.snapshotRewards(poolIds.defaultPool, users.eve);
     }
 
-    function test_RevertGiven_LastUpdateTimeNotLessThanEndTime()
-        external
-        whenNoDelegateCall
-        whenNotNull
-        givenStakedAmountNotZero
-    {
-        warpStateTo(END_TIME);
-
-        // Take a snapshot so that the user's last snapshot time exceeds the end time.
-        sablierStaking.snapshotRewards(poolIds.defaultPool, users.recipient);
-
-        // It should revert.
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.SablierStaking_SnapshotNotAllowed.selector, poolIds.defaultPool, users.recipient, END_TIME
-            )
-        );
-        sablierStaking.snapshotRewards(poolIds.defaultPool, users.recipient);
-    }
-
-    function test_WhenEndTimeInFuture()
-        external
-        whenNoDelegateCall
-        whenNotNull
-        givenStakedAmountNotZero
-        givenLastUpdateTimeLessThanEndTime
-    {
+    function test_WhenEndTimeInFuture() external whenNoDelegateCall whenNotNull givenStakedAmountNotZero {
         _test_SnapshotRewards();
     }
 
-    function test_WhenEndTimeInPresent()
-        external
-        whenNoDelegateCall
-        whenNotNull
-        givenStakedAmountNotZero
-        givenLastUpdateTimeLessThanEndTime
-    {
+    function test_WhenEndTimeInPresent() external whenNoDelegateCall whenNotNull givenStakedAmountNotZero {
         warpStateTo(END_TIME);
 
         _test_SnapshotRewards();
     }
 
-    function test_WhenEndTimeInPast()
-        external
-        whenNoDelegateCall
-        whenNotNull
-        givenStakedAmountNotZero
-        givenLastUpdateTimeLessThanEndTime
-    {
+    function test_WhenEndTimeInPast() external whenNoDelegateCall whenNotNull givenStakedAmountNotZero {
         warpStateTo(END_TIME + 1);
 
         _test_SnapshotRewards();
@@ -98,9 +60,7 @@ contract SnapshotRewards_Integration_Concrete_Test is Shared_Integration_Concret
         assertEq(rewardsDistributedPerTokenScaled, rewardsEarnedPerTokenScaled, "rewardsDistributedPerTokenScaled");
 
         // It should update user rewards snapshot.
-        (lastUpdateTime, rewardsEarnedPerTokenScaled, rewards) =
-            sablierStaking.userSnapshot(poolIds.defaultPool, users.recipient);
-        assertEq(lastUpdateTime, getBlockTimestamp(), "userLastUpdateTime");
+        (rewardsEarnedPerTokenScaled, rewards) = sablierStaking.userSnapshot(poolIds.defaultPool, users.recipient);
         assertEq(rewardsEarnedPerTokenScaled, rewardsEarnedPerTokenScaled, "rewardsEarnedPerTokenScaled");
         assertEq(rewards, rewards, "rewards");
     }

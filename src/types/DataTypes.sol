@@ -76,13 +76,11 @@ struct UserShares {
 }
 
 /// @notice A data structure to store a user's rewards and staking data for a given pool.
-/// @param lastUpdateTime The last time this snapshot was updated, denoted in UNIX timestamp.
 /// @param rewards The amount of reward tokens available to be claimed by the user, denoted in reward token's decimals.
 /// @param rewardsEarnedPerTokenScaled The amount of rewards earned per staking token (includes both direct staking and
 /// through Sablier streams), scaled by {Helpers.SCALE_FACTOR} to minimize precision loss.
 struct UserSnapshot {
     // Slot 0
-    uint40 lastUpdateTime;
     uint128 rewards;
     // Slot 1
     uint256 rewardsEarnedPerTokenScaled;

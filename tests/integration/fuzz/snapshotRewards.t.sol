@@ -2,43 +2,10 @@
 pragma solidity >=0.8.26;
 
 import { ISablierStaking } from "src/interfaces/ISablierStaking.sol";
-import { Errors } from "src/libraries/Errors.sol";
 
 import { Shared_Integration_Fuzz_Test } from "./Fuzz.t.sol";
 
 contract SnapshotRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
-    function testFuzz_RevertGiven_LastUpdateTimeNotLessThanEndTime(
-        uint256 userSeed,
-        uint40 timestamp
-    )
-        external
-        whenNoDelegateCall
-        whenNotNull
-        givenStakedAmountNotZero
-    {
-        // Pick a user based on the seed.
-        address user = userSeed % 2 == 0 ? users.recipient : users.staker;
-
-        // Warp EVM state to the end time and take a snapshot so that last update time equals the end time.
-        warpStateTo(END_TIME);
-        sablierStaking.snapshotRewards(poolIds.defaultPool, user);
-
-        // Bound timestamp so that it is greater than or equal to the end time.
-        timestamp = boundUint40(timestamp, END_TIME, END_TIME + 365 days);
-
-        // Forward time.
-        vm.warp(timestamp);
-
-        // It should revert.
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.SablierStaking_SnapshotNotAllowed.selector, poolIds.defaultPool, user, END_TIME
-            )
-        );
-
-        sablierStaking.snapshotRewards(poolIds.defaultPool, user);
-    }
-
     function testFuzz_SnapshotRewards(
         address caller,
         uint256 userSeed,
@@ -48,7 +15,6 @@ contract SnapshotRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         whenNoDelegateCall
         whenNotNull
         givenStakedAmountNotZero
-        givenLastUpdateTimeLessThanEndTime
     {
         assumeNoExcludedCallers(caller);
 
@@ -79,8 +45,7 @@ contract SnapshotRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         assertEq(rewardsDistributedPerTokenScaled, rewardsEarnedPerTokenScaled, "rewardsDistributedPerTokenScaled");
 
         // It should update user rewards snapshot.
-        (lastUpdateTime, rewardsEarnedPerTokenScaled, rewards) = sablierStaking.userSnapshot(poolIds.defaultPool, user);
-        assertEq(lastUpdateTime, timestamp, "userLastUpdateTime");
+        (rewardsEarnedPerTokenScaled, rewards) = sablierStaking.userSnapshot(poolIds.defaultPool, user);
         assertEq(rewardsEarnedPerTokenScaled, rewardsEarnedPerTokenScaled, "rewardsEarnedPerTokenScaled");
         assertEq(rewards, rewards, "rewards");
     }

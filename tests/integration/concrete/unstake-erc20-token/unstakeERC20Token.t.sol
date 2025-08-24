@@ -86,7 +86,7 @@ contract UnstakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concr
         sablierStaking.unstakeERC20Token(poolIds.defaultPool, DEFAULT_AMOUNT);
 
         // It should unstake.
-        (,, vars.actualDirectAmountStaked) = sablierStaking.userShares(poolIds.defaultPool, users.recipient);
+        (, vars.actualDirectAmountStaked) = sablierStaking.userShares(poolIds.defaultPool, users.recipient);
         assertEq(vars.actualDirectAmountStaked, 0, "directAmountStakedByUser");
 
         // It should decrease total amount staked.

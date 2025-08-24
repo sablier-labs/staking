@@ -202,7 +202,7 @@ contract Invariant_Test is Base_Test, StdInvariant {
                 address staker = handlerStore.poolStakers(poolId, j);
                 uint128 totalAmountStakedByUser = sablierStaking.totalAmountStakedByUser(poolId, staker);
 
-                (, uint128 streamAmountStakedByUser, uint128 directAmountStakedByUser) =
+                (uint128 streamAmountStakedByUser, uint128 directAmountStakedByUser) =
                     sablierStaking.userShares(poolId, staker);
 
                 assertEq(
@@ -242,7 +242,7 @@ contract Invariant_Test is Base_Test, StdInvariant {
             if (stakeLockupNFTCalls == 0) {
                 for (uint256 j = 0; j < handlerStore.totalStakers(poolId); ++j) {
                     address staker = handlerStore.poolStakers(poolId, j);
-                    (, uint128 streamAmountStaked,) = sablierStaking.userShares(poolId, staker);
+                    (uint128 streamAmountStaked,) = sablierStaking.userShares(poolId, staker);
 
                     assertGe(streamAmountStaked, 0, "invariant violation: streamAmountStaked != 0");
                 }
@@ -260,7 +260,7 @@ contract Invariant_Test is Base_Test, StdInvariant {
                 for (uint256 j = 0; j < handlerStore.totalStakers(poolId); ++j) {
                     address staker = handlerStore.poolStakers(poolId, j);
 
-                    (,, uint128 directAmountStaked) = sablierStaking.userShares(poolId, staker);
+                    (, uint128 directAmountStaked) = sablierStaking.userShares(poolId, staker);
 
                     assertGe(directAmountStaked, 0, "invariant violation: directAmountStaked != 0");
                 }

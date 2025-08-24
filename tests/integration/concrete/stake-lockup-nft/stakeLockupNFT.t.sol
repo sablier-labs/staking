@@ -142,8 +142,7 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
 
     /// @dev Helper function to test the staking of a lockup NFT.
     function _test_StakeLockupNFT(uint256 expectedRewardsPerTokenScaled, uint128 expectedUserRewards) private {
-        (uint128 initialStreamsCount, uint128 initialStreamAmountStaked,) =
-            sablierStaking.userShares(poolIds.defaultPool, users.recipient);
+        (uint128 initialStreamAmountStaked,) = sablierStaking.userShares(poolIds.defaultPool, users.recipient);
 
         vars.expectedTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool) + DEFAULT_AMOUNT;
 
@@ -167,9 +166,8 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
         sablierStaking.stakeLockupNFT(poolIds.defaultPool, lockup, streamIds.defaultStream);
 
         // It should stake stream.
-        (vars.actualStreamCount, vars.actualStreamAmountStaked,) =
+        (vars.actualStreamAmountStaked, vars.actualDirectAmountStaked) =
             sablierStaking.userShares(poolIds.defaultPool, users.recipient);
-        assertEq(vars.actualStreamCount, initialStreamsCount + 1, "streamsCount");
         assertEq(vars.actualStreamAmountStaked, initialStreamAmountStaked + DEFAULT_AMOUNT, "streamAmountStakedByUser");
 
         // It should increase total amount staked.

@@ -57,9 +57,7 @@ contract UnstakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concre
         sablierStaking.unstakeLockupNFT(lockup, streamIds.defaultStakedStream);
 
         // It should unstake NFT.
-        (vars.actualStreamCount, vars.actualStreamAmountStaked,) =
-            sablierStaking.userShares(poolIds.defaultPool, users.recipient);
-        assertEq(vars.actualStreamCount, 1, "streamsCount");
+        (vars.actualStreamAmountStaked,) = sablierStaking.userShares(poolIds.defaultPool, users.recipient);
         assertEq(vars.actualStreamAmountStaked, STREAM_AMOUNT_18D, "streamAmountStakedByUser");
 
         // It should decrease total amount staked.

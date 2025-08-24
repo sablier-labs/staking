@@ -42,8 +42,7 @@ contract StakeLockupNFT_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         IERC721(address(lockup)).setApprovalForAll({ operator: address(sablierStaking), approved: true });
 
         (vars.expectedRewardsPerTokenScaled, vars.expectedUserRewards) = calculateLatestRewards(caller);
-        (uint128 initialStreamsCount, uint128 initialStreamAmountStaked,) =
-            sablierStaking.userShares(poolIds.defaultPool, caller);
+        (uint128 initialStreamAmountStaked,) = sablierStaking.userShares(poolIds.defaultPool, caller);
 
         vars.expectedTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool) + amount;
 
@@ -61,9 +60,7 @@ contract StakeLockupNFT_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         sablierStaking.stakeLockupNFT(poolIds.defaultPool, lockup, streamId);
 
         // It should stake stream.
-        (vars.actualStreamCount, vars.actualStreamAmountStaked,) =
-            sablierStaking.userShares(poolIds.defaultPool, caller);
-        assertEq(vars.actualStreamCount, initialStreamsCount + 1, "streamsCount");
+        (vars.actualStreamAmountStaked,) = sablierStaking.userShares(poolIds.defaultPool, caller);
         assertEq(vars.actualStreamAmountStaked, initialStreamAmountStaked + amount, "streamAmountStakedByUser");
 
         // It should increase total amount staked.

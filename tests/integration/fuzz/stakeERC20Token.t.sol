@@ -38,7 +38,7 @@ contract StakeERC20Token_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         stakingToken.approve(address(sablierStaking), amount);
 
         (vars.expectedRewardsPerTokenScaled, vars.expectedUserRewards) = calculateLatestRewards(caller);
-        (,, uint128 initialDirectAmountStaked) = sablierStaking.userShares(poolIds.defaultPool, caller);
+        (, uint128 initialDirectAmountStaked) = sablierStaking.userShares(poolIds.defaultPool, caller);
 
         vars.expectedTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool) + amount;
 
@@ -56,7 +56,7 @@ contract StakeERC20Token_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         sablierStaking.stakeERC20Token(poolIds.defaultPool, amount);
 
         // It should stake tokens.
-        (,, vars.actualDirectAmountStaked) = sablierStaking.userShares(poolIds.defaultPool, caller);
+        (, vars.actualDirectAmountStaked) = sablierStaking.userShares(poolIds.defaultPool, caller);
         assertEq(vars.actualDirectAmountStaked, initialDirectAmountStaked + amount, "directAmountStakedByUser");
 
         // It should increase total amount staked.

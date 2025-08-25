@@ -24,17 +24,59 @@ contract SnapshotRewards_Integration_Concrete_Test is Shared_Integration_Concret
         sablierStaking.snapshotRewards(poolIds.defaultPool, users.eve);
     }
 
-    function test_WhenEndTimeInFuture() external whenNoDelegateCall whenNotNull givenStakedAmountNotZero {
+    function test_RevertGiven_LastUpdateTimeNotLessThanEndTime()
+        external
+        whenNoDelegateCall
+        whenNotNull
+        givenStakedAmountNotZero
+    {
+        warpStateTo(END_TIME);
+
+        // Take a snapshot so that the user's last snapshot time exceeds the end time.
+        sablierStaking.snapshotRewards(poolIds.defaultPool, users.recipient);
+
+        (uint256 beforeRewardsEarnedPerTokenScaled, uint128 beforeRewards) =
+            sablierStaking.userSnapshot(poolIds.defaultPool, users.recipient);
+
+        // It should do nothing.
+        sablierStaking.snapshotRewards(poolIds.defaultPool, users.recipient);
+
+        (uint256 afterRewardsEarnedPerTokenScaled, uint128 afterRewards) =
+            sablierStaking.userSnapshot(poolIds.defaultPool, users.recipient);
+
+        assertEq(afterRewardsEarnedPerTokenScaled, beforeRewardsEarnedPerTokenScaled, "rewardsEarnedPerTokenScaled");
+        assertEq(afterRewards, beforeRewards, "rewards");
+    }
+
+    function test_WhenEndTimeInFuture()
+        external
+        whenNoDelegateCall
+        whenNotNull
+        givenStakedAmountNotZero
+        givenLastUpdateTimeLessThanEndTime
+    {
         _test_SnapshotRewards();
     }
 
-    function test_WhenEndTimeInPresent() external whenNoDelegateCall whenNotNull givenStakedAmountNotZero {
+    function test_WhenEndTimeInPresent()
+        external
+        whenNoDelegateCall
+        whenNotNull
+        givenStakedAmountNotZero
+        givenLastUpdateTimeLessThanEndTime
+    {
         warpStateTo(END_TIME);
 
         _test_SnapshotRewards();
     }
 
-    function test_WhenEndTimeInPast() external whenNoDelegateCall whenNotNull givenStakedAmountNotZero {
+    function test_WhenEndTimeInPast()
+        external
+        whenNoDelegateCall
+        whenNotNull
+        givenStakedAmountNotZero
+        givenLastUpdateTimeLessThanEndTime
+    {
         warpStateTo(END_TIME + 1);
 
         _test_SnapshotRewards();

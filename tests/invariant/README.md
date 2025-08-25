@@ -12,7 +12,7 @@
    - Total staked amount = $`\sum`$ Total staked amount by each user.
 
 5. For a user in a pool:
-   - Rewards earned per token and snapshot time should never decrease over time.
+   - Rewards earned per token should never decrease over time.
    - Rewards earned per tokens should never exceed global rewards distributed per token.
    - Staked amount should equal direct staked + stream amount staked.
    - If unstake is called 0 times, total amount staked should never decrease over time.

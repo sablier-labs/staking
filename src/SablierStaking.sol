@@ -747,7 +747,7 @@ contract SablierStaking is
         uint256 rewardsPerTokenScaled = _updateGlobalSnapshot(poolId);
 
         // Update the user snapshot.
-        uint128 userRewards = _updateUserRewardsPerTokenScaled(poolId, user, rewardsPerTokenScaled);
+        uint128 userRewards = _updateUserSnapshot(poolId, user, rewardsPerTokenScaled);
 
         // Log the event.
         emit SnapshotRewards({
@@ -772,7 +772,7 @@ contract SablierStaking is
     }
 
     /// @dev Private function to update the user snapshot.
-    function _updateUserRewardsPerTokenScaled(
+    function _updateUserSnapshot(
         uint256 poolId,
         address user,
         uint256 rewardsPerTokenScaled

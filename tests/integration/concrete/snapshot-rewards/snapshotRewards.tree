@@ -9,7 +9,7 @@ SnapshotRewards_Integration_Concrete_Test
       │  └── it should revert
       └── given staked amount not zero
          ├── given last update time not less than end time
-         │  └── it should revert
+         │  └── it should do nothing
          └── given last update time less than end time
             ├── when end time in future
             │  └── it should take snapshot

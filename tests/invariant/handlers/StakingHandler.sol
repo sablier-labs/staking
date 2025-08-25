@@ -190,12 +190,10 @@ contract StakingHandler is BaseHandler {
         updateHandlerStoreForAllPools
         instrument("snapshotRewards")
     {
-        uint40 lastSnapshotTime = handlerStore.userSnapshotTime(selectedPoolId, selectedStaker);
-        uint40 endTime = sablierStaking.getEndTime(selectedPoolId);
         uint128 amountStakedByUser = handlerStore.amountStaked(selectedPoolId, selectedStaker);
 
         // Do nothing if the following conditions are met.
-        if (lastSnapshotTime >= endTime || amountStakedByUser == 0) {
+        if (amountStakedByUser == 0) {
             return;
         }
 

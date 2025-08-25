@@ -2,12 +2,11 @@
 pragma solidity >=0.8.26;
 
 import { ISablierStaking } from "src/interfaces/ISablierStaking.sol";
-import { Errors } from "src/libraries/Errors.sol";
 
 import { Shared_Integration_Fuzz_Test } from "./Fuzz.t.sol";
 
 contract SnapshotRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
-    function testFuzz_RevertGiven_LastUpdateTimeNotLessThanEndTime(
+    function testFuzz_GivenLastUpdateTimeNotLessThanEndTime(
         uint256 userSeed,
         uint40 timestamp
     )
@@ -29,14 +28,17 @@ contract SnapshotRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         // Forward time.
         vm.warp(timestamp);
 
-        // It should revert.
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.SablierStaking_SnapshotNotAllowed.selector, poolIds.defaultPool, user, END_TIME
-            )
-        );
+        (uint256 beforeRewardsEarnedPerTokenScaled, uint128 beforeRewards) =
+            sablierStaking.userSnapshot(poolIds.defaultPool, user);
 
+        // It should do nothing.
         sablierStaking.snapshotRewards(poolIds.defaultPool, user);
+
+        (uint256 afterRewardsEarnedPerTokenScaled, uint128 afterRewards) =
+            sablierStaking.userSnapshot(poolIds.defaultPool, user);
+
+        assertEq(afterRewardsEarnedPerTokenScaled, beforeRewardsEarnedPerTokenScaled, "rewardsEarnedPerTokenScaled");
+        assertEq(afterRewards, beforeRewards, "rewards");
     }
 
     function testFuzz_SnapshotRewards(
@@ -79,8 +81,7 @@ contract SnapshotRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         assertEq(rewardsDistributedPerTokenScaled, rewardsEarnedPerTokenScaled, "rewardsDistributedPerTokenScaled");
 
         // It should update user rewards snapshot.
-        (lastUpdateTime, rewardsEarnedPerTokenScaled, rewards) = sablierStaking.userSnapshot(poolIds.defaultPool, user);
-        assertEq(lastUpdateTime, timestamp, "userLastUpdateTime");
+        (rewardsEarnedPerTokenScaled, rewards) = sablierStaking.userSnapshot(poolIds.defaultPool, user);
         assertEq(rewardsEarnedPerTokenScaled, rewardsEarnedPerTokenScaled, "rewardsEarnedPerTokenScaled");
         assertEq(rewards, rewards, "rewards");
     }

@@ -155,11 +155,8 @@ contract Invariant_Test is Base_Test, StdInvariant {
 
             for (uint256 j = 0; j < handlerStore.totalStakers(poolId); ++j) {
                 address staker = handlerStore.poolStakers(poolId, j);
-                (uint40 snapshotTime, uint256 currentRewardsPerToken,) = sablierStaking.userSnapshot(poolId, staker);
-                uint40 previousSnapshotTime = handlerStore.userSnapshotTime(poolId, staker);
+                (uint256 currentRewardsPerToken,) = sablierStaking.userSnapshot(poolId, staker);
                 uint256 previousRewardsPerToken = handlerStore.userRewardsPerTokenScaled(poolId, staker);
-
-                assertGe(snapshotTime, previousSnapshotTime, "Invariant violation: user snapshot time decreased");
 
                 assertGe(
                     currentRewardsPerToken,
@@ -173,17 +170,11 @@ contract Invariant_Test is Base_Test, StdInvariant {
     function invariant_UserSnapshotLeGlobalSnapshot() external view {
         for (uint256 i = 0; i < handlerStore.totalPools(); ++i) {
             uint256 poolId = handlerStore.poolIds(i);
-            (uint40 globalSnapshotTime, uint256 globalRewardsPerToken) = sablierStaking.globalSnapshot(poolId);
+            (, uint256 globalRewardsPerToken) = sablierStaking.globalSnapshot(poolId);
 
             for (uint256 j = 0; j < handlerStore.totalStakers(poolId); ++j) {
                 address staker = handlerStore.poolStakers(poolId, j);
-                (uint40 userLastTimeUpdate, uint256 userRewardsPerToken,) = sablierStaking.userSnapshot(poolId, staker);
-
-                assertLe(
-                    userLastTimeUpdate,
-                    globalSnapshotTime,
-                    "Invariant violation: user snapshot time > global snapshot time"
-                );
+                (uint256 userRewardsPerToken,) = sablierStaking.userSnapshot(poolId, staker);
 
                 assertLe(
                     userRewardsPerToken,

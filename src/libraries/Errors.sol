@@ -82,9 +82,6 @@ library Errors {
     /// @notice Thrown when creating a pool with reward token as the zero address.
     error SablierStaking_RewardTokenZeroAddress();
 
-    /// @notice Thrown when snapshotting rewards for a user when the last snapshot time exceeds the end time.
-    error SablierStaking_SnapshotNotAllowed(uint256 poolId, address user, uint40 lastSnapshotTime);
-
     /// @notice Thrown when creating a pool with staking token as the zero address.
     error SablierStaking_StakingTokenZeroAddress();
 

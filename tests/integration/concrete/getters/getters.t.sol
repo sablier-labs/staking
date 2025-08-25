@@ -305,17 +305,14 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     function test_UserSnapshotWhenStartTimeInFuture() external whenNotNull whenNotZeroAddress {
         warpStateTo(START_TIME - 1);
 
-        (uint40 lastUpdateTime, uint256 rewardsPerTokenScaled, uint128 rewards) =
+        (uint256 rewardsPerTokenScaled, uint128 rewards) =
             sablierStaking.userSnapshot(poolIds.defaultPool, users.staker);
 
-        assertEq(lastUpdateTime, FEB_1_2025, "staker: lastUpdateTime");
         assertEq(rewardsPerTokenScaled, 0, "staker: rewardsPerTokenScaled");
         assertEq(rewards, 0, "staker: rewards");
 
-        (lastUpdateTime, rewardsPerTokenScaled, rewards) =
-            sablierStaking.userSnapshot(poolIds.defaultPool, users.recipient);
+        (rewardsPerTokenScaled, rewards) = sablierStaking.userSnapshot(poolIds.defaultPool, users.recipient);
 
-        assertEq(lastUpdateTime, 0, "recipient: lastUpdateTime");
         assertEq(rewardsPerTokenScaled, 0, "recipient: rewardsPerTokenScaled");
         assertEq(rewards, 0, "recipient: rewards");
     }
@@ -327,17 +324,14 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         sablierStaking.snapshotRewards(poolIds.defaultPool, users.staker);
         sablierStaking.snapshotRewards(poolIds.defaultPool, users.recipient);
 
-        (uint40 lastUpdateTime, uint256 rewardsPerTokenScaled, uint128 rewards) =
+        (uint256 rewardsPerTokenScaled, uint128 rewards) =
             sablierStaking.userSnapshot(poolIds.defaultPool, users.staker);
 
-        assertEq(lastUpdateTime, START_TIME, "staker: lastUpdateTime");
         assertEq(rewardsPerTokenScaled, 0, "staker: rewardsPerTokenScaled");
         assertEq(rewards, 0, "staker: rewards");
 
-        (lastUpdateTime, rewardsPerTokenScaled, rewards) =
-            sablierStaking.userSnapshot(poolIds.defaultPool, users.recipient);
+        (rewardsPerTokenScaled, rewards) = sablierStaking.userSnapshot(poolIds.defaultPool, users.recipient);
 
-        assertEq(lastUpdateTime, START_TIME, "recipient: lastUpdateTime");
         assertEq(rewardsPerTokenScaled, 0, "recipient: rewardsPerTokenScaled");
         assertEq(rewards, 0, "recipient: rewards");
     }
@@ -347,17 +341,14 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         sablierStaking.snapshotRewards(poolIds.defaultPool, users.staker);
         sablierStaking.snapshotRewards(poolIds.defaultPool, users.recipient);
 
-        (uint40 lastUpdateTime, uint256 rewardsPerTokenScaled, uint128 rewards) =
+        (uint256 rewardsPerTokenScaled, uint128 rewards) =
             sablierStaking.userSnapshot(poolIds.defaultPool, users.staker);
 
-        assertEq(lastUpdateTime, WARP_40_PERCENT, "staker: lastUpdateTime");
         assertEq(rewardsPerTokenScaled, REWARDS_DISTRIBUTED_PER_TOKEN_SCALED, "staker: rewardsPerTokenScaled");
         assertEq(rewards, REWARDS_EARNED_BY_STAKER, "staker: rewards");
 
-        (lastUpdateTime, rewardsPerTokenScaled, rewards) =
-            sablierStaking.userSnapshot(poolIds.defaultPool, users.recipient);
+        (rewardsPerTokenScaled, rewards) = sablierStaking.userSnapshot(poolIds.defaultPool, users.recipient);
 
-        assertEq(lastUpdateTime, WARP_40_PERCENT, "recipient: lastUpdateTime");
         assertEq(rewardsPerTokenScaled, REWARDS_DISTRIBUTED_PER_TOKEN_SCALED, "recipient: rewardsPerTokenScaled");
         assertEq(rewards, REWARDS_EARNED_BY_RECIPIENT, "recipient: rewards");
     }
@@ -369,10 +360,9 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         sablierStaking.snapshotRewards(poolIds.defaultPool, users.staker);
         sablierStaking.snapshotRewards(poolIds.defaultPool, users.recipient);
 
-        (uint40 lastUpdateTime, uint256 rewardsPerTokenScaled, uint128 rewards) =
+        (uint256 rewardsPerTokenScaled, uint128 rewards) =
             sablierStaking.userSnapshot(poolIds.defaultPool, users.staker);
 
-        assertEq(lastUpdateTime, END_TIME, "staker: lastUpdateTime");
         assertEq(
             rewardsPerTokenScaled,
             getScaledValue(REWARDS_DISTRIBUTED_PER_TOKEN_END_TIME),
@@ -380,10 +370,8 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         );
         assertEq(rewards, REWARDS_EARNED_BY_STAKER_END_TIME, "staker: rewards");
 
-        (lastUpdateTime, rewardsPerTokenScaled, rewards) =
-            sablierStaking.userSnapshot(poolIds.defaultPool, users.recipient);
+        (rewardsPerTokenScaled, rewards) = sablierStaking.userSnapshot(poolIds.defaultPool, users.recipient);
 
-        assertEq(lastUpdateTime, END_TIME, "recipient: lastUpdateTime");
         assertEq(
             rewardsPerTokenScaled,
             getScaledValue(REWARDS_DISTRIBUTED_PER_TOKEN_END_TIME),

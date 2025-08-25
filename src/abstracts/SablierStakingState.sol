@@ -203,7 +203,7 @@ abstract contract SablierStakingState is ISablierStakingState {
         external
         view
         notNull(poolId)
-        returns (uint40 lastUpdateTime, uint256 rewardsEarnedPerTokenScaled, uint128 rewards)
+        returns (uint256 rewardsEarnedPerTokenScaled, uint128 rewards)
     {
         // Check: the user is not the zero address.
         if (user == address(0)) {
@@ -212,7 +212,6 @@ abstract contract SablierStakingState is ISablierStakingState {
 
         UserSnapshot memory snapshot = _userSnapshot[user][poolId];
 
-        lastUpdateTime = snapshot.lastUpdateTime;
         rewardsEarnedPerTokenScaled = snapshot.rewardsEarnedPerTokenScaled;
         rewards = snapshot.rewards;
     }

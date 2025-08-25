@@ -102,9 +102,8 @@ contract UnstakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concr
         );
 
         // It should update user rewards snapshot.
-        (vars.actualLastUpdateTime, vars.actualRewardsPerTokenScaled, vars.actualUserRewards) =
+        (vars.actualRewardsPerTokenScaled, vars.actualUserRewards) =
             sablierStaking.userSnapshot(poolIds.defaultPool, users.recipient);
-        assertEq(vars.actualLastUpdateTime, WARP_40_PERCENT, "userLastUpdateTime");
         assertEq(vars.actualRewardsPerTokenScaled, REWARDS_DISTRIBUTED_PER_TOKEN_SCALED, "rewardsEarnedPerTokenScaled");
         assertEq(vars.actualUserRewards, REWARDS_EARNED_BY_RECIPIENT, "rewards");
     }

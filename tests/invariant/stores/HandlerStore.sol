@@ -42,9 +42,6 @@ contract HandlerStore {
     /// @dev Stores previous values for user rewards per token for each pool.
     mapping(uint256 poolId => mapping(address staker => uint256 rewardsPerTokenScaled)) public userRewardsPerTokenScaled;
 
-    /// @dev Tracks the last time user snapshot was taken for each staker in each pool.
-    mapping(uint256 poolId => mapping(address staker => uint40 time)) public userSnapshotTime;
-
     /*//////////////////////////////////////////////////////////////////////////
                                       GETTERS
     //////////////////////////////////////////////////////////////////////////*/
@@ -106,8 +103,7 @@ contract HandlerStore {
         status[poolId] = currentStatus;
     }
 
-    function updateUserSnapshot(uint256 poolId, address staker, uint40 time, uint256 rewardsPerTokenScaled) external {
+    function updateUserRewardsPerTokenScaled(uint256 poolId, address staker, uint256 rewardsPerTokenScaled) external {
         userRewardsPerTokenScaled[poolId][staker] = rewardsPerTokenScaled;
-        userSnapshotTime[poolId][staker] = time;
     }
 }

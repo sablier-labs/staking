@@ -35,6 +35,8 @@ contract SnapshotRewards_Integration_Concrete_Test is Shared_Integration_Concret
         // Take a snapshot so that the user's last snapshot time exceeds the end time.
         sablierStaking.snapshotRewards(poolIds.defaultPool, users.recipient);
 
+        warpStateTo(END_TIME + 1 days);
+
         (uint256 beforeRewardsEarnedPerTokenScaled, uint128 beforeRewards) =
             sablierStaking.userSnapshot(poolIds.defaultPool, users.recipient);
 

@@ -6,7 +6,7 @@ import { ISablierStaking } from "src/interfaces/ISablierStaking.sol";
 import { Shared_Integration_Fuzz_Test } from "./Fuzz.t.sol";
 
 contract SnapshotRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
-    function testFuzz_RevertGiven_LastUpdateTimeNotLessThanEndTime(
+    function testFuzz_GivenLastUpdateTimeNotLessThanEndTime(
         uint256 userSeed,
         uint40 timestamp
     )

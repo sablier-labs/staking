@@ -24,7 +24,7 @@ contract SnapshotRewards_Integration_Concrete_Test is Shared_Integration_Concret
         sablierStaking.snapshotRewards(poolIds.defaultPool, users.eve);
     }
 
-    function test_RevertGiven_LastUpdateTimeNotLessThanEndTime()
+    function test_GivenLastUpdateTimeNotLessThanEndTime()
         external
         whenNoDelegateCall
         whenNotNull

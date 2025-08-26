@@ -7,7 +7,7 @@ import { UD60x18 } from "@prb/math/src/UD60x18.sol";
 import { ISablierLockupNFT } from "../interfaces/ISablierLockupNFT.sol";
 import { ISablierStakingState } from "../interfaces/ISablierStakingState.sol";
 import { Errors } from "../libraries/Errors.sol";
-import { Pool, Status, StreamLookup, UserShares, UserSnapshot } from "../types/DataTypes.sol";
+import { Pool, Status, StreamLookup, UserAccount } from "../types/DataTypes.sol";
 
 /// @title SablierStakingState
 /// @notice See the documentation in {ISablierStakingState}.
@@ -24,23 +24,19 @@ abstract contract SablierStakingState is ISablierStakingState {
     uint256 public override nextPoolId;
 
     /// @notice Indicates whether the Lockup contract is whitelisted to stake into this contract.
-    mapping(ISablierLockupNFT lockup => bool isWhitelisted) internal _lockupWhitelist;
+    mapping(ISablierLockupNFT lockup => bool isWhitelisted) internal _lockupWhitelists;
 
     /// @notice The Pool parameters mapped by the Pool ID.
     /// @dev See the documentation for Pool in {DataTypes}.
-    mapping(uint256 poolId => Pool pool) internal _pool;
+    mapping(uint256 poolId => Pool pool) internal _pools;
 
     /// @notice Get the Pool ID and the original owner of the staked stream.
     /// @dev See the documentation for StreamLookup in {DataTypes}.
-    mapping(ISablierLockupNFT lockup => mapping(uint256 streamId => StreamLookup lookup)) internal _streamLookup;
-
-    /// @notice The user's shares of tokens staked in a pool.
-    /// @dev See the documentation for UserShares in {DataTypes}.
-    mapping(address user => mapping(uint256 poolId => UserShares shares)) internal _userShares;
+    mapping(ISablierLockupNFT lockup => mapping(uint256 streamId => StreamLookup lookup)) internal _streamLookups;
 
     /// @notice Stores the user's staking details for each pool.
-    /// @dev See the documentation for UserSnapshot in {DataTypes}.
-    mapping(address user => mapping(uint256 poolId => UserSnapshot snapshot)) internal _userSnapshot;
+    /// @dev See the documentation for UserAccount in {DataTypes}.
+    mapping(address user => mapping(uint256 poolId => UserAccount userAccount)) internal _userAccounts;
 
     /*//////////////////////////////////////////////////////////////////////////
                                      MODIFIERS
@@ -64,37 +60,37 @@ abstract contract SablierStakingState is ISablierStakingState {
 
     /// @inheritdoc ISablierStakingState
     function getAdmin(uint256 poolId) external view notNull(poolId) returns (address) {
-        return _pool[poolId].admin;
+        return _pools[poolId].admin;
     }
 
     /// @inheritdoc ISablierStakingState
     function getEndTime(uint256 poolId) external view notNull(poolId) returns (uint40) {
-        return _pool[poolId].endTime;
+        return _pools[poolId].endTime;
     }
 
     /// @inheritdoc ISablierStakingState
     function getRewardToken(uint256 poolId) external view notNull(poolId) returns (IERC20) {
-        return _pool[poolId].rewardToken;
+        return _pools[poolId].rewardToken;
     }
 
     /// @inheritdoc ISablierStakingState
     function getStakingToken(uint256 poolId) external view notNull(poolId) returns (IERC20) {
-        return _pool[poolId].stakingToken;
+        return _pools[poolId].stakingToken;
     }
 
     /// @inheritdoc ISablierStakingState
     function getStartTime(uint256 poolId) external view notNull(poolId) returns (uint40) {
-        return _pool[poolId].startTime;
+        return _pools[poolId].startTime;
     }
 
     /// @inheritdoc ISablierStakingState
     function getRewardAmount(uint256 poolId) external view notNull(poolId) returns (uint128) {
-        return _pool[poolId].rewardAmount;
+        return _pools[poolId].rewardAmount;
     }
 
     /// @inheritdoc ISablierStakingState
     function getTotalStakedAmount(uint256 poolId) external view notNull(poolId) returns (uint128) {
-        return _pool[poolId].totalStakedAmount;
+        return _pools[poolId].totalStakedAmount;
     }
 
     /// @inheritdoc ISablierStakingState
@@ -104,8 +100,8 @@ abstract contract SablierStakingState is ISablierStakingState {
         notNull(poolId)
         returns (uint40 lastUpdateTime, uint256 rewardsDistributedPerTokenScaled)
     {
-        lastUpdateTime = _pool[poolId].lastUpdateTime;
-        rewardsDistributedPerTokenScaled = _pool[poolId].rewardsDistributedPerTokenScaled;
+        lastUpdateTime = _pools[poolId].lastUpdateTime;
+        rewardsDistributedPerTokenScaled = _pools[poolId].rewardsDistributedPerTokenScaled;
     }
 
     /// @inheritdoc ISablierStakingState
@@ -115,13 +111,13 @@ abstract contract SablierStakingState is ISablierStakingState {
             revert Errors.SablierStakingState_ZeroAddress();
         }
 
-        return _lockupWhitelist[lockup];
+        return _lockupWhitelists[lockup];
     }
 
     /// @inheritdoc ISablierStakingState
     function status(uint256 poolId) external view override notNull(poolId) returns (Status) {
         // Return SCHEDULED if the start time is in the future.
-        if (block.timestamp < _pool[poolId].startTime) {
+        if (block.timestamp < _pools[poolId].startTime) {
             return Status.SCHEDULED;
         }
 
@@ -149,12 +145,12 @@ abstract contract SablierStakingState is ISablierStakingState {
         }
 
         // Check: the stream ID is staked in a pool.
-        if (_streamLookup[lockup][streamId].poolId == 0) {
+        if (_streamLookups[lockup][streamId].poolId == 0) {
             revert Errors.SablierStakingState_StreamNotStaked(lockup, streamId);
         }
 
-        poolId = _streamLookup[lockup][streamId].poolId;
-        owner = _streamLookup[lockup][streamId].owner;
+        poolId = _streamLookups[lockup][streamId].poolId;
+        owner = _streamLookups[lockup][streamId].owner;
     }
 
     /// @inheritdoc ISablierStakingState
@@ -164,7 +160,7 @@ abstract contract SablierStakingState is ISablierStakingState {
             revert Errors.SablierStakingState_ZeroAddress();
         }
 
-        return _userShares[user][poolId].directAmountStaked + _userShares[user][poolId].streamAmountStaked;
+        return _userAccounts[user][poolId].directAmountStaked + _userAccounts[user][poolId].streamAmountStaked;
     }
 
     /// @inheritdoc ISablierStakingState
@@ -182,7 +178,7 @@ abstract contract SablierStakingState is ISablierStakingState {
             revert Errors.SablierStakingState_ZeroAddress();
         }
 
-        return (_userShares[user][poolId].streamAmountStaked, _userShares[user][poolId].directAmountStaked);
+        return (_userAccounts[user][poolId].streamAmountStaked, _userAccounts[user][poolId].directAmountStaked);
     }
 
     /// @inheritdoc ISablierStakingState
@@ -200,8 +196,8 @@ abstract contract SablierStakingState is ISablierStakingState {
             revert Errors.SablierStakingState_ZeroAddress();
         }
 
-        rewardsEarnedPerTokenScaled = _userSnapshot[user][poolId].rewardsEarnedPerTokenScaled;
-        rewards = _userSnapshot[user][poolId].rewards;
+        rewardsEarnedPerTokenScaled = _userAccounts[user][poolId].rewardsEarnedPerTokenScaled;
+        rewards = _userAccounts[user][poolId].rewards;
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -210,9 +206,8 @@ abstract contract SablierStakingState is ISablierStakingState {
 
     /// @dev Returns true if the pool is active.
     function _isActive(uint256 poolId) private view returns (bool) {
-        Pool memory pool = _pool[poolId];
         uint40 currentTimestamp = uint40(block.timestamp);
-        return pool.startTime <= currentTimestamp && currentTimestamp <= pool.endTime;
+        return _pools[poolId].startTime <= currentTimestamp && currentTimestamp <= _pools[poolId].endTime;
     }
 
     /// @dev Reverts if the pool is not active.
@@ -224,7 +219,7 @@ abstract contract SablierStakingState is ISablierStakingState {
 
     /// @dev Reverts if the pool ID does not exist.
     function _revertIfNull(uint256 poolId) private view {
-        if (_pool[poolId].admin == address(0)) {
+        if (_pools[poolId].admin == address(0)) {
             revert Errors.SablierStakingState_PoolDoesNotExist(poolId);
         }
     }

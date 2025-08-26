@@ -135,9 +135,9 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
         uint128 expectedRewardsTransferredToRecipient =
             expectedRewardsEarnedByRecipient - expectedRewardsTransferredToComptroller;
 
-        // It should emit 1 {SnapshotRewards}, 2 {Transfer} and 1 {ClaimRewards} events.
+        // It should emit 1 {UpdateRewards}, 2 {Transfer} and 1 {ClaimRewards} events.
         vm.expectEmit({ emitter: address(sablierStaking) });
-        emit ISablierStaking.SnapshotRewards(
+        emit ISablierStaking.UpdateRewards(
             poolIds.defaultPool,
             expectedSnapshotTime,
             expectedRewardsEarnedPerTokenScaled,

@@ -5,7 +5,7 @@ import { ISablierStaking } from "src/interfaces/ISablierStaking.sol";
 
 import { Shared_Integration_Fuzz_Test } from "./Fuzz.t.sol";
 
-contract SnapshotRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
+contract UpdateRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
     function testFuzz_GivenLastUpdateTimeNotLessThanEndTime(
         uint256 userSeed,
         uint40 timestamp
@@ -41,7 +41,7 @@ contract SnapshotRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         assertEq(afterRewards, beforeRewards, "rewards");
     }
 
-    function testFuzz_SnapshotRewards(
+    function testFuzz_UpdateRewards(
         address caller,
         uint256 userSeed,
         uint40 timestamp
@@ -66,9 +66,9 @@ contract SnapshotRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
 
         (uint256 rewardsEarnedPerTokenScaled, uint128 rewards) = calculateLatestRewards(user);
 
-        // It should emit {SnapshotRewards} event.
+        // It should emit {UpdateRewards} event.
         vm.expectEmit({ emitter: address(sablierStaking) });
-        emit ISablierStaking.SnapshotRewards(poolIds.defaultPool, timestamp, rewardsEarnedPerTokenScaled, user, rewards);
+        emit ISablierStaking.UpdateRewards(poolIds.defaultPool, timestamp, rewardsEarnedPerTokenScaled, user, rewards);
 
         // Test snapshot rewards.
         setMsgSender(caller);

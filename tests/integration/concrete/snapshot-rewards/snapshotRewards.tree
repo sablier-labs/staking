@@ -1,4 +1,4 @@
-SnapshotRewards_Integration_Concrete_Test
+UpdateRewards_Integration_Concrete_Test
 ├── when delegate call
 │  └── it should revert
 └── when no delegate call
@@ -18,4 +18,4 @@ SnapshotRewards_Integration_Concrete_Test
             └── when end time in past
                ├── it should update global rewards snapshot
                ├── it should update user rewards snapshot
-               └── it should emit {SnapshotRewards} event
+               └── it should emit {UpdateRewards} event

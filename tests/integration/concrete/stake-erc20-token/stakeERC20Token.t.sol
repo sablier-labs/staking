@@ -80,9 +80,9 @@ contract StakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concret
         (, uint128 initialDirectAmountStaked) = sablierStaking.userShares(poolIds.defaultPool, users.recipient);
         vars.expectedTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool) + DEFAULT_AMOUNT;
 
-        // It should emit {SnapshotRewards}, {Transfer} and {StakeERC20Token} events.
+        // It should emit {UpdateRewards}, {Transfer} and {StakeERC20Token} events.
         vm.expectEmit({ emitter: address(sablierStaking) });
-        emit ISablierStaking.SnapshotRewards(
+        emit ISablierStaking.UpdateRewards(
             poolIds.defaultPool,
             getBlockTimestamp(),
             expectedRewardsPerTokenScaled,

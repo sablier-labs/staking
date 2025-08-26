@@ -6,7 +6,7 @@ import { Errors } from "src/libraries/Errors.sol";
 
 import { Shared_Integration_Concrete_Test } from "../Concrete.t.sol";
 
-contract SnapshotRewards_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
+contract UpdateRewards_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     function test_RevertWhen_DelegateCall() external {
         bytes memory callData = abi.encodeCall(sablierStaking.snapshotRewards, (poolIds.defaultPool, users.recipient));
         expectRevert_DelegateCall(callData);
@@ -58,7 +58,7 @@ contract SnapshotRewards_Integration_Concrete_Test is Shared_Integration_Concret
         givenStakedAmountNotZero
         givenLastUpdateTimeLessThanEndTime
     {
-        _test_SnapshotRewards();
+        _test_UpdateRewards();
     }
 
     function test_WhenEndTimeInPresent()
@@ -70,7 +70,7 @@ contract SnapshotRewards_Integration_Concrete_Test is Shared_Integration_Concret
     {
         warpStateTo(END_TIME);
 
-        _test_SnapshotRewards();
+        _test_UpdateRewards();
     }
 
     function test_WhenEndTimeInPast()
@@ -82,16 +82,16 @@ contract SnapshotRewards_Integration_Concrete_Test is Shared_Integration_Concret
     {
         warpStateTo(END_TIME + 1);
 
-        _test_SnapshotRewards();
+        _test_UpdateRewards();
     }
 
     /// @dev Shared function for testing.
-    function _test_SnapshotRewards() private {
+    function _test_UpdateRewards() private {
         (uint256 rewardsEarnedPerTokenScaled, uint128 rewards) = calculateLatestRewards(users.recipient);
 
-        // It should emit {SnapshotRewards} event.
+        // It should emit {UpdateRewards} event.
         vm.expectEmit({ emitter: address(sablierStaking) });
-        emit ISablierStaking.SnapshotRewards(
+        emit ISablierStaking.UpdateRewards(
             poolIds.defaultPool, getBlockTimestamp(), rewardsEarnedPerTokenScaled, users.recipient, rewards
         );
 

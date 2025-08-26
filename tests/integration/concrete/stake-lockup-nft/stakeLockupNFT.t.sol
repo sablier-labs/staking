@@ -146,9 +146,9 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
 
         vars.expectedTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool) + DEFAULT_AMOUNT;
 
-        // It should emit {SnapshotRewards}, {Transfer} and {StakeLockupNFT} events.
+        // It should emit {UpdateRewards}, {Transfer} and {StakeLockupNFT} events.
         vm.expectEmit({ emitter: address(sablierStaking) });
-        emit ISablierStaking.SnapshotRewards(
+        emit ISablierStaking.UpdateRewards(
             poolIds.defaultPool,
             getBlockTimestamp(),
             expectedRewardsPerTokenScaled,

@@ -180,7 +180,7 @@ contract SablierStaking is
         }
 
         // Effect: snapshot rewards data to the latest values.
-        _snapshotRewards(poolId, msg.sender);
+        _updateRewards(poolId, msg.sender);
 
         // Load rewards from storage.
         amountClaimed = _userAccounts[msg.sender][poolId].rewards;
@@ -264,7 +264,7 @@ contract SablierStaking is
         }
 
         // Effect: snapshot rewards.
-        _snapshotRewards(poolId, msg.sender);
+        _updateRewards(poolId, msg.sender);
 
         // Effect: set the next staking round parameters.
         _pools[poolId].endTime = newEndTime;
@@ -385,7 +385,7 @@ contract SablierStaking is
         address owner = streamLookup.owner;
 
         // Effect: snapshot user rewards.
-        _snapshotRewards(poolId, owner);
+        _updateRewards(poolId, owner);
 
         // Effect: decrease the total staked amount in the pool.
         _pools[poolId].totalStakedAmount -= senderAmount;
@@ -407,7 +407,7 @@ contract SablierStaking is
         }
 
         // Effect: snapshot rewards data to the latest values for `user`.
-        _snapshotRewards(poolId, user);
+        _updateRewards(poolId, user);
     }
 
     /// @inheritdoc ISablierStaking
@@ -426,7 +426,7 @@ contract SablierStaking is
         }
 
         // Effect: update rewards for `msg.sender`.
-        _snapshotRewards(poolId, msg.sender);
+        _updateRewards(poolId, msg.sender);
 
         // Effect: update total staked amount in the pool.
         _pools[poolId].totalStakedAmount += amount;
@@ -480,7 +480,7 @@ contract SablierStaking is
         }
 
         // Effect: update rewards.
-        _snapshotRewards(poolId, msg.sender);
+        _updateRewards(poolId, msg.sender);
 
         // Effect: update total staked amount in the pool.
         _pools[poolId].totalStakedAmount += amountInStream;
@@ -511,7 +511,7 @@ contract SablierStaking is
         }
 
         // Effect: update rewards.
-        _snapshotRewards(poolId, msg.sender);
+        _updateRewards(poolId, msg.sender);
 
         // Effect: reduce total staked amount in the pool.
         _pools[poolId].totalStakedAmount -= amount;
@@ -553,7 +553,7 @@ contract SablierStaking is
         uint128 amountInStream = Helpers.amountInStream(lockup, streamId);
 
         // Effect: update rewards.
-        _snapshotRewards(poolId, msg.sender);
+        _updateRewards(poolId, msg.sender);
 
         // Effect: reduce total staked amount in the pool.
         _pools[poolId].totalStakedAmount -= amountInStream;
@@ -725,24 +725,6 @@ contract SablierStaking is
                           PRIVATE STATE-CHANGING FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice Snapshots rewards data for the specified pool and user.
-    function _snapshotRewards(uint256 poolId, address user) private {
-        // Update the global rewards.
-        uint256 rewardsPerTokenScaled = _updateGlobalRewards(poolId);
-
-        // Update the user rewards.
-        uint128 userRewards = _updateUserRewards(poolId, user, rewardsPerTokenScaled);
-
-        // Log the event.
-        emit SnapshotRewards({
-            poolId: poolId,
-            lastUpdateTime: uint40(block.timestamp),
-            rewardsDistributedPerTokenScaled: rewardsPerTokenScaled,
-            user: user,
-            userRewards: userRewards
-        });
-    }
-
     /// @notice Private function to update the global rewards.
     function _updateGlobalRewards(uint256 poolId) private returns (uint256 rewardsPerTokenScaled) {
         // Get the latest value of the cumulative rewards distributed per ERC20 token.
@@ -753,6 +735,24 @@ contract SablierStaking is
 
         // Effect: update the last time update.
         _pools[poolId].lastUpdateTime = uint40(block.timestamp);
+    }
+
+    /// @notice Update rewards data for the specified pool and user.
+    function _updateRewards(uint256 poolId, address user) private {
+        // Update the global rewards.
+        uint256 rewardsPerTokenScaled = _updateGlobalRewards(poolId);
+
+        // Update the user rewards.
+        uint128 userRewards = _updateUserRewards(poolId, user, rewardsPerTokenScaled);
+
+        // Log the event.
+        emit UpdateRewards({
+            poolId: poolId,
+            lastUpdateTime: uint40(block.timestamp),
+            rewardsDistributedPerTokenScaled: rewardsPerTokenScaled,
+            user: user,
+            userRewards: userRewards
+        });
     }
 
     /// @dev Private function to update the user rewards.

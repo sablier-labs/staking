@@ -7,7 +7,7 @@ import { UD60x18 } from "@prb/math/src/UD60x18.sol";
 import { ISablierLockupNFT } from "../interfaces/ISablierLockupNFT.sol";
 import { ISablierStakingState } from "../interfaces/ISablierStakingState.sol";
 import { Errors } from "../libraries/Errors.sol";
-import { GlobalSnapshot, Pool, Status, StreamLookup, UserShares, UserSnapshot } from "../types/DataTypes.sol";
+import { Pool, Status, StreamLookup, UserShares, UserSnapshot } from "../types/DataTypes.sol";
 
 /// @title SablierStakingState
 /// @notice See the documentation in {ISablierStakingState}.
@@ -22,10 +22,6 @@ abstract contract SablierStakingState is ISablierStakingState {
 
     /// @inheritdoc ISablierStakingState
     uint256 public override nextPoolId;
-
-    /// @notice Tracks the global rewards data and total staked amount for a given pool.
-    /// @dev See the documentation for GlobalSnapshot in {DataTypes}.
-    mapping(uint256 poolId => GlobalSnapshot snapshot) internal _globalSnapshot;
 
     /// @notice Indicates whether the Lockup contract is whitelisted to stake into this contract.
     mapping(ISablierLockupNFT lockup => bool isWhitelisted) internal _lockupWhitelist;
@@ -108,10 +104,8 @@ abstract contract SablierStakingState is ISablierStakingState {
         notNull(poolId)
         returns (uint40 lastUpdateTime, uint256 rewardsDistributedPerTokenScaled)
     {
-        GlobalSnapshot memory snapshot = _globalSnapshot[poolId];
-
-        lastUpdateTime = snapshot.lastUpdateTime;
-        rewardsDistributedPerTokenScaled = snapshot.rewardsDistributedPerTokenScaled;
+        lastUpdateTime = _pool[poolId].lastUpdateTime;
+        rewardsDistributedPerTokenScaled = _pool[poolId].rewardsDistributedPerTokenScaled;
     }
 
     /// @inheritdoc ISablierStakingState
@@ -170,9 +164,7 @@ abstract contract SablierStakingState is ISablierStakingState {
             revert Errors.SablierStakingState_ZeroAddress();
         }
 
-        UserShares memory shares = _userShares[user][poolId];
-
-        return shares.directAmountStaked + shares.streamAmountStaked;
+        return _userShares[user][poolId].directAmountStaked + _userShares[user][poolId].streamAmountStaked;
     }
 
     /// @inheritdoc ISablierStakingState
@@ -190,9 +182,7 @@ abstract contract SablierStakingState is ISablierStakingState {
             revert Errors.SablierStakingState_ZeroAddress();
         }
 
-        UserShares memory shares = _userShares[user][poolId];
-
-        return (shares.streamAmountStaked, shares.directAmountStaked);
+        return (_userShares[user][poolId].streamAmountStaked, _userShares[user][poolId].directAmountStaked);
     }
 
     /// @inheritdoc ISablierStakingState
@@ -210,10 +200,8 @@ abstract contract SablierStakingState is ISablierStakingState {
             revert Errors.SablierStakingState_ZeroAddress();
         }
 
-        UserSnapshot memory snapshot = _userSnapshot[user][poolId];
-
-        rewardsEarnedPerTokenScaled = snapshot.rewardsEarnedPerTokenScaled;
-        rewards = snapshot.rewards;
+        rewardsEarnedPerTokenScaled = _userSnapshot[user][poolId].rewardsEarnedPerTokenScaled;
+        rewards = _userSnapshot[user][poolId].rewards;
     }
 
     /*//////////////////////////////////////////////////////////////////////////

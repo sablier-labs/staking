@@ -17,7 +17,7 @@ import { ISablierLockupNFT } from "./interfaces/ISablierLockupNFT.sol";
 import { ISablierStaking } from "./interfaces/ISablierStaking.sol";
 import { Errors } from "./libraries/Errors.sol";
 import { Helpers } from "./libraries/Helpers.sol";
-import { GlobalSnapshot, Pool, StreamLookup, UserShares, UserSnapshot } from "./types/DataTypes.sol";
+import { Pool, StreamLookup, UserShares, UserSnapshot } from "./types/DataTypes.sol";
 
 /// @title SablierStaking
 /// @notice See the documentation in {ISablierStaking}.
@@ -332,11 +332,13 @@ contract SablierStaking is
         _pool[poolId] = Pool({
             admin: admin,
             endTime: endTime,
+            lastUpdateTime: 0,
+            rewardAmount: rewardAmount,
             rewardToken: rewardToken,
+            rewardsDistributedPerTokenScaled: 0,
             stakingToken: stakingToken,
             startTime: startTime,
-            totalStakedAmount: 0,
-            rewardAmount: rewardAmount
+            totalStakedAmount: 0
         });
 
         // Safe to use unchecked because it can't overflow.
@@ -619,10 +621,7 @@ contract SablierStaking is
         view
         returns (uint256 rewardsPerTokenScaled)
     {
-        // Load the global snapshot into memory.
-        GlobalSnapshot memory globalSnapshot = _globalSnapshot[poolId];
-
-        rewardsPerTokenScaled = globalSnapshot.rewardsDistributedPerTokenScaled;
+        rewardsPerTokenScaled = _pool[poolId].rewardsDistributedPerTokenScaled;
 
         // Get the rewards distributed since the last snapshot.
         uint256 rewardsDistributedSinceLastSnapshot = _rewardsDistributedSinceLastSnapshot(poolId);
@@ -673,7 +672,7 @@ contract SablierStaking is
             return 0;
         }
 
-        uint40 lastUpdateTime = _globalSnapshot[poolId].lastUpdateTime;
+        uint40 lastUpdateTime = _pool[poolId].lastUpdateTime;
 
         // If the last time update is greater than or equal to the end time, return 0.
         if (lastUpdateTime >= pool.endTime) {
@@ -765,10 +764,10 @@ contract SablierStaking is
         rewardsPerTokenScaled = _latestRewardsDistributedPerTokenScaled(poolId);
 
         // Effect: update the rewards distributed per ERC20 token.
-        _globalSnapshot[poolId].rewardsDistributedPerTokenScaled = rewardsPerTokenScaled;
+        _pool[poolId].rewardsDistributedPerTokenScaled = rewardsPerTokenScaled;
 
         // Effect: update the last time update.
-        _globalSnapshot[poolId].lastUpdateTime = uint40(block.timestamp);
+        _pool[poolId].lastUpdateTime = uint40(block.timestamp);
     }
 
     /// @dev Private function to update the user snapshot.

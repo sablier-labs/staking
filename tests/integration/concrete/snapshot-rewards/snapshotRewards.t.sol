@@ -39,13 +39,13 @@ contract SnapshotRewards_Integration_Concrete_Test is Shared_Integration_Concret
         vm.warp(END_TIME + 1 days);
 
         (uint256 beforeRewardsEarnedPerTokenScaled, uint128 beforeRewards) =
-            sablierStaking.userSnapshot(poolIds.defaultPool, users.recipient);
+            sablierStaking.userRewards(poolIds.defaultPool, users.recipient);
 
         // It should do nothing.
         sablierStaking.snapshotRewards(poolIds.defaultPool, users.recipient);
 
         (uint256 afterRewardsEarnedPerTokenScaled, uint128 afterRewards) =
-            sablierStaking.userSnapshot(poolIds.defaultPool, users.recipient);
+            sablierStaking.userRewards(poolIds.defaultPool, users.recipient);
 
         assertEq(afterRewardsEarnedPerTokenScaled, beforeRewardsEarnedPerTokenScaled, "rewardsEarnedPerTokenScaled");
         assertEq(afterRewards, beforeRewards, "rewards");
@@ -100,12 +100,12 @@ contract SnapshotRewards_Integration_Concrete_Test is Shared_Integration_Concret
 
         // It should update global rewards snapshot.
         (uint40 lastUpdateTime, uint256 rewardsDistributedPerTokenScaled) =
-            sablierStaking.globalSnapshot(poolIds.defaultPool);
+            sablierStaking.globalRewardsPerTokenSnapshot(poolIds.defaultPool);
         assertEq(lastUpdateTime, getBlockTimestamp(), "globalLastUpdateTime");
         assertEq(rewardsDistributedPerTokenScaled, rewardsEarnedPerTokenScaled, "rewardsDistributedPerTokenScaled");
 
         // It should update user rewards snapshot.
-        (rewardsEarnedPerTokenScaled, rewards) = sablierStaking.userSnapshot(poolIds.defaultPool, users.recipient);
+        (rewardsEarnedPerTokenScaled, rewards) = sablierStaking.userRewards(poolIds.defaultPool, users.recipient);
         assertEq(rewardsEarnedPerTokenScaled, rewardsEarnedPerTokenScaled, "rewardsEarnedPerTokenScaled");
         assertEq(rewards, rewards, "rewards");
     }

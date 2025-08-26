@@ -69,7 +69,7 @@ abstract contract Integration_Test is Base_Test {
         }
 
         (uint40 lastUpdateTime, uint256 rewardsDistributedPerTokenScaled) =
-            sablierStaking.globalSnapshot(poolIds.defaultPool);
+            sablierStaking.globalRewardsPerTokenSnapshot(poolIds.defaultPool);
 
         // Calculate starting point in time for rewards calculation.
         uint40 startingPointInTime = lastUpdateTime >= START_TIME ? lastUpdateTime : START_TIME;
@@ -86,7 +86,7 @@ abstract contract Integration_Test is Base_Test {
             getScaledValue(rewardsDistributedSinceLastUpdate) / sablierStaking.getTotalStakedAmount(poolIds.defaultPool);
 
         // Get user rewards snapshot.
-        (rewardsEarnedPerTokenScaled, rewards) = sablierStaking.userSnapshot(poolIds.defaultPool, user);
+        (rewardsEarnedPerTokenScaled, rewards) = sablierStaking.userRewards(poolIds.defaultPool, user);
 
         // Calculate latest rewards earned per token scaled.
         uint256 rewardsEarnedPerTokenScaledDelta = rewardsDistributedPerTokenScaled - rewardsEarnedPerTokenScaled;

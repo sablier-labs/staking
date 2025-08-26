@@ -69,7 +69,7 @@ contract StakeLockupNFT_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
 
         // It should update user rewards snapshot.
         (vars.actualRewardsPerTokenScaled, vars.actualUserRewards) =
-            sablierStaking.userSnapshot(poolIds.defaultPool, caller);
+            sablierStaking.userRewards(poolIds.defaultPool, caller);
         assertEq(vars.actualRewardsPerTokenScaled, vars.expectedRewardsPerTokenScaled, "rewardsEarnedPerTokenScaled");
         assertEq(vars.actualUserRewards, vars.expectedUserRewards, "rewards");
     }

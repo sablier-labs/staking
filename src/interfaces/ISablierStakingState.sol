@@ -55,7 +55,7 @@ interface ISablierStakingState {
     /// @return lastUpdateTime The last time this snapshot was updated, denoted in UNIX timestamp.
     /// @return rewardsDistributedPerTokenScaled The amount of rewards distributed per staking token, scaled by
     /// {Helpers.SCALE_FACTOR} to minimize precision loss.
-    function globalSnapshot(uint256 poolId)
+    function globalRewardsPerTokenSnapshot(uint256 poolId)
         external
         view
         returns (uint40 lastUpdateTime, uint256 rewardsDistributedPerTokenScaled);
@@ -113,7 +113,7 @@ interface ISablierStakingState {
     /// @return rewardsEarnedPerTokenScaled The amount of rewards earned per staking token, scaled by
     /// {Helpers.SCALE_FACTOR} to minimize precision loss.
     /// @return rewards The amount of rewards earned by the user until last snapshot, denoted in token's decimals.
-    function userSnapshot(
+    function userRewards(
         uint256 poolId,
         address user
     )

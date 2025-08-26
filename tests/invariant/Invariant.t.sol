@@ -52,10 +52,10 @@ contract Invariant_Test is Base_Test, StdInvariant {
         assertEq(nextPoolId, lastPoolId + 1, "Invariant violation: next pool ID not incremented");
     }
 
-    function invariant_GlobalSnapshot() external view {
+    function invariant_GlobalRewardsPerTokenSnapshot() external view {
         for (uint256 i = 0; i < handlerStore.totalPools(); ++i) {
             uint256 poolId = handlerStore.poolIds(i);
-            (uint40 snapshotTime, uint256 currentRewardsPerToken) = sablierStaking.globalSnapshot(poolId);
+            (uint40 snapshotTime, uint256 currentRewardsPerToken) = sablierStaking.globalRewardsPerTokenSnapshot(poolId);
             uint40 previousSnapshotTime = handlerStore.globalSnapshotTime(poolId);
             uint256 previousRewardsPerToken = handlerStore.globalRewardsPerTokenScaled(poolId);
 
@@ -149,13 +149,13 @@ contract Invariant_Test is Base_Test, StdInvariant {
         }
     }
 
-    function invariant_UserSnapshot() external view {
+    function invariant_UserRewards() external view {
         for (uint256 i = 0; i < handlerStore.totalPools(); ++i) {
             uint256 poolId = handlerStore.poolIds(i);
 
             for (uint256 j = 0; j < handlerStore.totalStakers(poolId); ++j) {
                 address staker = handlerStore.poolStakers(poolId, j);
-                (uint256 currentRewardsPerToken,) = sablierStaking.userSnapshot(poolId, staker);
+                (uint256 currentRewardsPerToken,) = sablierStaking.userRewards(poolId, staker);
                 uint256 previousRewardsPerToken = handlerStore.userRewardsPerTokenScaled(poolId, staker);
 
                 assertGe(
@@ -167,14 +167,14 @@ contract Invariant_Test is Base_Test, StdInvariant {
         }
     }
 
-    function invariant_UserSnapshotLeGlobalSnapshot() external view {
+    function invariant_UserRewardsLeGlobalRewardsPerTokenSnapshot() external view {
         for (uint256 i = 0; i < handlerStore.totalPools(); ++i) {
             uint256 poolId = handlerStore.poolIds(i);
-            (, uint256 globalRewardsPerToken) = sablierStaking.globalSnapshot(poolId);
+            (, uint256 globalRewardsPerToken) = sablierStaking.globalRewardsPerTokenSnapshot(poolId);
 
             for (uint256 j = 0; j < handlerStore.totalStakers(poolId); ++j) {
                 address staker = handlerStore.poolStakers(poolId, j);
-                (uint256 userRewardsPerToken,) = sablierStaking.userSnapshot(poolId, staker);
+                (uint256 userRewardsPerToken,) = sablierStaking.userRewards(poolId, staker);
 
                 assertLe(
                     userRewardsPerToken,

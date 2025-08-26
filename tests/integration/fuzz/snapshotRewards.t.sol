@@ -29,13 +29,13 @@ contract SnapshotRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         vm.warp(timestamp);
 
         (uint256 beforeRewardsEarnedPerTokenScaled, uint128 beforeRewards) =
-            sablierStaking.userSnapshot(poolIds.defaultPool, user);
+            sablierStaking.userRewards(poolIds.defaultPool, user);
 
         // It should do nothing.
         sablierStaking.snapshotRewards(poolIds.defaultPool, user);
 
         (uint256 afterRewardsEarnedPerTokenScaled, uint128 afterRewards) =
-            sablierStaking.userSnapshot(poolIds.defaultPool, user);
+            sablierStaking.userRewards(poolIds.defaultPool, user);
 
         assertEq(afterRewardsEarnedPerTokenScaled, beforeRewardsEarnedPerTokenScaled, "rewardsEarnedPerTokenScaled");
         assertEq(afterRewards, beforeRewards, "rewards");
@@ -76,12 +76,12 @@ contract SnapshotRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
 
         // It should update global rewards snapshot.
         (uint40 lastUpdateTime, uint256 rewardsDistributedPerTokenScaled) =
-            sablierStaking.globalSnapshot(poolIds.defaultPool);
+            sablierStaking.globalRewardsPerTokenSnapshot(poolIds.defaultPool);
         assertEq(lastUpdateTime, timestamp, "globalLastUpdateTime");
         assertEq(rewardsDistributedPerTokenScaled, rewardsEarnedPerTokenScaled, "rewardsDistributedPerTokenScaled");
 
         // It should update user rewards snapshot.
-        (rewardsEarnedPerTokenScaled, rewards) = sablierStaking.userSnapshot(poolIds.defaultPool, user);
+        (rewardsEarnedPerTokenScaled, rewards) = sablierStaking.userRewards(poolIds.defaultPool, user);
         assertEq(rewardsEarnedPerTokenScaled, rewardsEarnedPerTokenScaled, "rewardsEarnedPerTokenScaled");
         assertEq(rewards, rewards, "rewards");
     }

@@ -99,14 +99,15 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
                                   GLOBAL-SNAPSHOT
     //////////////////////////////////////////////////////////////////////////*/
 
-    function test_GlobalSnapshotRevertWhen_Null() external {
-        expectRevert_Null({ callData: abi.encodeCall(sablierStaking.globalSnapshot, poolIds.nullPool) });
+    function test_GlobalRewardsPerTokenSnapshotRevertWhen_Null() external {
+        expectRevert_Null({ callData: abi.encodeCall(sablierStaking.globalRewardsPerTokenSnapshot, poolIds.nullPool) });
     }
 
-    function test_GlobalSnapshotWhenStartTimeInFuture() external whenNotNull {
+    function test_GlobalRewardsPerTokenSnapshotWhenStartTimeInFuture() external whenNotNull {
         warpStateTo(START_TIME - 1);
 
-        (uint40 lastUpdateTime, uint256 rewardsPerTokenScaled) = sablierStaking.globalSnapshot(poolIds.defaultPool);
+        (uint40 lastUpdateTime, uint256 rewardsPerTokenScaled) =
+            sablierStaking.globalRewardsPerTokenSnapshot(poolIds.defaultPool);
 
         // It should return zero last update time.
         assertEq(lastUpdateTime, FEB_1_2025, "lastUpdateTime");
@@ -120,10 +121,11 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         );
     }
 
-    function test_GlobalSnapshotWhenStartTimeInPresent() external whenNotNull {
+    function test_GlobalRewardsPerTokenSnapshotWhenStartTimeInPresent() external whenNotNull {
         warpStateTo(START_TIME);
 
-        (uint40 lastUpdateTime, uint256 rewardsPerTokenScaled) = sablierStaking.globalSnapshot(poolIds.defaultPool);
+        (uint40 lastUpdateTime, uint256 rewardsPerTokenScaled) =
+            sablierStaking.globalRewardsPerTokenSnapshot(poolIds.defaultPool);
 
         // It should return correct last update time.
         assertEq(lastUpdateTime, START_TIME, "lastUpdateTime");
@@ -137,8 +139,9 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         );
     }
 
-    function test_GlobalSnapshotWhenEndTimeInFuture() external view whenNotNull whenStartTimeInPast {
-        (uint40 lastUpdateTime, uint256 rewardsPerTokenScaled) = sablierStaking.globalSnapshot(poolIds.defaultPool);
+    function test_GlobalRewardsPerTokenSnapshotWhenEndTimeInFuture() external view whenNotNull whenStartTimeInPast {
+        (uint40 lastUpdateTime, uint256 rewardsPerTokenScaled) =
+            sablierStaking.globalRewardsPerTokenSnapshot(poolIds.defaultPool);
 
         // It should return correct last update time.
         assertEq(lastUpdateTime, WARP_40_PERCENT, "lastUpdateTime");
@@ -151,13 +154,14 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         assertEq(sablierStaking.getTotalStakedAmount(poolIds.defaultPool), TOTAL_STAKED, "getTotalStakedAmount");
     }
 
-    function test_GlobalSnapshotWhenEndTimeNotInFuture() external whenNotNull whenStartTimeInPast {
+    function test_GlobalRewardsPerTokenSnapshotWhenEndTimeNotInFuture() external whenNotNull whenStartTimeInPast {
         warpStateTo(END_TIME);
 
         // Take global snapshot of the rewards.
         sablierStaking.snapshotRewards(poolIds.defaultPool, users.staker);
 
-        (uint40 lastUpdateTime, uint256 rewardsPerTokenScaled) = sablierStaking.globalSnapshot(poolIds.defaultPool);
+        (uint40 lastUpdateTime, uint256 rewardsPerTokenScaled) =
+            sablierStaking.globalRewardsPerTokenSnapshot(poolIds.defaultPool);
 
         // It should return correct last update time.
         assertEq(lastUpdateTime, END_TIME, "lastUpdateTime");
@@ -264,6 +268,93 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     }
 
     /*//////////////////////////////////////////////////////////////////////////
+                                   USER-REWARDS
+    //////////////////////////////////////////////////////////////////////////*/
+
+    function test_UserRewardsRevertWhen_Null() external {
+        expectRevert_Null({ callData: abi.encodeCall(sablierStaking.userRewards, (poolIds.nullPool, users.staker)) });
+    }
+
+    function test_UserRewardsRevertWhen_ZeroAddress() external whenNotNull {
+        vm.expectRevert(Errors.SablierStakingState_ZeroAddress.selector);
+        sablierStaking.userRewards(poolIds.defaultPool, address(0));
+    }
+
+    function test_UserRewardsWhenStartTimeInFuture() external whenNotNull whenNotZeroAddress {
+        warpStateTo(START_TIME - 1);
+
+        (uint256 rewardsPerTokenScaled, uint128 rewards) = sablierStaking.userRewards(poolIds.defaultPool, users.staker);
+
+        assertEq(rewardsPerTokenScaled, 0, "staker: rewardsPerTokenScaled");
+        assertEq(rewards, 0, "staker: rewards");
+
+        (rewardsPerTokenScaled, rewards) = sablierStaking.userRewards(poolIds.defaultPool, users.recipient);
+
+        assertEq(rewardsPerTokenScaled, 0, "recipient: rewardsPerTokenScaled");
+        assertEq(rewards, 0, "recipient: rewards");
+    }
+
+    function test_UserRewardsWhenStartTimeInPresent() external whenNotNull whenNotZeroAddress {
+        warpStateTo(START_TIME);
+
+        // Take snapshots of the rewards.
+        sablierStaking.snapshotRewards(poolIds.defaultPool, users.staker);
+        sablierStaking.snapshotRewards(poolIds.defaultPool, users.recipient);
+
+        (uint256 rewardsPerTokenScaled, uint128 rewards) = sablierStaking.userRewards(poolIds.defaultPool, users.staker);
+
+        assertEq(rewardsPerTokenScaled, 0, "staker: rewardsPerTokenScaled");
+        assertEq(rewards, 0, "staker: rewards");
+
+        (rewardsPerTokenScaled, rewards) = sablierStaking.userRewards(poolIds.defaultPool, users.recipient);
+
+        assertEq(rewardsPerTokenScaled, 0, "recipient: rewardsPerTokenScaled");
+        assertEq(rewards, 0, "recipient: rewards");
+    }
+
+    function test_UserRewardsWhenEndTimeInFuture() external whenNotNull whenNotZeroAddress whenStartTimeInPast {
+        // Take snapshots of the rewards.
+        sablierStaking.snapshotRewards(poolIds.defaultPool, users.staker);
+        sablierStaking.snapshotRewards(poolIds.defaultPool, users.recipient);
+
+        (uint256 rewardsPerTokenScaled, uint128 rewards) = sablierStaking.userRewards(poolIds.defaultPool, users.staker);
+
+        assertEq(rewardsPerTokenScaled, REWARDS_DISTRIBUTED_PER_TOKEN_SCALED, "staker: rewardsPerTokenScaled");
+        assertEq(rewards, REWARDS_EARNED_BY_STAKER, "staker: rewards");
+
+        (rewardsPerTokenScaled, rewards) = sablierStaking.userRewards(poolIds.defaultPool, users.recipient);
+
+        assertEq(rewardsPerTokenScaled, REWARDS_DISTRIBUTED_PER_TOKEN_SCALED, "recipient: rewardsPerTokenScaled");
+        assertEq(rewards, REWARDS_EARNED_BY_RECIPIENT, "recipient: rewards");
+    }
+
+    function test_UserRewardsWhenEndTimeNotInFuture() external whenNotNull whenNotZeroAddress whenStartTimeInPast {
+        warpStateTo(END_TIME);
+
+        // Take snapshots of the rewards.
+        sablierStaking.snapshotRewards(poolIds.defaultPool, users.staker);
+        sablierStaking.snapshotRewards(poolIds.defaultPool, users.recipient);
+
+        (uint256 rewardsPerTokenScaled, uint128 rewards) = sablierStaking.userRewards(poolIds.defaultPool, users.staker);
+
+        assertEq(
+            rewardsPerTokenScaled,
+            getScaledValue(REWARDS_DISTRIBUTED_PER_TOKEN_END_TIME),
+            "staker: rewardsPerTokenScaled"
+        );
+        assertEq(rewards, REWARDS_EARNED_BY_STAKER_END_TIME, "staker: rewards");
+
+        (rewardsPerTokenScaled, rewards) = sablierStaking.userRewards(poolIds.defaultPool, users.recipient);
+
+        assertEq(
+            rewardsPerTokenScaled,
+            getScaledValue(REWARDS_DISTRIBUTED_PER_TOKEN_END_TIME),
+            "recipient: rewardsPerTokenScaled"
+        );
+        assertEq(rewards, REWARDS_EARNED_BY_RECIPIENT_END_TIME, "recipient: rewards");
+    }
+
+    /*//////////////////////////////////////////////////////////////////////////
                                     USER-SHARES
     //////////////////////////////////////////////////////////////////////////*/
 
@@ -287,96 +378,5 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         (streamAmountStaked, directAmountStaked) = sablierStaking.userShares(poolIds.defaultPool, users.recipient);
         assertEq(streamAmountStaked, 2 * STREAM_AMOUNT_18D, "recipient: streamAmountStaked");
         assertEq(directAmountStaked, DIRECT_AMOUNT_STAKED_BY_RECIPIENT_END_TIME, "recipient: directAmountStaked");
-    }
-
-    /*//////////////////////////////////////////////////////////////////////////
-                                   USER-SNAPSHOT
-    //////////////////////////////////////////////////////////////////////////*/
-
-    function test_UserSnapshotRevertWhen_Null() external {
-        expectRevert_Null({ callData: abi.encodeCall(sablierStaking.userSnapshot, (poolIds.nullPool, users.staker)) });
-    }
-
-    function test_UserSnapshotRevertWhen_ZeroAddress() external whenNotNull {
-        vm.expectRevert(Errors.SablierStakingState_ZeroAddress.selector);
-        sablierStaking.userSnapshot(poolIds.defaultPool, address(0));
-    }
-
-    function test_UserSnapshotWhenStartTimeInFuture() external whenNotNull whenNotZeroAddress {
-        warpStateTo(START_TIME - 1);
-
-        (uint256 rewardsPerTokenScaled, uint128 rewards) =
-            sablierStaking.userSnapshot(poolIds.defaultPool, users.staker);
-
-        assertEq(rewardsPerTokenScaled, 0, "staker: rewardsPerTokenScaled");
-        assertEq(rewards, 0, "staker: rewards");
-
-        (rewardsPerTokenScaled, rewards) = sablierStaking.userSnapshot(poolIds.defaultPool, users.recipient);
-
-        assertEq(rewardsPerTokenScaled, 0, "recipient: rewardsPerTokenScaled");
-        assertEq(rewards, 0, "recipient: rewards");
-    }
-
-    function test_UserSnapshotWhenStartTimeInPresent() external whenNotNull whenNotZeroAddress {
-        warpStateTo(START_TIME);
-
-        // Take snapshots of the rewards.
-        sablierStaking.snapshotRewards(poolIds.defaultPool, users.staker);
-        sablierStaking.snapshotRewards(poolIds.defaultPool, users.recipient);
-
-        (uint256 rewardsPerTokenScaled, uint128 rewards) =
-            sablierStaking.userSnapshot(poolIds.defaultPool, users.staker);
-
-        assertEq(rewardsPerTokenScaled, 0, "staker: rewardsPerTokenScaled");
-        assertEq(rewards, 0, "staker: rewards");
-
-        (rewardsPerTokenScaled, rewards) = sablierStaking.userSnapshot(poolIds.defaultPool, users.recipient);
-
-        assertEq(rewardsPerTokenScaled, 0, "recipient: rewardsPerTokenScaled");
-        assertEq(rewards, 0, "recipient: rewards");
-    }
-
-    function test_UserSnapshotWhenEndTimeInFuture() external whenNotNull whenNotZeroAddress whenStartTimeInPast {
-        // Take snapshots of the rewards.
-        sablierStaking.snapshotRewards(poolIds.defaultPool, users.staker);
-        sablierStaking.snapshotRewards(poolIds.defaultPool, users.recipient);
-
-        (uint256 rewardsPerTokenScaled, uint128 rewards) =
-            sablierStaking.userSnapshot(poolIds.defaultPool, users.staker);
-
-        assertEq(rewardsPerTokenScaled, REWARDS_DISTRIBUTED_PER_TOKEN_SCALED, "staker: rewardsPerTokenScaled");
-        assertEq(rewards, REWARDS_EARNED_BY_STAKER, "staker: rewards");
-
-        (rewardsPerTokenScaled, rewards) = sablierStaking.userSnapshot(poolIds.defaultPool, users.recipient);
-
-        assertEq(rewardsPerTokenScaled, REWARDS_DISTRIBUTED_PER_TOKEN_SCALED, "recipient: rewardsPerTokenScaled");
-        assertEq(rewards, REWARDS_EARNED_BY_RECIPIENT, "recipient: rewards");
-    }
-
-    function test_UserSnapshotWhenEndTimeNotInFuture() external whenNotNull whenNotZeroAddress whenStartTimeInPast {
-        warpStateTo(END_TIME);
-
-        // Take snapshots of the rewards.
-        sablierStaking.snapshotRewards(poolIds.defaultPool, users.staker);
-        sablierStaking.snapshotRewards(poolIds.defaultPool, users.recipient);
-
-        (uint256 rewardsPerTokenScaled, uint128 rewards) =
-            sablierStaking.userSnapshot(poolIds.defaultPool, users.staker);
-
-        assertEq(
-            rewardsPerTokenScaled,
-            getScaledValue(REWARDS_DISTRIBUTED_PER_TOKEN_END_TIME),
-            "staker: rewardsPerTokenScaled"
-        );
-        assertEq(rewards, REWARDS_EARNED_BY_STAKER_END_TIME, "staker: rewards");
-
-        (rewardsPerTokenScaled, rewards) = sablierStaking.userSnapshot(poolIds.defaultPool, users.recipient);
-
-        assertEq(
-            rewardsPerTokenScaled,
-            getScaledValue(REWARDS_DISTRIBUTED_PER_TOKEN_END_TIME),
-            "recipient: rewardsPerTokenScaled"
-        );
-        assertEq(rewards, REWARDS_EARNED_BY_RECIPIENT_END_TIME, "recipient: rewards");
     }
 }

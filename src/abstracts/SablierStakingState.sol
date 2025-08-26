@@ -94,7 +94,7 @@ abstract contract SablierStakingState is ISablierStakingState {
     }
 
     /// @inheritdoc ISablierStakingState
-    function globalSnapshot(uint256 poolId)
+    function globalRewardsPerTokenSnapshot(uint256 poolId)
         external
         view
         notNull(poolId)
@@ -182,7 +182,7 @@ abstract contract SablierStakingState is ISablierStakingState {
     }
 
     /// @inheritdoc ISablierStakingState
-    function userSnapshot(
+    function userRewards(
         uint256 poolId,
         address user
     )

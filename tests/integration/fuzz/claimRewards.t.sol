@@ -170,7 +170,7 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         // It should return the rewards.
         assertEq(actualRewards, expectedRewardsTransferredToRecipient, "return value");
 
-        (uint256 actualRewardsPerTokenScaled,) = sablierStaking.userSnapshot(poolIds.defaultPool, caller);
+        (uint256 actualRewardsPerTokenScaled,) = sablierStaking.userRewards(poolIds.defaultPool, caller);
 
         // It should set rewards to zero.
         assertEq(sablierStaking.claimableRewards(poolIds.defaultPool, caller), 0, "rewards");

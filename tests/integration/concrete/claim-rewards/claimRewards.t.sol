@@ -156,7 +156,7 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
         uint128 actualRewards =
             sablierStaking.claimRewards{ value: STAKING_MIN_FEE_WEI }(poolIds.defaultPool, FEE_ON_REWARDS);
 
-        (uint256 actualRewardsEarnedPerTokenScaled,) = sablierStaking.userSnapshot(poolIds.defaultPool, users.recipient);
+        (uint256 actualRewardsEarnedPerTokenScaled,) = sablierStaking.userRewards(poolIds.defaultPool, users.recipient);
 
         // It should set rewards to zero.
         assertEq(sablierStaking.claimableRewards(poolIds.defaultPool, users.recipient), 0, "rewards");

@@ -727,11 +727,11 @@ contract SablierStaking is
 
     /// @notice Snapshots rewards data for the specified pool and user.
     function _snapshotRewards(uint256 poolId, address user) private {
-        // Update the global snapshot.
-        uint256 rewardsPerTokenScaled = _updateGlobalSnapshot(poolId);
+        // Update the global rewards.
+        uint256 rewardsPerTokenScaled = _updateGlobalRewards(poolId);
 
-        // Update the user snapshot.
-        uint128 userRewards = _updateUserSnapshot(poolId, user, rewardsPerTokenScaled);
+        // Update the user rewards.
+        uint128 userRewards = _updateUserRewards(poolId, user, rewardsPerTokenScaled);
 
         // Log the event.
         emit SnapshotRewards({
@@ -743,8 +743,8 @@ contract SablierStaking is
         });
     }
 
-    /// @notice Private function to update the global snapshot.
-    function _updateGlobalSnapshot(uint256 poolId) private returns (uint256 rewardsPerTokenScaled) {
+    /// @notice Private function to update the global rewards.
+    function _updateGlobalRewards(uint256 poolId) private returns (uint256 rewardsPerTokenScaled) {
         // Get the latest value of the cumulative rewards distributed per ERC20 token.
         rewardsPerTokenScaled = _latestRewardsDistributedPerTokenScaled(poolId);
 
@@ -755,8 +755,8 @@ contract SablierStaking is
         _pools[poolId].lastUpdateTime = uint40(block.timestamp);
     }
 
-    /// @dev Private function to update the user snapshot.
-    function _updateUserSnapshot(
+    /// @dev Private function to update the user rewards.
+    function _updateUserRewards(
         uint256 poolId,
         address user,
         uint256 rewardsPerTokenScaled

@@ -176,13 +176,13 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
 
         // It should update global rewards snapshot.
         (vars.actualLastUpdateTime, vars.actualRewardsPerTokenScaled) =
-            sablierStaking.globalSnapshot(poolIds.defaultPool);
+            sablierStaking.globalRewardsPerTokenSnapshot(poolIds.defaultPool);
         assertEq(vars.actualLastUpdateTime, getBlockTimestamp(), "globalLastUpdateTime");
         assertEq(vars.actualRewardsPerTokenScaled, expectedRewardsPerTokenScaled, "rewardsDistributedPerTokenScaled");
 
         // It should update user rewards snapshot.
         (vars.actualRewardsPerTokenScaled, vars.actualUserRewards) =
-            sablierStaking.userSnapshot(poolIds.defaultPool, users.recipient);
+            sablierStaking.userRewards(poolIds.defaultPool, users.recipient);
         assertEq(vars.actualRewardsPerTokenScaled, expectedRewardsPerTokenScaled, "rewardsEarnedPerTokenScaled");
         assertEq(vars.actualUserRewards, expectedUserRewards, "rewards");
     }

@@ -48,7 +48,7 @@ interface ISablierStaking is
         uint40 lastUpdateTime,
         uint256 rewardsDistributedPerTokenScaled,
         address indexed user,
-        uint128 userRewards
+        uint128 pendingRewards
     );
 
     /// @notice Emitted when a user stakes ERC20 tokens in a pool.
@@ -145,8 +145,8 @@ interface ISablierStaking is
     /// @param poolId The Pool ID to claim rewards from.
     /// @param feeOnRewards An optional fee to be deducted from the rewards claimed, denoted as fixed-point number where
     /// 1e18 is 100%.
-    /// @return rewards The amount of rewards claimed, denoted in reward token's decimals.
-    function claimRewards(uint256 poolId, UD60x18 feeOnRewards) external payable returns (uint128 rewards);
+    /// @return amountClaimed The amount of rewards claimed, denoted in reward token's decimals.
+    function claimRewards(uint256 poolId, UD60x18 feeOnRewards) external payable returns (uint128 amountClaimed);
 
     /// @notice Configures the next staking round for the specified pool.
     /// @dev Emits a {UpdateRewards} and {ConfigureNextRound} events.

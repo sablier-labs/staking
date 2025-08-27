@@ -96,14 +96,15 @@ interface ISablierStakingState {
     /// @param user The user address for the query.
     /// @return rewardsEarnedPerTokenScaled The amount of rewards earned per staking token, scaled by
     /// {Helpers.SCALE_FACTOR} to minimize precision loss.
-    /// @return rewards The amount of rewards earned by the user until last snapshot, denoted in token's decimals.
+    /// @return pendingRewards The amount of rewards earned by the user until last snapshot, denoted in token's
+    /// decimals.
     function userRewards(
         uint256 poolId,
         address user
     )
         external
         view
-        returns (uint256 rewardsEarnedPerTokenScaled, uint128 rewards);
+        returns (uint256 rewardsEarnedPerTokenScaled, uint128 pendingRewards);
 
     /// @notice Returns the user's shares of tokens staked in a pool.
     /// @dev Reverts if `poolId` references a non-existent pool or `user` is the zero address.

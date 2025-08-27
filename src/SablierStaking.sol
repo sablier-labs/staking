@@ -17,7 +17,7 @@ import { ISablierLockupNFT } from "./interfaces/ISablierLockupNFT.sol";
 import { ISablierStaking } from "./interfaces/ISablierStaking.sol";
 import { Errors } from "./libraries/Errors.sol";
 import { Helpers } from "./libraries/Helpers.sol";
-import { Pool, StreamLookup, UserAccount } from "./types/DataTypes.sol";
+import { Pool, StreamLookup } from "./types/DataTypes.sol";
 
 /// @title SablierStaking
 /// @notice See the documentation in {ISablierStaking}.
@@ -58,9 +58,29 @@ contract SablierStaking is
             revert Errors.SablierStaking_UserZeroAddress();
         }
 
-        uint128 rewardsEarnedSinceLastSnapshot = _userRewardsSinceLastSnapshot(poolId, user);
+        // Calculate the total amount staked by the user.
+        uint128 userTotalAmountStaked =
+            _userAccounts[user][poolId].directAmountStaked + _userAccounts[user][poolId].streamAmountStaked;
 
-        return _userAccounts[user][poolId].rewards + rewardsEarnedSinceLastSnapshot;
+        uint128 rewardsEarnedSinceLastSnapshot;
+
+        // If the user has tokens staked, calculate rewards earned since last snapshot.
+        if (userTotalAmountStaked > 0) {
+            // Get the latest value of the cumulative rewards distributed per ERC20 token.
+            uint256 rewardsPerTokenScaled = _latestRewardsDistributedPerTokenScaled(poolId);
+
+            // Calculate the rewards earned per ERC20 token by the user since the last snapshot.
+            uint256 userRewardsPerTokenSinceLastSnapshotScaled =
+                rewardsPerTokenScaled - _userAccounts[user][poolId].rewardsEarnedPerTokenScaled;
+
+            // Calculate the rewards earned by the user since the last snapshot.
+            uint256 rewardsEarnedScaled = userRewardsPerTokenSinceLastSnapshotScaled * userTotalAmountStaked;
+
+            // Scale down the amount.
+            rewardsEarnedSinceLastSnapshot = rewardsEarnedScaled.scaleDown().toUint128();
+        }
+
+        return _userAccounts[user][poolId].pendingRewards + rewardsEarnedSinceLastSnapshot;
     }
 
     /// @inheritdoc ISablierStaking
@@ -183,7 +203,7 @@ contract SablierStaking is
         _updateRewards(poolId, msg.sender);
 
         // Load rewards from storage.
-        amountClaimed = _userAccounts[msg.sender][poolId].rewards;
+        amountClaimed = _userAccounts[msg.sender][poolId].pendingRewards;
 
         // Check: `msg.sender` has rewards to claim.
         if (amountClaimed == 0) {
@@ -191,7 +211,7 @@ contract SablierStaking is
         }
 
         // Effect: set the rewards to 0.
-        _userAccounts[msg.sender][poolId].rewards = 0;
+        _userAccounts[msg.sender][poolId].pendingRewards = 0;
 
         // Interaction: transfer the fee paid to comptroller if it's greater than 0.
         if (feePaid > 0) {
@@ -371,10 +391,8 @@ contract SablierStaking is
         noDelegateCall
         returns (bytes4)
     {
-        StreamLookup memory streamLookup = _streamLookups[ISablierLockupNFT(msg.sender)][streamId];
-
         // Get the Pool ID in which the stream ID is staked.
-        uint256 poolId = streamLookup.poolId;
+        uint256 poolId = _streamLookups[ISablierLockupNFT(msg.sender)][streamId].poolId;
 
         // Check: the Pool ID is not zero.
         if (poolId == 0) {
@@ -382,7 +400,7 @@ contract SablierStaking is
         }
 
         // Get the owner of the stream.
-        address owner = streamLookup.owner;
+        address owner = _streamLookups[ISablierLockupNFT(msg.sender)][streamId].owner;
 
         // Effect: snapshot user rewards.
         _updateRewards(poolId, owner);
@@ -398,11 +416,8 @@ contract SablierStaking is
 
     /// @inheritdoc ISablierStaking
     function snapshotRewards(uint256 poolId, address user) external override noDelegateCall notNull(poolId) {
-        // Get the user account.
-        UserAccount memory userAccount = _userAccounts[user][poolId];
-
         // Check: the total amount staked by user is not zero.
-        if (userAccount.directAmountStaked + userAccount.streamAmountStaked == 0) {
+        if (_userAccounts[user][poolId].directAmountStaked + _userAccounts[user][poolId].streamAmountStaked == 0) {
             revert Errors.SablierStaking_NoStakedAmount(poolId, user);
         }
 
@@ -412,12 +427,9 @@ contract SablierStaking is
 
     /// @inheritdoc ISablierStaking
     function stakeERC20Token(uint256 poolId, uint128 amount) external override noDelegateCall notNull(poolId) {
-        // Retrieve the pool from storage.
-        Pool memory pool = _pools[poolId];
-
         // Check: the end time is in the future.
-        if (pool.endTime <= uint40(block.timestamp)) {
-            revert Errors.SablierStaking_EndTimeNotInFuture(poolId, pool.endTime);
+        if (_pools[poolId].endTime <= uint40(block.timestamp)) {
+            revert Errors.SablierStaking_EndTimeNotInFuture(poolId, _pools[poolId].endTime);
         }
 
         // Check: the amount is not zero.
@@ -435,7 +447,7 @@ contract SablierStaking is
         _userAccounts[msg.sender][poolId].directAmountStaked += amount;
 
         // Interaction: transfer the tokens from the `msg.sender` to this contract.
-        pool.stakingToken.safeTransferFrom({ from: msg.sender, to: address(this), value: amount });
+        _pools[poolId].stakingToken.safeTransferFrom({ from: msg.sender, to: address(this), value: amount });
 
         // Log the event.
         emit StakeERC20Token(poolId, msg.sender, amount);
@@ -457,18 +469,17 @@ contract SablierStaking is
             revert Errors.SablierStaking_LockupNotWhitelisted(lockup);
         }
 
-        // Retrieve the pool from storage.
-        Pool memory pool = _pools[poolId];
+        uint40 poolEndTime = _pools[poolId].endTime;
 
         // Check: the end time is in the future.
-        if (pool.endTime <= uint40(block.timestamp)) {
-            revert Errors.SablierStaking_EndTimeNotInFuture(poolId, pool.endTime);
+        if (poolEndTime <= uint40(block.timestamp)) {
+            revert Errors.SablierStaking_EndTimeNotInFuture(poolId, poolEndTime);
         }
 
         // Check: the stream's underlying token is the same as the pool's staking token.
         IERC20 underlyingToken = lockup.getUnderlyingToken(streamId);
-        if (underlyingToken != pool.stakingToken) {
-            revert Errors.SablierStaking_UnderlyingTokenDifferent(underlyingToken, pool.stakingToken);
+        if (underlyingToken != _pools[poolId].stakingToken) {
+            revert Errors.SablierStaking_UnderlyingTokenDifferent(underlyingToken, _pools[poolId].stakingToken);
         }
 
         // Retrieves the amount of token available in the stream.
@@ -531,22 +542,18 @@ contract SablierStaking is
 
     /// @inheritdoc ISablierStaking
     function unstakeLockupNFT(ISablierLockupNFT lockup, uint256 streamId) external override noDelegateCall {
-        StreamLookup memory streamLookup = _streamLookups[lockup][streamId];
-
-        // Get the Pool ID in which the stream ID is staked.
-        uint256 poolId = streamLookup.poolId;
+        uint256 poolId = _streamLookups[lockup][streamId].poolId;
 
         // Check: the Pool ID is not zero.
         if (poolId == 0) {
             revert Errors.SablierStaking_StreamNotStaked(lockup, streamId);
         }
 
-        // Get the owner of the stream.
-        address owner = streamLookup.owner;
-
         // Check: `msg.sender` is the original owner of the stream.
-        if (msg.sender != owner) {
-            revert Errors.SablierStaking_CallerNotStreamOwner(lockup, streamId, msg.sender, owner);
+        if (msg.sender != _streamLookups[lockup][streamId].owner) {
+            revert Errors.SablierStaking_CallerNotStreamOwner(
+                lockup, streamId, msg.sender, _streamLookups[lockup][streamId].owner
+            );
         }
 
         // Retrieves the amount of token available in the stream.
@@ -650,7 +657,7 @@ contract SablierStaking is
         }
 
         uint40 blockTimestamp = uint40(block.timestamp);
-        uint40 poolEndtime = _pools[poolId].endTime;
+        uint40 poolEndTime = _pools[poolId].endTime;
         uint40 poolStartTime = _pools[poolId].startTime;
 
         // If the start time is in the future, return 0.
@@ -661,7 +668,7 @@ contract SablierStaking is
         uint40 lastUpdateTime = _pools[poolId].lastUpdateTime;
 
         // If the last time update is greater than or equal to the end time, return 0.
-        if (lastUpdateTime >= poolEndtime) {
+        if (lastUpdateTime >= poolEndTime) {
             return 0;
         }
 
@@ -677,8 +684,8 @@ contract SablierStaking is
         }
 
         // If the end time has passed, the ending timestamp is the pool end time.
-        if (poolEndtime <= blockTimestamp) {
-            endingTimestamp = poolEndtime;
+        if (poolEndTime <= blockTimestamp) {
+            endingTimestamp = poolEndTime;
         } else {
             endingTimestamp = blockTimestamp;
         }
@@ -687,38 +694,13 @@ contract SablierStaking is
         unchecked {
             // Calculate the elapsed time and the total reward period.
             uint256 elapsedTime = endingTimestamp - startingTimestamp;
-            uint256 rewardsPeriod = poolEndtime - poolStartTime;
+            uint256 rewardsPeriod = poolEndTime - poolStartTime;
 
             // Calculate the total rewards distributed since the last snapshot.
             rewardsDistributed = ((_pools[poolId].rewardAmount * elapsedTime) / rewardsPeriod).toUint128();
         }
 
         return rewardsDistributed;
-    }
-
-    /// @dev Calculates the rewards earned by the user since the last snapshot.
-    function _userRewardsSinceLastSnapshot(uint256 poolId, address user) private view returns (uint128) {
-        // Calculate the total amount staked by the user.
-        uint128 userTotalAmountStaked =
-            _userAccounts[user][poolId].directAmountStaked + _userAccounts[user][poolId].streamAmountStaked;
-
-        // If the user has no tokens staked, return 0.
-        if (userTotalAmountStaked == 0) {
-            return 0;
-        }
-
-        // Get the latest value of the cumulative rewards distributed per ERC20 token.
-        uint256 rewardsPerTokenScaled = _latestRewardsDistributedPerTokenScaled(poolId);
-
-        // Calculate the rewards earned per ERC20 token by the user since the last snapshot.
-        uint256 userRewardsPerTokenSinceLastSnapshotScaled =
-            rewardsPerTokenScaled - _userAccounts[user][poolId].rewardsEarnedPerTokenScaled;
-
-        // Calculate the rewards earned by the user since the last snapshot.
-        uint256 rewardsEarnedScaled = userRewardsPerTokenSinceLastSnapshotScaled * userTotalAmountStaked;
-
-        // Return the scaled down amount.
-        return rewardsEarnedScaled.scaleDown().toUint128();
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -751,7 +733,7 @@ contract SablierStaking is
             lastUpdateTime: uint40(block.timestamp),
             rewardsDistributedPerTokenScaled: rewardsPerTokenScaled,
             user: user,
-            userRewards: userRewards
+            pendingRewards: userRewards
         });
     }
 
@@ -782,13 +764,13 @@ contract SablierStaking is
             uint128 userRewardsSinceLastSnapshot = userRewardsSinceLastSnapshotScaled.scaleDown().toUint128();
 
             // Effect: update the rewards earned by the user.
-            _userAccounts[user][poolId].rewards += userRewardsSinceLastSnapshot;
+            _userAccounts[user][poolId].pendingRewards += userRewardsSinceLastSnapshot;
         }
 
         // Effect: update the rewards earned per ERC20 token by the user.
         _userAccounts[user][poolId].rewardsEarnedPerTokenScaled = rewardsPerTokenScaled;
 
         // Return the user's total rewards.
-        return _userAccounts[user][poolId].rewards;
+        return _userAccounts[user][poolId].pendingRewards;
     }
 }

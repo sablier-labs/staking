@@ -189,7 +189,7 @@ abstract contract SablierStakingState is ISablierStakingState {
         external
         view
         notNull(poolId)
-        returns (uint256 rewardsEarnedPerTokenScaled, uint128 rewards)
+        returns (uint256 rewardsEarnedPerTokenScaled, uint128 pendingRewards)
     {
         // Check: the user is not the zero address.
         if (user == address(0)) {
@@ -197,7 +197,7 @@ abstract contract SablierStakingState is ISablierStakingState {
         }
 
         rewardsEarnedPerTokenScaled = _userAccounts[user][poolId].rewardsEarnedPerTokenScaled;
-        rewards = _userAccounts[user][poolId].rewards;
+        pendingRewards = _userAccounts[user][poolId].pendingRewards;
     }
 
     /*//////////////////////////////////////////////////////////////////////////

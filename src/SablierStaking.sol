@@ -199,7 +199,7 @@ contract SablierStaking is
             revert Errors.SablierStaking_FeeOnRewardsTooHigh(feeOnRewards, MAX_FEE_ON_REWARDS);
         }
 
-        // Effect: snapshot rewards data to the latest values.
+        // Effect: update rewards data to the latest values.
         _updateRewards(poolId, msg.sender);
 
         // Load rewards from storage.
@@ -283,7 +283,7 @@ contract SablierStaking is
             revert Errors.SablierStaking_RewardAmountZero();
         }
 
-        // Effect: snapshot rewards.
+        // Effect: update rewards.
         _updateRewards(poolId, msg.sender);
 
         // Effect: set the next staking round parameters.
@@ -421,7 +421,7 @@ contract SablierStaking is
             revert Errors.SablierStaking_NoStakedAmount(poolId, user);
         }
 
-        // Effect: snapshot rewards data to the latest values for `user`.
+        // Effect: update rewards data to the latest values for `user`.
         _updateRewards(poolId, user);
     }
 

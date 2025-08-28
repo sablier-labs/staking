@@ -1,8 +1,5 @@
 name: "CI Deep"
 
-env:
-  MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
-
 on:
   workflow_dispatch:
     inputs:

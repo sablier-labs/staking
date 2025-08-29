@@ -24,14 +24,14 @@ contract ConfigureNextRound_Integration_Concrete_Test is Shared_Integration_Conc
 
     function test_RevertWhen_DelegateCall() external {
         bytes memory callData = abi.encodeCall(
-            sablierStaking.configureNextRound, (poolIds.defaultPool, END_TIME, START_TIME, REWARD_AMOUNT)
+            sablierStaking.configureNextRound, (poolIds.defaultPool, START_TIME, END_TIME, REWARD_AMOUNT)
         );
         expectRevert_DelegateCall(callData);
     }
 
     function test_RevertWhen_Null() external whenNoDelegateCall {
         bytes memory callData = abi.encodeCall(
-            sablierStaking.configureNextRound, (poolIds.nullPool, newEndTime, newStartTime, newRewardAmount)
+            sablierStaking.configureNextRound, (poolIds.nullPool, newStartTime, newEndTime, newRewardAmount)
         );
         expectRevert_Null(callData);
     }
@@ -43,7 +43,7 @@ contract ConfigureNextRound_Integration_Concrete_Test is Shared_Integration_Conc
                 Errors.SablierStaking_CallerNotPoolAdmin.selector, poolIds.defaultPool, users.eve, users.poolCreator
             )
         );
-        sablierStaking.configureNextRound(poolIds.defaultPool, newEndTime, newStartTime, newRewardAmount);
+        sablierStaking.configureNextRound(poolIds.defaultPool, newStartTime, newEndTime, newRewardAmount);
     }
 
     function test_RevertWhen_EndTimeNotInPast() external whenNoDelegateCall whenNotNull whenCallerPoolAdmin {
@@ -52,7 +52,7 @@ contract ConfigureNextRound_Integration_Concrete_Test is Shared_Integration_Conc
         vm.expectRevert(
             abi.encodeWithSelector(Errors.SablierStaking_EndTimeNotInPast.selector, poolIds.defaultPool, END_TIME)
         );
-        sablierStaking.configureNextRound(poolIds.defaultPool, newEndTime, newStartTime, newRewardAmount);
+        sablierStaking.configureNextRound(poolIds.defaultPool, newStartTime, newEndTime, newRewardAmount);
     }
 
     function test_RevertWhen_NewStartTimeInPast()
@@ -65,7 +65,7 @@ contract ConfigureNextRound_Integration_Concrete_Test is Shared_Integration_Conc
         newStartTime = END_TIME;
 
         vm.expectRevert(abi.encodeWithSelector(Errors.SablierStaking_StartTimeInPast.selector, newStartTime));
-        sablierStaking.configureNextRound(poolIds.defaultPool, newEndTime, newStartTime, newRewardAmount);
+        sablierStaking.configureNextRound(poolIds.defaultPool, newStartTime, newEndTime, newRewardAmount);
     }
 
     function test_RevertWhen_NewEndTimeNotGreaterThanNewStartTime()
@@ -81,7 +81,7 @@ contract ConfigureNextRound_Integration_Concrete_Test is Shared_Integration_Conc
         vm.expectRevert(
             abi.encodeWithSelector(Errors.SablierStaking_StartTimeNotLessThanEndTime.selector, newStartTime, newEndTime)
         );
-        sablierStaking.configureNextRound(poolIds.defaultPool, newEndTime, newStartTime, newRewardAmount);
+        sablierStaking.configureNextRound(poolIds.defaultPool, newStartTime, newEndTime, newRewardAmount);
     }
 
     function test_RevertWhen_NewRewardAmountZero()
@@ -96,7 +96,7 @@ contract ConfigureNextRound_Integration_Concrete_Test is Shared_Integration_Conc
         newRewardAmount = 0;
 
         vm.expectRevert(Errors.SablierStaking_RewardAmountZero.selector);
-        sablierStaking.configureNextRound(poolIds.defaultPool, newEndTime, newStartTime, newRewardAmount);
+        sablierStaking.configureNextRound(poolIds.defaultPool, newStartTime, newEndTime, newRewardAmount);
     }
 
     function test_WhenNewRewardAmountNotZero()
@@ -120,9 +120,9 @@ contract ConfigureNextRound_Integration_Concrete_Test is Shared_Integration_Conc
         vm.expectEmit({ emitter: address(rewardToken) });
         emit IERC20.Transfer(users.poolCreator, address(sablierStaking), newRewardAmount);
         vm.expectEmit({ emitter: address(sablierStaking) });
-        emit ISablierStaking.ConfigureNextRound(poolIds.defaultPool, newEndTime, newStartTime, newRewardAmount);
+        emit ISablierStaking.ConfigureNextRound(poolIds.defaultPool, newStartTime, newEndTime, newRewardAmount);
 
-        sablierStaking.configureNextRound(poolIds.defaultPool, newEndTime, newStartTime, newRewardAmount);
+        sablierStaking.configureNextRound(poolIds.defaultPool, newStartTime, newEndTime, newRewardAmount);
 
         // It should set the new start time.
         assertEq(sablierStaking.getStartTime(poolIds.defaultPool), newStartTime, "startTime");

@@ -26,7 +26,7 @@ interface ISablierStaking is
     event ClaimRewards(uint256 indexed poolId, address indexed user, uint128 amountClaimed);
 
     /// @notice Emitted when a new staking round is configured on an existing pool.
-    event ConfigureNextRound(uint256 indexed poolId, uint40 newEndTime, uint40 newStartTime, uint128 newRewardAmount);
+    event ConfigureNextRound(uint256 indexed poolId, uint40 newStartTime, uint40 newEndTime, uint128 newRewardAmount);
 
     /// @notice Emitted when a new pool is created.
     event CreatePool(
@@ -162,14 +162,14 @@ interface ISablierStaking is
     ///  - `msg.sender` must have approved this contract to spend the `rewardAmount` of reward ERC20 token.
     ///
     /// @param poolId The pool ID for which to configure the next staking round.
-    /// @param newEndTime The end time for the next rewards period, denoted in UNIX timestamp.
     /// @param newStartTime The start time for the next rewards period, denoted in UNIX timestamp.
+    /// @param newEndTime The end time for the next rewards period, denoted in UNIX timestamp.
     /// @param newRewardAmount The amount of reward tokens to distribute during the next rewards period, denoted in
     /// reward token's decimals.
     function configureNextRound(
         uint256 poolId,
-        uint40 newEndTime,
         uint40 newStartTime,
+        uint40 newEndTime,
         uint128 newRewardAmount
     )
         external;

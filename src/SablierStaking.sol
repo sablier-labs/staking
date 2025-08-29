@@ -247,8 +247,8 @@ contract SablierStaking is
     /// @inheritdoc ISablierStaking
     function configureNextRound(
         uint256 poolId,
-        uint40 newEndTime,
         uint40 newStartTime,
+        uint40 newEndTime,
         uint128 newRewardAmount
     )
         external
@@ -295,7 +295,7 @@ contract SablierStaking is
         _pools[poolId].rewardToken.safeTransferFrom({ from: msg.sender, to: address(this), value: newRewardAmount });
 
         // Log the event.
-        emit ConfigureNextRound(poolId, newEndTime, newStartTime, newRewardAmount);
+        emit ConfigureNextRound(poolId, newStartTime, newEndTime, newRewardAmount);
     }
 
     /// @inheritdoc ISablierStaking

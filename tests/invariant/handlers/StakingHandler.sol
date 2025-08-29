@@ -117,7 +117,7 @@ contract StakingHandler is BaseHandler {
         rewardToken.approve(address(sablierStaking), newRewardAmount);
 
         // Configure next round.
-        sablierStaking.configureNextRound(selectedPoolId, newEndTime, newStartTime, newRewardAmount);
+        sablierStaking.configureNextRound(selectedPoolId, newStartTime, newEndTime, newRewardAmount);
 
         // Update handler store.
         handlerStore.addTotalRewardsDeposited(selectedPoolId, newRewardAmount);

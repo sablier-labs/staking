@@ -103,8 +103,8 @@ abstract contract Integration_Test is Base_Test {
 
         sablierStaking.configureNextRound({
             poolId: poolIds.defaultPool,
-            newEndTime: END_TIME + 365 days,
             newStartTime: END_TIME + 10 days,
+            newEndTime: END_TIME + 365 days,
             newRewardAmount: REWARD_AMOUNT
         });
     }

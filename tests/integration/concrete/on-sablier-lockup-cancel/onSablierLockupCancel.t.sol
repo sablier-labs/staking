@@ -57,9 +57,9 @@ contract OnSablierLockupCancel_Integration_Concrete_Test is Shared_Integration_C
         (uint128 previousStreamAmount, uint128 previousDirectAmount) =
             sablierStaking.userShares(poolIds.defaultPool, users.recipient);
 
-        // It should emit {UpdateRewards} event.
+        // It should emit {SnapshotRewards} event.
         vm.expectEmit({ emitter: address(sablierStaking) });
-        emit ISablierStaking.UpdateRewards(
+        emit ISablierStaking.SnapshotRewards(
             poolIds.defaultPool,
             WARP_40_PERCENT,
             REWARDS_DISTRIBUTED_PER_TOKEN_SCALED,

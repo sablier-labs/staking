@@ -40,7 +40,7 @@ Getters_Integration_Concrete_Test::getTotalStakedAmount
 └── when not null
    └── it should return the total staked amount
 
-Getters_Integration_Concrete_Test::globalRewardsPerTokenSnapshot
+Getters_Integration_Concrete_Test::globalRptAtSnapshot
 ├── when null
 │  └── it should revert
 └── when not null

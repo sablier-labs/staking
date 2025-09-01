@@ -92,9 +92,9 @@ contract UnstakeERC20Token_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test
 
         vars.expectedTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool) - amount;
 
-        // It should emit {UpdateRewards}, {Transfer} and {UnstakeERC20Token} events.
+        // It should emit {SnapshotRewards}, {Transfer} and {UnstakeERC20Token} events.
         vm.expectEmit({ emitter: address(sablierStaking) });
-        emit ISablierStaking.UpdateRewards(
+        emit ISablierStaking.SnapshotRewards(
             poolIds.defaultPool, timestamp, vars.expectedRewardsPerTokenScaled, caller, vars.expectedUserRewards
         );
         vm.expectEmit({ emitter: address(stakingToken) });
@@ -114,17 +114,15 @@ contract UnstakeERC20Token_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test
         assertEq(vars.actualTotalAmountStaked, vars.expectedTotalAmountStaked, "total amount staked");
 
         // It should update global rewards snapshot.
-        (vars.actualLastUpdateTime, vars.actualRewardsPerTokenScaled) =
-            sablierStaking.globalRewardsPerTokenSnapshot(poolIds.defaultPool);
-        assertEq(vars.actualLastUpdateTime, timestamp, "globalLastUpdateTime");
-        assertEq(
-            vars.actualRewardsPerTokenScaled, vars.expectedRewardsPerTokenScaled, "rewardsDistributedPerTokenScaled"
-        );
+        (vars.actualsnapshotTime, vars.actualRewardsPerTokenScaled) =
+            sablierStaking.globalRptAtSnapshot(poolIds.defaultPool);
+        assertEq(vars.actualsnapshotTime, timestamp, "globalsnapshotTime");
+        assertEq(vars.actualRewardsPerTokenScaled, vars.expectedRewardsPerTokenScaled, "snapshotRptDistributedScaled");
 
         // It should update user rewards snapshot.
         (vars.actualRewardsPerTokenScaled, vars.actualUserRewards) =
             sablierStaking.userRewards(poolIds.defaultPool, caller);
-        assertEq(vars.actualRewardsPerTokenScaled, vars.expectedRewardsPerTokenScaled, "rewardsEarnedPerTokenScaled");
+        assertEq(vars.actualRewardsPerTokenScaled, vars.expectedRewardsPerTokenScaled, "rptEarnedScaled");
         assertEq(vars.actualUserRewards, vars.expectedUserRewards, "rewards");
     }
 }

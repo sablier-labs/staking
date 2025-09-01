@@ -46,9 +46,9 @@ contract StakeLockupNFT_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
 
         vars.expectedTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool) + amount;
 
-        // It should emit {UpdateRewards}, {Transfer} and {StakeLockupNFT} events.
+        // It should emit {SnapshotRewards}, {Transfer} and {StakeLockupNFT} events.
         vm.expectEmit({ emitter: address(sablierStaking) });
-        emit ISablierStaking.UpdateRewards(
+        emit ISablierStaking.SnapshotRewards(
             poolIds.defaultPool, timestamp, vars.expectedRewardsPerTokenScaled, caller, vars.expectedUserRewards
         );
         vm.expectEmit({ emitter: address(lockup) });
@@ -70,7 +70,7 @@ contract StakeLockupNFT_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         // It should update user rewards snapshot.
         (vars.actualRewardsPerTokenScaled, vars.actualUserRewards) =
             sablierStaking.userRewards(poolIds.defaultPool, caller);
-        assertEq(vars.actualRewardsPerTokenScaled, vars.expectedRewardsPerTokenScaled, "rewardsEarnedPerTokenScaled");
+        assertEq(vars.actualRewardsPerTokenScaled, vars.expectedRewardsPerTokenScaled, "rptEarnedScaled");
         assertEq(vars.actualUserRewards, vars.expectedUserRewards, "rewards");
     }
 }

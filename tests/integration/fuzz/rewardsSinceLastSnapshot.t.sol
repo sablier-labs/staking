@@ -10,7 +10,7 @@ contract RewardsSinceLastSnapshot_Integration_Fuzz_Test is Shared_Integration_Fu
         whenStartTimeNotInFuture
         givenTotalStakedNotZero
     {
-        // Bound timestamp such that last time update is greater than or equal to end time.
+        // Bound timestamp such that snapshot time is greater than or equal to end time.
         timestamp = boundUint40(timestamp, END_TIME, END_TIME + 30 days);
 
         // Warp the EVM state to the given timestamp and take snapshot.
@@ -32,9 +32,9 @@ contract RewardsSinceLastSnapshot_Integration_Fuzz_Test is Shared_Integration_Fu
         whenNotNull
         whenStartTimeNotInFuture
         givenTotalStakedNotZero
-        givenLastUpdateTimeLessThanEndTime
+        givenSnapshotTimeLessThanEndTime
     {
-        // Bound timestamp such that last time update is less than end time.
+        // Bound timestamp such that snapshot time is less than end time.
         timestamp = boundUint40(timestamp, START_TIME, END_TIME - 1);
 
         // Warp the EVM state to the given timestamp and snapshot rewards.

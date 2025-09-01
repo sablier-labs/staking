@@ -31,4 +31,4 @@ StakeLockupNFT_Integration_Concrete_Test
                         ├── it should increase total amount staked
                         ├── it should update global rewards snapshot
                         ├── it should update user rewards snapshot
-                        └── it should emit {UpdateRewards}, {Transfer} and {StakeLockupNFT} events
+                        └── it should emit {SnapshotRewards}, {Transfer} and {StakeLockupNFT} events

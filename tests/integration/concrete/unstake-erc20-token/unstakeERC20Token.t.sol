@@ -68,9 +68,9 @@ contract UnstakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concr
     {
         vars.expectedTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool) - DEFAULT_AMOUNT;
 
-        // It should emit {UpdateRewards}, {Transfer} and {UnstakeERC20Token} events.
+        // It should emit {SnapshotRewards}, {Transfer} and {UnstakeERC20Token} events.
         vm.expectEmit({ emitter: address(sablierStaking) });
-        emit ISablierStaking.UpdateRewards(
+        emit ISablierStaking.SnapshotRewards(
             poolIds.defaultPool,
             WARP_40_PERCENT,
             REWARDS_DISTRIBUTED_PER_TOKEN_SCALED,
@@ -94,17 +94,15 @@ contract UnstakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concr
         assertEq(vars.actualTotalAmountStaked, vars.expectedTotalAmountStaked, "total amount staked");
 
         // It should update global rewards snapshot.
-        (vars.actualLastUpdateTime, vars.actualRewardsPerTokenScaled) =
-            sablierStaking.globalRewardsPerTokenSnapshot(poolIds.defaultPool);
-        assertEq(vars.actualLastUpdateTime, WARP_40_PERCENT, "globalLastUpdateTime");
-        assertEq(
-            vars.actualRewardsPerTokenScaled, REWARDS_DISTRIBUTED_PER_TOKEN_SCALED, "rewardsDistributedPerTokenScaled"
-        );
+        (vars.actualsnapshotTime, vars.actualRewardsPerTokenScaled) =
+            sablierStaking.globalRptAtSnapshot(poolIds.defaultPool);
+        assertEq(vars.actualsnapshotTime, WARP_40_PERCENT, "globalsnapshotTime");
+        assertEq(vars.actualRewardsPerTokenScaled, REWARDS_DISTRIBUTED_PER_TOKEN_SCALED, "snapshotRptDistributedScaled");
 
         // It should update user rewards snapshot.
         (vars.actualRewardsPerTokenScaled, vars.actualUserRewards) =
             sablierStaking.userRewards(poolIds.defaultPool, users.recipient);
-        assertEq(vars.actualRewardsPerTokenScaled, REWARDS_DISTRIBUTED_PER_TOKEN_SCALED, "rewardsEarnedPerTokenScaled");
+        assertEq(vars.actualRewardsPerTokenScaled, REWARDS_DISTRIBUTED_PER_TOKEN_SCALED, "rptEarnedScaled");
         assertEq(vars.actualUserRewards, REWARDS_EARNED_BY_RECIPIENT, "rewards");
     }
 }

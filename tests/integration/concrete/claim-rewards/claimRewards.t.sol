@@ -3,6 +3,7 @@ pragma solidity >=0.8.26;
 
 import { ud, UD60x18 } from "@prb/math/src/UD60x18.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 import { ISablierStaking } from "src/interfaces/ISablierStaking.sol";
 import { Errors } from "src/libraries/Errors.sol";
 import { Status } from "src/types/DataTypes.sol";
@@ -74,7 +75,7 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
         // It should claim rewards.
         _test_claimRewards({
             expectedSnapshotTime: END_TIME + 1 seconds,
-            expectedRewardsEarnedPerTokenScaled: REWARDS_DISTRIBUTED_PER_TOKEN_END_TIME_SCALED,
+            expectedrptEarnedScaled: REWARDS_DISTRIBUTED_PER_TOKEN_END_TIME_SCALED,
             expectedRewardsEarnedByRecipient: REWARDS_EARNED_BY_RECIPIENT_END_TIME
         });
     }
@@ -96,7 +97,7 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
         // It should claim rewards.
         _test_claimRewards({
             expectedSnapshotTime: END_TIME + 1 seconds,
-            expectedRewardsEarnedPerTokenScaled: REWARDS_DISTRIBUTED_PER_TOKEN_END_TIME_SCALED,
+            expectedrptEarnedScaled: REWARDS_DISTRIBUTED_PER_TOKEN_END_TIME_SCALED,
             expectedRewardsEarnedByRecipient: REWARDS_EARNED_BY_RECIPIENT_END_TIME
         });
     }
@@ -112,7 +113,7 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
         // It should claim rewards.
         _test_claimRewards({
             expectedSnapshotTime: WARP_40_PERCENT,
-            expectedRewardsEarnedPerTokenScaled: REWARDS_DISTRIBUTED_PER_TOKEN_SCALED,
+            expectedrptEarnedScaled: REWARDS_DISTRIBUTED_PER_TOKEN_SCALED,
             expectedRewardsEarnedByRecipient: REWARDS_EARNED_BY_RECIPIENT
         });
     }
@@ -120,7 +121,7 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
     /// @dev Helper function.
     function _test_claimRewards(
         uint40 expectedSnapshotTime,
-        uint256 expectedRewardsEarnedPerTokenScaled,
+        uint256 expectedrptEarnedScaled,
         uint128 expectedRewardsEarnedByRecipient
     )
         private
@@ -135,12 +136,12 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
         uint128 expectedRewardsTransferredToRecipient =
             expectedRewardsEarnedByRecipient - expectedRewardsTransferredToComptroller;
 
-        // It should emit 1 {UpdateRewards}, 2 {Transfer} and 1 {ClaimRewards} events.
+        // It should emit 1 {SnapshotRewards}, 2 {Transfer} and 1 {ClaimRewards} events.
         vm.expectEmit({ emitter: address(sablierStaking) });
-        emit ISablierStaking.UpdateRewards(
+        emit ISablierStaking.SnapshotRewards(
             poolIds.defaultPool,
             expectedSnapshotTime,
-            expectedRewardsEarnedPerTokenScaled,
+            expectedrptEarnedScaled,
             users.recipient,
             expectedRewardsEarnedByRecipient
         );
@@ -156,7 +157,7 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
         uint128 actualRewards =
             sablierStaking.claimRewards{ value: STAKING_MIN_FEE_WEI }(poolIds.defaultPool, FEE_ON_REWARDS);
 
-        (uint256 actualRewardsEarnedPerTokenScaled,) = sablierStaking.userRewards(poolIds.defaultPool, users.recipient);
+        (uint256 actualrptEarnedScaled,) = sablierStaking.userRewards(poolIds.defaultPool, users.recipient);
 
         // It should set rewards to zero.
         assertEq(sablierStaking.claimableRewards(poolIds.defaultPool, users.recipient), 0, "rewards");
@@ -187,6 +188,6 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
         assertEq(actualRewards, expectedRewardsTransferredToRecipient, "return value");
 
         // It should update the user snapshot correctly.
-        assertEq(actualRewardsEarnedPerTokenScaled, expectedRewardsEarnedPerTokenScaled, "rewardsEarnedPerTokenScaled");
+        assertEq(actualrptEarnedScaled, expectedrptEarnedScaled, "rptEarnedScaled");
     }
 }

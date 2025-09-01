@@ -32,7 +32,7 @@ abstract contract Modifiers is EvmUtilsBase {
         _;
     }
 
-    modifier givenLastUpdateTimeLessThanEndTime() {
+    modifier givenSnapshotTimeLessThanEndTime() {
         _;
     }
 

@@ -43,9 +43,6 @@ library Errors {
         ISablierLockupNFT lockup, uint256 streamId, address caller, address streamOwner
     );
 
-    /// @notice Thrown when staking a Lockup stream with depleted status.
-    error SablierStaking_DepletedStream(ISablierLockupNFT lockup, uint256 streamId);
-
     /// @notice Thrown when staking into a pool when end time is not in the future.
     error SablierStaking_EndTimeNotInFuture(uint256 poolId, uint40 endTime);
 
@@ -73,26 +70,23 @@ library Errors {
     /// @notice Thrown when snapshotting rewards for a user when the user has no staked amount.
     error SablierStaking_NoStakedAmount(uint256 poolId, address user);
 
-    /// @notice Thrown when user provided amount exceeds the total staked amount.
+    /// @notice Thrown when the user attempts to unstake more than their staked amount.
     error SablierStaking_Overflow(uint256 poolId, uint256 unstakedAmount, uint256 totalStakedAmount);
 
     /// @notice Thrown when rewards amount is zero.
     error SablierStaking_RewardAmountZero();
-
-    /// @notice Thrown when creating a pool with reward token as the zero address.
-    error SablierStaking_RewardTokenZeroAddress();
-
-    /// @notice Thrown when creating a pool with staking token as the zero address.
-    error SablierStaking_StakingTokenZeroAddress();
-
-    /// @notice Thrown when staking into a pool with zero amount.
-    error SablierStaking_StakingZeroAmount(uint256 poolId);
 
     /// @notice Thrown when start time is in the past.
     error SablierStaking_StartTimeInPast(uint40 startTime);
 
     /// @notice Thrown when start time is not less than end time.
     error SablierStaking_StartTimeNotLessThanEndTime(uint40 startTime, uint40 endTime);
+
+    /// @notice Thrown when creating a pool with staking token as the zero address.
+    error SablierStaking_StakingTokenZeroAddress();
+
+    /// @notice Thrown when staking into a pool with zero amount.
+    error SablierStaking_StakingZeroAmount(uint256 poolId);
 
     /// @notice Thrown when an unauthorized action is attempted using a Lockup stream that is not staked in any pool.
     error SablierStaking_StreamNotStaked(ISablierLockupNFT lockup, uint256 streamId);

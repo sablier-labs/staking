@@ -55,7 +55,7 @@ contract Invariant_Test is Base_Test, StdInvariant {
     function invariant_GlobalRewardsPerTokenSnapshot() external view {
         for (uint256 i = 0; i < handlerStore.totalPools(); ++i) {
             uint256 poolId = handlerStore.poolIds(i);
-            (uint40 snapshotTime, uint256 currentRewardsPerToken) = sablierStaking.globalRewardsPerTokenSnapshot(poolId);
+            (uint40 snapshotTime, uint256 currentRewardsPerToken) = sablierStaking.globalRptAtSnapshot(poolId);
             uint40 previousSnapshotTime = handlerStore.globalSnapshotTime(poolId);
             uint256 previousRewardsPerToken = handlerStore.globalRewardsPerTokenScaled(poolId);
 
@@ -170,7 +170,7 @@ contract Invariant_Test is Base_Test, StdInvariant {
     function invariant_UserRewardsLeGlobalRewardsPerTokenSnapshot() external view {
         for (uint256 i = 0; i < handlerStore.totalPools(); ++i) {
             uint256 poolId = handlerStore.poolIds(i);
-            (, uint256 globalRewardsPerToken) = sablierStaking.globalRewardsPerTokenSnapshot(poolId);
+            (, uint256 globalRewardsPerToken) = sablierStaking.globalRptAtSnapshot(poolId);
 
             for (uint256 j = 0; j < handlerStore.totalStakers(poolId); ++j) {
                 address staker = handlerStore.poolStakers(poolId, j);

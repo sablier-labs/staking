@@ -88,9 +88,7 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
         // Withdraw all tokens from the stream.
         ISablierLockup(address(lockup)).withdrawMax(streamIds.defaultStream, users.recipient);
 
-        vm.expectRevert(
-            abi.encodeWithSelector(Errors.SablierStaking_DepletedStream.selector, lockup, streamIds.defaultStream)
-        );
+        vm.expectRevert(abi.encodeWithSelector(Errors.SablierStaking_StakingZeroAmount.selector, poolIds.defaultPool));
         sablierStaking.stakeLockupNFT(poolIds.defaultPool, lockup, streamIds.defaultStream);
     }
 
@@ -146,9 +144,9 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
 
         vars.expectedTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool) + DEFAULT_AMOUNT;
 
-        // It should emit {UpdateRewards}, {Transfer} and {StakeLockupNFT} events.
+        // It should emit {SnapshotRewards}, {Transfer} and {StakeLockupNFT} events.
         vm.expectEmit({ emitter: address(sablierStaking) });
-        emit ISablierStaking.UpdateRewards(
+        emit ISablierStaking.SnapshotRewards(
             poolIds.defaultPool,
             getBlockTimestamp(),
             expectedRewardsPerTokenScaled,
@@ -175,15 +173,15 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
         assertEq(vars.actualTotalAmountStaked, vars.expectedTotalAmountStaked, "total amount staked");
 
         // It should update global rewards snapshot.
-        (vars.actualLastUpdateTime, vars.actualRewardsPerTokenScaled) =
-            sablierStaking.globalRewardsPerTokenSnapshot(poolIds.defaultPool);
-        assertEq(vars.actualLastUpdateTime, getBlockTimestamp(), "globalLastUpdateTime");
-        assertEq(vars.actualRewardsPerTokenScaled, expectedRewardsPerTokenScaled, "rewardsDistributedPerTokenScaled");
+        (vars.actualsnapshotTime, vars.actualRewardsPerTokenScaled) =
+            sablierStaking.globalRptAtSnapshot(poolIds.defaultPool);
+        assertEq(vars.actualsnapshotTime, getBlockTimestamp(), "globalsnapshotTime");
+        assertEq(vars.actualRewardsPerTokenScaled, expectedRewardsPerTokenScaled, "snapshotRptDistributedScaled");
 
         // It should update user rewards snapshot.
         (vars.actualRewardsPerTokenScaled, vars.actualUserRewards) =
             sablierStaking.userRewards(poolIds.defaultPool, users.recipient);
-        assertEq(vars.actualRewardsPerTokenScaled, expectedRewardsPerTokenScaled, "rewardsEarnedPerTokenScaled");
+        assertEq(vars.actualRewardsPerTokenScaled, expectedRewardsPerTokenScaled, "rptEarnedScaled");
         assertEq(vars.actualUserRewards, expectedUserRewards, "rewards");
     }
 }

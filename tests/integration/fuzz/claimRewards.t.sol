@@ -150,9 +150,9 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         uint128 expectedRewardsTransferredToComptroller = ud(expectedUserRewards).mul(feeOnRewards).intoUint128();
         uint128 expectedRewardsTransferredToRecipient = expectedUserRewards - expectedRewardsTransferredToComptroller;
 
-        // It should emit 1 {UpdateRewards}, 2 {Transfer} and 1 {ClaimRewards} events.
+        // It should emit 1 {SnapshotRewards}, 2 {Transfer} and 1 {ClaimRewards} events.
         vm.expectEmit({ emitter: address(sablierStaking) });
-        emit ISablierStaking.UpdateRewards(
+        emit ISablierStaking.SnapshotRewards(
             poolIds.defaultPool, timestamp, expectedRewardsPerTokenScaled, caller, expectedUserRewards
         );
         if (feeOnRewards > ZERO) {
@@ -176,7 +176,7 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         assertEq(sablierStaking.claimableRewards(poolIds.defaultPool, caller), 0, "rewards");
 
         // It should set the rewards earned per token.
-        assertEq(actualRewardsPerTokenScaled, expectedRewardsPerTokenScaled, "rewardsEarnedPerTokenScaled");
+        assertEq(actualRewardsPerTokenScaled, expectedRewardsPerTokenScaled, "rptEarnedScaled");
 
         // It should transfer the min fee to comptroller.
         assertEq(address(comptroller).balance, initialComptrollerEthBalance + fee, "comptroller ETH balance");

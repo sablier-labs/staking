@@ -79,11 +79,9 @@ contract BaseHandler is Utils, StdCheats {
             }
 
             // Update global rewards per token in handler store.
-            (uint40 globalSnapshotTime, uint256 rewardsDistributedPerTokenScaled) =
-                sablierStaking.globalRewardsPerTokenSnapshot(poolId);
-            handlerStore.updateGlobalRewardsPerTokenSnapshot(
-                poolId, globalSnapshotTime, rewardsDistributedPerTokenScaled
-            );
+            (uint40 globalSnapshotTime, uint256 snapshotRptDistributedScaled) =
+                sablierStaking.globalRptAtSnapshot(poolId);
+            handlerStore.updateGlobalRewardsPerTokenSnapshot(poolId, globalSnapshotTime, snapshotRptDistributedScaled);
 
             // Update status.
             handlerStore.updateStatus(poolId, sablierStaking.status(poolId));
@@ -92,8 +90,8 @@ contract BaseHandler is Utils, StdCheats {
             for (uint256 j = 0; j < handlerStore.totalStakers(poolId); ++j) {
                 address staker = handlerStore.poolStakers(poolId, j);
                 // Update user rewards per token in handler store.
-                (uint256 rewardsPerTokenScaled,) = sablierStaking.userRewards(poolId, staker);
-                handlerStore.updateUserRewardsPerTokenScaled(poolId, staker, rewardsPerTokenScaled);
+                (uint256 rptScaled,) = sablierStaking.userRewards(poolId, staker);
+                handlerStore.updateUserRewardsPerTokenScaled(poolId, staker, rptScaled);
             }
         }
 

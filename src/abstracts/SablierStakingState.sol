@@ -94,14 +94,14 @@ abstract contract SablierStakingState is ISablierStakingState {
     }
 
     /// @inheritdoc ISablierStakingState
-    function globalRewardsPerTokenSnapshot(uint256 poolId)
+    function globalRptAtSnapshot(uint256 poolId)
         external
         view
         notNull(poolId)
-        returns (uint40 lastUpdateTime, uint256 rewardsDistributedPerTokenScaled)
+        returns (uint40 snapshotTime, uint256 snapshotRptDistributedScaled)
     {
-        lastUpdateTime = _pools[poolId].lastUpdateTime;
-        rewardsDistributedPerTokenScaled = _pools[poolId].rewardsDistributedPerTokenScaled;
+        snapshotTime = _pools[poolId].snapshotTime;
+        snapshotRptDistributedScaled = _pools[poolId].snapshotRptDistributedScaled;
     }
 
     /// @inheritdoc ISablierStakingState
@@ -190,15 +190,15 @@ abstract contract SablierStakingState is ISablierStakingState {
         external
         view
         notNull(poolId)
-        returns (uint256 rewardsEarnedPerTokenScaled, uint128 pendingRewards)
+        returns (uint256 snapshotRptEarnedScaled, uint128 snapshotRewards)
     {
         // Check: the user is not the zero address.
         if (user == address(0)) {
             revert Errors.SablierStakingState_ZeroAddress();
         }
 
-        rewardsEarnedPerTokenScaled = _userAccounts[user][poolId].rewardsEarnedPerTokenScaled;
-        pendingRewards = _userAccounts[user][poolId].pendingRewards;
+        snapshotRptEarnedScaled = _userAccounts[user][poolId].snapshotRptEarnedScaled;
+        snapshotRewards = _userAccounts[user][poolId].snapshotRewards;
     }
 
     /*//////////////////////////////////////////////////////////////////////////

@@ -59,20 +59,16 @@ abstract contract Integration_Test is Base_Test {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Calculate latest rewards for a user.
-    function calculateLatestRewards(address user)
-        internal
-        view
-        returns (uint256 rewardsEarnedPerTokenScaled, uint128 rewards)
-    {
+    function calculateLatestRewards(address user) internal view returns (uint256 rptEarnedScaled, uint128 rewards) {
         if (getBlockTimestamp() <= START_TIME) {
             return (0, 0);
         }
 
-        (uint40 lastUpdateTime, uint256 rewardsDistributedPerTokenScaled) =
-            sablierStaking.globalRewardsPerTokenSnapshot(poolIds.defaultPool);
+        (uint40 snapshotTime, uint256 snapshotRptDistributedScaled) =
+            sablierStaking.globalRptAtSnapshot(poolIds.defaultPool);
 
         // Calculate starting point in time for rewards calculation.
-        uint40 startingPointInTime = lastUpdateTime >= START_TIME ? lastUpdateTime : START_TIME;
+        uint40 startingPointInTime = snapshotTime >= START_TIME ? snapshotTime : START_TIME;
 
         // Calculate time elapsed.
         uint40 timeElapsed =
@@ -82,19 +78,19 @@ abstract contract Integration_Test is Base_Test {
         uint128 rewardsDistributedSinceLastUpdate = REWARD_AMOUNT * timeElapsed / REWARD_PERIOD;
 
         // Update global rewards distributed per token scaled.
-        rewardsDistributedPerTokenScaled +=
+        snapshotRptDistributedScaled +=
             getScaledValue(rewardsDistributedSinceLastUpdate) / sablierStaking.getTotalStakedAmount(poolIds.defaultPool);
 
         // Get user rewards snapshot.
-        (rewardsEarnedPerTokenScaled, rewards) = sablierStaking.userRewards(poolIds.defaultPool, user);
+        (rptEarnedScaled, rewards) = sablierStaking.userRewards(poolIds.defaultPool, user);
 
         // Calculate latest rewards earned per token scaled.
-        uint256 rewardsEarnedPerTokenScaledDelta = rewardsDistributedPerTokenScaled - rewardsEarnedPerTokenScaled;
-        rewardsEarnedPerTokenScaled += rewardsEarnedPerTokenScaledDelta;
+        uint256 rptEarnedScaledDelta = snapshotRptDistributedScaled - rptEarnedScaled;
+        rptEarnedScaled += rptEarnedScaledDelta;
 
         // Calculate latest rewards for user.
         uint128 totalAmountStakedByUser = sablierStaking.totalAmountStakedByUser(poolIds.defaultPool, user);
-        rewards += getDescaledValue(rewardsEarnedPerTokenScaledDelta * totalAmountStakedByUser);
+        rewards += getDescaledValue(rptEarnedScaledDelta * totalAmountStakedByUser);
     }
 
     /// @notice Configures the next round.

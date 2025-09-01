@@ -27,7 +27,7 @@ contract ClaimableRewards_Integration_Concrete_Test is Shared_Integration_Concre
         assertEq(actualRewards, 0, "rewards");
     }
 
-    function test_WhenCurrentTimeEqualsLastUpdateTime()
+    function test_WhenCurrentTimeEqualssnapshotTime()
         external
         view
         whenNotNull
@@ -39,7 +39,7 @@ contract ClaimableRewards_Integration_Concrete_Test is Shared_Integration_Concre
         assertEq(actualRewards, REWARDS_EARNED_BY_RECIPIENT, "rewards");
     }
 
-    function test_WhenCurrentTimeExceedsLastUpdateTime()
+    function test_WhenCurrentTimeExceedssnapshotTime()
         external
         whenNotNull
         whenUserNotZeroAddress
@@ -49,7 +49,7 @@ contract ClaimableRewards_Integration_Concrete_Test is Shared_Integration_Concre
         // Warp the EVM state to 20% through the rewards period.
         warpStateTo(WARP_20_PERCENT);
 
-        // Warp the time to 40% through the rewards period so that last time update is in the past.
+        // Warp the time to 40% through the rewards period so that snapshot time is in the past.
         vm.warp(WARP_40_PERCENT);
 
         uint128 actualRewards = sablierStaking.claimableRewards(poolIds.defaultPool, users.recipient);

@@ -14,14 +14,15 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 /// @param endTime The end time of the rewards period, denoted in UNIX timestamp.
 /// @param startTime The start time of the rewards period, denoted in UNIX timestamp.
 /// @param rewardToken The address of the ERC20 token to used as staking rewards.
-/// @param lastUpdateTime The last time this snapshot was updated, denoted in UNIX timestamp.
+/// @param snapshotTime The Unix timestamp used to calculate the global amount of rewards distributed per staking token.
 /// @param stakingToken The address of the ERC20 token that can be staked either directly or through Sablier stream.
 /// @param rewardAmount The amount of rewards to be distributed between the start and end times, denoted in reward
 /// token's decimals.
 /// @param totalStakedAmount The total amount of tokens staked in a pool (both direct staking and through Sablier
 /// streams), denoted in staking token's decimals.
-/// @param rewardsDistributedPerTokenScaled The amount of rewards distributed per staking token (includes both direct
-/// staking and through Sablier streams), scaled by {Helpers.SCALE_FACTOR} to minimize precision loss.
+/// @param snapshotRptDistributedScaled The global amount of rewards distributed per staking token at snapshot time,
+/// includes both direct staking and through Sablier Lockup streams, scaled by {Helpers.SCALE_FACTOR} to minimize
+/// precision loss.
 struct Pool {
     // Slot 0
     address admin;
@@ -29,14 +30,14 @@ struct Pool {
     uint40 startTime;
     // Slot 1
     IERC20 rewardToken;
-    uint40 lastUpdateTime;
+    uint40 snapshotTime;
     // Slot 2
     IERC20 stakingToken;
     // Slot 3
     uint128 rewardAmount;
     uint128 totalStakedAmount;
     // Slot 4
-    uint256 rewardsDistributedPerTokenScaled;
+    uint256 snapshotRptDistributedScaled;
 }
 
 /// @notice Enum to represent the different statuses of a staking pool.
@@ -64,16 +65,16 @@ struct StreamLookup {
 /// decimals.
 /// @param streamAmountStaked The total amount of ERC20 tokens staked through Sablier streams, denoted in staking
 /// token's decimals.
-/// @param pendingRewards The amount of reward tokens available to be claimed by the user, denoted in reward token's
-/// decimals.
-/// @param rewardsEarnedPerTokenScaled The amount of rewards earned per staking token (includes both direct staking and
+/// @param snapshotRewards The amount of reward tokens available to be claimed during previous user's snapshot, denoted
+/// in reward token's decimals.
+/// @param snapshotRptEarnedScaled The amount of rewards earned per staking token (includes both direct staking and
 /// through Sablier streams), scaled by {Helpers.SCALE_FACTOR} to minimize precision loss.
 struct UserAccount {
     // Slot 0
     uint128 directAmountStaked;
     uint128 streamAmountStaked;
     // Slot 1
-    uint128 pendingRewards;
+    uint128 snapshotRewards;
     // Slot 2
-    uint256 rewardsEarnedPerTokenScaled;
+    uint256 snapshotRptEarnedScaled;
 }

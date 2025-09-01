@@ -15,7 +15,7 @@ contract RewardsPerTokenSinceLastSnapshot_Integration_Concrete_Test is Shared_In
         assertEq(actualRewardRatePerTokenStaked, 0, "rewardsPerTokenSinceLastSnapshot");
     }
 
-    function test_GivenLastUpdateTimeNotLessThanEndTime() external whenNotNull givenTotalStakedNotZero {
+    function test_GivensnapshotTimeNotLessThanEndTime() external whenNotNull givenTotalStakedNotZero {
         warpStateTo(END_TIME);
 
         // Snapshot rewards so that last time update equals end time.
@@ -26,7 +26,7 @@ contract RewardsPerTokenSinceLastSnapshot_Integration_Concrete_Test is Shared_In
         assertEq(actualRewardRatePerTokenStaked, 0, "rewardsPerTokenSinceLastSnapshot");
     }
 
-    function test_GivenLastUpdateTimeLessThanEndTime() external whenNotNull givenTotalStakedNotZero {
+    function test_GivensnapshotTimeLessThanEndTime() external whenNotNull givenTotalStakedNotZero {
         warpStateTo(END_TIME);
 
         // It should return correct rewards per token since last snapshot.

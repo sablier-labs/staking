@@ -1,4 +1,4 @@
-UpdateRewards_Integration_Concrete_Test
+SnapshotRewards_Integration_Concrete_Test
 ├── when delegate call
 │  └── it should revert
 └── when no delegate call
@@ -8,14 +8,14 @@ UpdateRewards_Integration_Concrete_Test
       ├── given staked amount zero
       │  └── it should revert
       └── given staked amount not zero
-         ├── given last update time not less than end time
+         ├── given snapshot time not less than end time
          │  └── it should do nothing
-         └── given last update time less than end time
+         └── given snapshot time less than end time
             ├── when end time in future
             │  └── it should update rewards
             ├── when end time in present
             │  └── it should update rewards
             └── when end time in past
-               ├── it should update global rewards distributed per token
-               ├── it should update user rewards
-               └── it should emit {UpdateRewards} event
+               ├── it should update global rewards snapshot
+               ├── it should update user rewards snapshot
+               └── it should emit {SnapshotRewards} event

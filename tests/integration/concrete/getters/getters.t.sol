@@ -158,7 +158,7 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         warpStateTo(END_TIME);
 
         // Take global snapshot of the rewards.
-        sablierStaking.snapshotRewards(poolIds.defaultPool, users.staker);
+        sablierStaking.updateRewards(poolIds.defaultPool, users.staker);
 
         (uint40 lastUpdateTime, uint256 rewardsPerTokenScaled) =
             sablierStaking.globalRewardsPerTokenSnapshot(poolIds.defaultPool);
@@ -298,8 +298,8 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         warpStateTo(START_TIME);
 
         // Take snapshots of the rewards.
-        sablierStaking.snapshotRewards(poolIds.defaultPool, users.staker);
-        sablierStaking.snapshotRewards(poolIds.defaultPool, users.recipient);
+        sablierStaking.updateRewards(poolIds.defaultPool, users.staker);
+        sablierStaking.updateRewards(poolIds.defaultPool, users.recipient);
 
         (uint256 rewardsPerTokenScaled, uint128 rewards) = sablierStaking.userRewards(poolIds.defaultPool, users.staker);
 
@@ -314,8 +314,8 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
 
     function test_UserRewardsWhenEndTimeInFuture() external whenNotNull whenNotZeroAddress whenStartTimeInPast {
         // Take snapshots of the rewards.
-        sablierStaking.snapshotRewards(poolIds.defaultPool, users.staker);
-        sablierStaking.snapshotRewards(poolIds.defaultPool, users.recipient);
+        sablierStaking.updateRewards(poolIds.defaultPool, users.staker);
+        sablierStaking.updateRewards(poolIds.defaultPool, users.recipient);
 
         (uint256 rewardsPerTokenScaled, uint128 rewards) = sablierStaking.userRewards(poolIds.defaultPool, users.staker);
 
@@ -332,8 +332,8 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         warpStateTo(END_TIME);
 
         // Take snapshots of the rewards.
-        sablierStaking.snapshotRewards(poolIds.defaultPool, users.staker);
-        sablierStaking.snapshotRewards(poolIds.defaultPool, users.recipient);
+        sablierStaking.updateRewards(poolIds.defaultPool, users.staker);
+        sablierStaking.updateRewards(poolIds.defaultPool, users.recipient);
 
         (uint256 rewardsPerTokenScaled, uint128 rewards) = sablierStaking.userRewards(poolIds.defaultPool, users.staker);
 

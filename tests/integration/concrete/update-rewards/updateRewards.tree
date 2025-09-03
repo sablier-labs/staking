@@ -12,10 +12,10 @@ UpdateRewards_Integration_Concrete_Test
          │  └── it should do nothing
          └── given last update time less than end time
             ├── when end time in future
-            │  └── it should take snapshot
+            │  └── it should update rewards
             ├── when end time in present
-            │  └── it should take snapshot
+            │  └── it should update rewards
             └── when end time in past
-               ├── it should update global rewards snapshot
-               ├── it should update user rewards snapshot
+               ├── it should update global rewards distributed per token
+               ├── it should update user rewards
                └── it should emit {UpdateRewards} event

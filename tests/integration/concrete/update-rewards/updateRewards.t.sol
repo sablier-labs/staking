@@ -8,12 +8,12 @@ import { Shared_Integration_Concrete_Test } from "../Concrete.t.sol";
 
 contract UpdateRewards_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     function test_RevertWhen_DelegateCall() external {
-        bytes memory callData = abi.encodeCall(sablierStaking.snapshotRewards, (poolIds.defaultPool, users.recipient));
+        bytes memory callData = abi.encodeCall(sablierStaking.updateRewards, (poolIds.defaultPool, users.recipient));
         expectRevert_DelegateCall(callData);
     }
 
     function test_RevertWhen_Null() external whenNoDelegateCall {
-        bytes memory callData = abi.encodeCall(sablierStaking.snapshotRewards, (poolIds.nullPool, users.recipient));
+        bytes memory callData = abi.encodeCall(sablierStaking.updateRewards, (poolIds.nullPool, users.recipient));
         expectRevert_Null(callData);
     }
 
@@ -21,7 +21,7 @@ contract UpdateRewards_Integration_Concrete_Test is Shared_Integration_Concrete_
         vm.expectRevert(
             abi.encodeWithSelector(Errors.SablierStaking_NoStakedAmount.selector, poolIds.defaultPool, users.eve)
         );
-        sablierStaking.snapshotRewards(poolIds.defaultPool, users.eve);
+        sablierStaking.updateRewards(poolIds.defaultPool, users.eve);
     }
 
     function test_GivenLastUpdateTimeNotLessThanEndTime()
@@ -32,8 +32,8 @@ contract UpdateRewards_Integration_Concrete_Test is Shared_Integration_Concrete_
     {
         warpStateTo(END_TIME);
 
-        // Take a snapshot so that the user's last snapshot time exceeds the end time.
-        sablierStaking.snapshotRewards(poolIds.defaultPool, users.recipient);
+        // Update rewards so that the last update time is not less than the end time.
+        sablierStaking.updateRewards(poolIds.defaultPool, users.recipient);
 
         // Forward time.
         vm.warp(END_TIME + 1 days);
@@ -42,7 +42,7 @@ contract UpdateRewards_Integration_Concrete_Test is Shared_Integration_Concrete_
             sablierStaking.userRewards(poolIds.defaultPool, users.recipient);
 
         // It should do nothing.
-        sablierStaking.snapshotRewards(poolIds.defaultPool, users.recipient);
+        sablierStaking.updateRewards(poolIds.defaultPool, users.recipient);
 
         (uint256 afterRewardsEarnedPerTokenScaled, uint128 afterRewards) =
             sablierStaking.userRewards(poolIds.defaultPool, users.recipient);
@@ -95,16 +95,16 @@ contract UpdateRewards_Integration_Concrete_Test is Shared_Integration_Concrete_
             poolIds.defaultPool, getBlockTimestamp(), rewardsEarnedPerTokenScaled, users.recipient, rewards
         );
 
-        // Snapshot user rewards.
-        sablierStaking.snapshotRewards(poolIds.defaultPool, users.recipient);
+        // Update rewards.
+        sablierStaking.updateRewards(poolIds.defaultPool, users.recipient);
 
-        // It should update global rewards snapshot.
+        // It should update global rewards distributed per token.
         (uint40 lastUpdateTime, uint256 rewardsDistributedPerTokenScaled) =
             sablierStaking.globalRewardsPerTokenSnapshot(poolIds.defaultPool);
         assertEq(lastUpdateTime, getBlockTimestamp(), "globalLastUpdateTime");
         assertEq(rewardsDistributedPerTokenScaled, rewardsEarnedPerTokenScaled, "rewardsDistributedPerTokenScaled");
 
-        // It should update user rewards snapshot.
+        // It should update user rewards.
         (rewardsEarnedPerTokenScaled, rewards) = sablierStaking.userRewards(poolIds.defaultPool, users.recipient);
         assertEq(rewardsEarnedPerTokenScaled, rewardsEarnedPerTokenScaled, "rewardsEarnedPerTokenScaled");
         assertEq(rewards, rewards, "rewards");

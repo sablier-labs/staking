@@ -18,9 +18,9 @@ contract UpdateRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         // Pick a user based on the seed.
         address user = userSeed % 2 == 0 ? users.recipient : users.staker;
 
-        // Warp EVM state to the end time and take a snapshot so that last update time equals the end time.
+        // Warp EVM state to the end time and update rewards so that last update time equals the end time.
         warpStateTo(END_TIME);
-        sablierStaking.snapshotRewards(poolIds.defaultPool, user);
+        sablierStaking.updateRewards(poolIds.defaultPool, user);
 
         // Bound timestamp so that it is greater than or equal to the end time.
         timestamp = boundUint40(timestamp, END_TIME, END_TIME + 365 days);
@@ -32,7 +32,7 @@ contract UpdateRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
             sablierStaking.userRewards(poolIds.defaultPool, user);
 
         // It should do nothing.
-        sablierStaking.snapshotRewards(poolIds.defaultPool, user);
+        sablierStaking.updateRewards(poolIds.defaultPool, user);
 
         (uint256 afterRewardsEarnedPerTokenScaled, uint128 afterRewards) =
             sablierStaking.userRewards(poolIds.defaultPool, user);
@@ -70,17 +70,17 @@ contract UpdateRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         vm.expectEmit({ emitter: address(sablierStaking) });
         emit ISablierStaking.UpdateRewards(poolIds.defaultPool, timestamp, rewardsEarnedPerTokenScaled, user, rewards);
 
-        // Test snapshot rewards.
+        // Update rewards.
         setMsgSender(caller);
-        sablierStaking.snapshotRewards(poolIds.defaultPool, user);
+        sablierStaking.updateRewards(poolIds.defaultPool, user);
 
-        // It should update global rewards snapshot.
+        // It should update global rewards distributed per token.
         (uint40 lastUpdateTime, uint256 rewardsDistributedPerTokenScaled) =
             sablierStaking.globalRewardsPerTokenSnapshot(poolIds.defaultPool);
         assertEq(lastUpdateTime, timestamp, "globalLastUpdateTime");
         assertEq(rewardsDistributedPerTokenScaled, rewardsEarnedPerTokenScaled, "rewardsDistributedPerTokenScaled");
 
-        // It should update user rewards snapshot.
+        // It should update user rewards.
         (rewardsEarnedPerTokenScaled, rewards) = sablierStaking.userRewards(poolIds.defaultPool, user);
         assertEq(rewardsEarnedPerTokenScaled, rewardsEarnedPerTokenScaled, "rewardsEarnedPerTokenScaled");
         assertEq(rewards, rewards, "rewards");

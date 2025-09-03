@@ -49,7 +49,7 @@ interface ISablierStakingState {
     /// @dev Reverts if `poolId` references a non-existent pool.
     function getTotalStakedAmount(uint256 poolId) external view returns (uint128);
 
-    /// @notice Retrieves the global rewards snapshot for the given Pool ID.
+    /// @notice Retrieves the global rewards per token at last update time for the given Pool ID.
     /// @dev Reverts if `poolId` references a non-existent pool.
     /// @param poolId The Pool ID for the query.
     /// @return lastUpdateTime The last time this snapshot was updated, denoted in UNIX timestamp.
@@ -90,7 +90,7 @@ interface ISablierStakingState {
     /// @dev Reverts if `poolId` references a non-existent pool or `user` is the zero address.
     function totalAmountStakedByUser(uint256 poolId, address user) external view returns (uint128);
 
-    /// @notice Retrieves the rewards snapshot of a user for the given Pool ID.
+    /// @notice Retrieves the user rewards for the given Pool ID.
     /// @dev Reverts if `poolId` references a non-existent pool or `user` is the zero address.
     /// @param poolId The Pool ID for the query.
     /// @param user The user address for the query.

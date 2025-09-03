@@ -55,13 +55,15 @@ contract StakingHandler is BaseHandler {
         uint256 stakerIndex
     )
         external
-        adjustTimestamp(timeJump)
         useFuzzedPool(poolIdIndex)
         useFuzzedStaker(stakerIndex)
+        adjustTimestamp(timeJump)
         updateHandlerStoreForAllPools
         instrument("claimRewards")
     {
         uint128 claimableRewards = sablierStaking.claimableRewards(selectedPoolId, selectedStaker);
+
+        // Discard if the claimable rewards is zero.
         vm.assume(claimableRewards > 0);
 
         setMsgSender(selectedStaker);
@@ -84,15 +86,13 @@ contract StakingHandler is BaseHandler {
         uint128 newRewardAmount
     )
         external
-        adjustTimestamp(timeJump)
         useFuzzedPool(poolIdIndex)
+        adjustTimestamp(timeJump)
         updateHandlerStoreForAllPools
         instrument("configureNextRound")
     {
-        // Do nothing if the end time is not in the past.
-        if (sablierStaking.getEndTime(selectedPoolId) >= getBlockTimestamp()) {
-            return;
-        }
+        // Discard if the end time is not in the past.
+        vm.assume(sablierStaking.getEndTime(selectedPoolId) < getBlockTimestamp());
 
         // Bound the new start time.
         newStartTime = boundUint40(newStartTime, getBlockTimestamp(), getBlockTimestamp() + 30 days);
@@ -184,18 +184,16 @@ contract StakingHandler is BaseHandler {
         uint256 stakerIndex
     )
         external
-        adjustTimestamp(timeJump)
         useFuzzedPool(poolIdIndex)
         useFuzzedStaker(stakerIndex)
+        adjustTimestamp(timeJump)
         updateHandlerStoreForAllPools
         instrument("snapshotRewards")
     {
         uint128 amountStakedByUser = handlerStore.amountStaked(selectedPoolId, selectedStaker);
 
-        // Do nothing if the following conditions are met.
-        if (amountStakedByUser == 0) {
-            return;
-        }
+        // Discard if the amount staked is zero.
+        vm.assume(amountStakedByUser > 0);
 
         sablierStaking.snapshotRewards(selectedPoolId, selectedStaker);
     }
@@ -208,16 +206,14 @@ contract StakingHandler is BaseHandler {
         uint256 stakerIndex
     )
         external
-        adjustTimestamp(timeJump)
         useFuzzedPool(poolIdIndex)
         useFuzzedStaker(stakerIndex)
+        adjustTimestamp(timeJump)
         updateHandlerStoreForAllPools
         instrument("stakeERC20Token")
     {
-        // Do nothing if end time is not in the future.
-        if (sablierStaking.getEndTime(selectedPoolId) <= getBlockTimestamp()) {
-            return;
-        }
+        // Discard if end time has passed.
+        vm.assume(sablierStaking.getEndTime(selectedPoolId) > getBlockTimestamp());
 
         if (isNewStaker) {
             // Create a new user.
@@ -249,15 +245,15 @@ contract StakingHandler is BaseHandler {
         uint256 stakerIndex
     )
         external
-        adjustTimestamp(timeJump)
         useFuzzedPool(poolIdIndex)
         useFuzzedStaker(stakerIndex)
+        adjustTimestamp(timeJump)
         updateHandlerStoreForAllPools
         instrument("unstakeERC20Token")
     {
         uint128 amountStakedByUser = handlerStore.amountStaked(selectedPoolId, selectedStaker);
 
-        // Check that staker has amount staked.
+        // Discard if the amount staked is zero.
         vm.assume(amountStakedByUser > 0);
 
         amount = boundUint128(amount, 1, amountStakedByUser);

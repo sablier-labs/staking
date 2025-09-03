@@ -110,10 +110,8 @@ contract BaseHandler is Utils, StdCheats {
 
     /// @dev Selects a pool ID from the store.
     modifier useFuzzedPool(uint256 poolIdIndex) {
-        // Return if there are no pools.
-        if (handlerStore.totalPools() == 0) {
-            return;
-        }
+        // Discard if there are no pools.
+        vm.assume(handlerStore.totalPools() > 0);
 
         poolIdIndex = bound(poolIdIndex, 0, handlerStore.totalPools() - 1);
         selectedPoolId = handlerStore.poolIds(poolIdIndex);

@@ -749,13 +749,15 @@ contract SablierStaking is
         uint256 rewardsPerTokenScaled
     )
         private
-        returns (uint128)
+        returns (uint128 userRewards)
     {
         // Load the struct.
         UserAccount storage userAccount = _userAccounts[user][poolId];
 
         // Calculate the total amount staked by the user.
         uint128 userTotalAmountStaked = userAccount.directAmountStaked + userAccount.streamAmountStaked;
+
+        userRewards = userAccount.pendingRewards;
 
         // If the user has tokens staked, update the user rewards earned.
         if (userTotalAmountStaked > 0) {
@@ -770,14 +772,13 @@ contract SablierStaking is
             // Scale down the rewards earned by the user since the last snapshot.
             uint128 userRewardsSinceLastSnapshot = userRewardsSinceLastSnapshotScaled.scaleDown().toUint128();
 
+            userRewards += userRewardsSinceLastSnapshot;
+
             // Effect: update the rewards earned by the user.
-            userAccount.pendingRewards += userRewardsSinceLastSnapshot;
+            userAccount.pendingRewards = userRewards;
         }
 
         // Effect: update the rewards earned per ERC20 token by the user.
         userAccount.rewardsEarnedPerTokenScaled = rewardsPerTokenScaled;
-
-        // Return the user's total rewards.
-        return userAccount.pendingRewards;
     }
 }

@@ -145,8 +145,8 @@ interface ISablierStaking is
     /// @param poolId The Pool ID to claim rewards from.
     /// @param feeOnRewards An optional fee to be deducted from the rewards claimed, denoted as fixed-point number where
     /// 1e18 is 100%.
-    /// @return amountClaimed The amount of rewards claimed, denoted in reward token's decimals.
-    function claimRewards(uint256 poolId, UD60x18 feeOnRewards) external payable returns (uint128 amountClaimed);
+    /// @return rewardsClaimed The amount of rewards claimed, denoted in reward token's decimals.
+    function claimRewards(uint256 poolId, UD60x18 feeOnRewards) external payable returns (uint128 rewardsClaimed);
 
     /// @notice Configures the next staking round for the specified pool.
     /// @dev Emits a {UpdateRewards} and {ConfigureNextRound} events.

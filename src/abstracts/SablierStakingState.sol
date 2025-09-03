@@ -32,7 +32,7 @@ abstract contract SablierStakingState is ISablierStakingState {
 
     /// @notice Get the Pool ID and the original owner of the staked stream.
     /// @dev See the documentation for StreamLookup in {DataTypes}.
-    mapping(ISablierLockupNFT lockup => mapping(uint256 streamId => StreamLookup lookup)) internal _streamLookups;
+    mapping(ISablierLockupNFT lockup => mapping(uint256 streamId => StreamLookup lookup)) internal _streamsLookup;
 
     /// @notice Stores the user's staking details for each pool.
     /// @dev See the documentation for UserAccount in {DataTypes}.
@@ -145,12 +145,12 @@ abstract contract SablierStakingState is ISablierStakingState {
         }
 
         // Check: the stream ID is staked in a pool.
-        if (_streamLookups[lockup][streamId].poolId == 0) {
+        if (_streamsLookup[lockup][streamId].poolId == 0) {
             revert Errors.SablierStakingState_StreamNotStaked(lockup, streamId);
         }
 
-        poolId = _streamLookups[lockup][streamId].poolId;
-        owner = _streamLookups[lockup][streamId].owner;
+        poolId = _streamsLookup[lockup][streamId].poolId;
+        owner = _streamsLookup[lockup][streamId].owner;
     }
 
     /// @inheritdoc ISablierStakingState
@@ -178,7 +178,8 @@ abstract contract SablierStakingState is ISablierStakingState {
             revert Errors.SablierStakingState_ZeroAddress();
         }
 
-        return (_userAccounts[user][poolId].streamAmountStaked, _userAccounts[user][poolId].directAmountStaked);
+        streamAmountStaked = _userAccounts[user][poolId].streamAmountStaked;
+        directAmountStaked = _userAccounts[user][poolId].directAmountStaked;
     }
 
     /// @inheritdoc ISablierStakingState

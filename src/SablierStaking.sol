@@ -258,16 +258,19 @@ contract SablierStaking is
         noDelegateCall
         notNull(poolId)
     {
+        // Load the pool.
+        Pool storage pool = _pools[poolId];
+
         // Check: `msg.sender` is the pool admin.
-        if (msg.sender != _pools[poolId].admin) {
-            revert Errors.SablierStaking_CallerNotPoolAdmin(poolId, msg.sender, _pools[poolId].admin);
+        if (msg.sender != pool.admin) {
+            revert Errors.SablierStaking_CallerNotPoolAdmin(poolId, msg.sender, pool.admin);
         }
 
         uint40 blockTimestamp = uint40(block.timestamp);
 
         // Check: pool end time is in the past.
-        if (_pools[poolId].endTime >= blockTimestamp) {
-            revert Errors.SablierStaking_EndTimeNotInPast(poolId, _pools[poolId].endTime);
+        if (pool.endTime >= blockTimestamp) {
+            revert Errors.SablierStaking_EndTimeNotInPast(poolId, pool.endTime);
         }
 
         // Check: the new start time is greater than or equal to the current block timestamp.
@@ -289,12 +292,12 @@ contract SablierStaking is
         _updateRewards(poolId, msg.sender);
 
         // Effect: set the next staking round parameters.
-        _pools[poolId].endTime = newEndTime;
-        _pools[poolId].startTime = newStartTime;
-        _pools[poolId].rewardAmount = newRewardAmount;
+        pool.endTime = newEndTime;
+        pool.startTime = newStartTime;
+        pool.rewardAmount = newRewardAmount;
 
         // Interaction: transfer the reward amount from the `msg.sender` to this contract.
-        _pools[poolId].rewardToken.safeTransferFrom({ from: msg.sender, to: address(this), value: newRewardAmount });
+        pool.rewardToken.safeTransferFrom({ from: msg.sender, to: address(this), value: newRewardAmount });
 
         // Log the event.
         emit ConfigureNextRound(poolId, newStartTime, newEndTime, newRewardAmount);

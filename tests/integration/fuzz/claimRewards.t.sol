@@ -150,9 +150,9 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         uint128 expectedRewardsTransferredToComptroller = ud(expectedUserRewards).mul(feeOnRewards).intoUint128();
         uint128 expectedRewardsTransferredToRecipient = expectedUserRewards - expectedRewardsTransferredToComptroller;
 
-        // It should emit 1 {SnapshotRewards}, 2 {Transfer} and 1 {ClaimRewards} events.
+        // It should emit 1 {UpdateRewards}, 2 {Transfer} and 1 {ClaimRewards} events.
         vm.expectEmit({ emitter: address(sablierStaking) });
-        emit ISablierStaking.SnapshotRewards(
+        emit ISablierStaking.UpdateRewards(
             poolIds.defaultPool, timestamp, expectedRewardsPerTokenScaled, caller, expectedUserRewards
         );
         if (feeOnRewards > ZERO) {
@@ -170,7 +170,7 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         // It should return the rewards.
         assertEq(actualRewards, expectedRewardsTransferredToRecipient, "return value");
 
-        (uint256 actualRewardsPerTokenScaled,) = sablierStaking.userSnapshot(poolIds.defaultPool, caller);
+        (uint256 actualRewardsPerTokenScaled,) = sablierStaking.userRewards(poolIds.defaultPool, caller);
 
         // It should set rewards to zero.
         assertEq(sablierStaking.claimableRewards(poolIds.defaultPool, caller), 0, "rewards");

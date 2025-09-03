@@ -90,7 +90,7 @@ contract HandlerStore {
         amountStaked[poolId][staker] -= amount;
     }
 
-    function updateGlobalSnapshot(uint256 poolId, uint40 time, uint256 rewardsPerTokenScaled) external {
+    function updateGlobalRewardsPerTokenSnapshot(uint256 poolId, uint40 time, uint256 rewardsPerTokenScaled) external {
         globalRewardsPerTokenScaled[poolId] = rewardsPerTokenScaled;
         globalSnapshotTime[poolId] = time;
     }

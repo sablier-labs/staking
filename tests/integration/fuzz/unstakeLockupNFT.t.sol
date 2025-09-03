@@ -89,9 +89,9 @@ contract UnstakeLockupNFT_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test 
 
         vars.expectedTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool) - amountUnstaked;
 
-        // It should emit {SnapshotRewards}, {Transfer} and {UnstakeERC20Token} events.
+        // It should emit {UpdateRewards}, {Transfer} and {UnstakeERC20Token} events.
         vm.expectEmit({ emitter: address(sablierStaking) });
-        emit ISablierStaking.SnapshotRewards(
+        emit ISablierStaking.UpdateRewards(
             poolIds.defaultPool,
             timestamp,
             vars.expectedRewardsPerTokenScaled,
@@ -119,7 +119,7 @@ contract UnstakeLockupNFT_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test 
 
         // It should update global rewards snapshot.
         (vars.actualLastUpdateTime, vars.actualRewardsPerTokenScaled) =
-            sablierStaking.globalSnapshot(poolIds.defaultPool);
+            sablierStaking.globalRewardsPerTokenSnapshot(poolIds.defaultPool);
         assertEq(vars.actualLastUpdateTime, timestamp, "actualLastUpdateTime");
         assertEq(
             vars.actualRewardsPerTokenScaled, vars.expectedRewardsPerTokenScaled, "rewardsDistributedPerTokenScaled"
@@ -127,7 +127,7 @@ contract UnstakeLockupNFT_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test 
 
         // It should update user rewards snapshot.
         (vars.actualRewardsPerTokenScaled, vars.actualUserRewards) =
-            sablierStaking.userSnapshot(poolIds.defaultPool, users.recipient);
+            sablierStaking.userRewards(poolIds.defaultPool, users.recipient);
         assertEq(vars.actualRewardsPerTokenScaled, vars.expectedRewardsPerTokenScaled, "rewardsEarnedPerTokenScaled");
         assertEq(vars.actualUserRewards, vars.expectedUserRewards, "rewards");
     }

@@ -49,13 +49,13 @@ interface ISablierStakingState {
     /// @dev Reverts if `poolId` references a non-existent pool.
     function getTotalStakedAmount(uint256 poolId) external view returns (uint128);
 
-    /// @notice Retrieves the global rewards snapshot for the given Pool ID.
+    /// @notice Retrieves the global rewards per token at last update time for the given Pool ID.
     /// @dev Reverts if `poolId` references a non-existent pool.
     /// @param poolId The Pool ID for the query.
     /// @return lastUpdateTime The last time this snapshot was updated, denoted in UNIX timestamp.
     /// @return rewardsDistributedPerTokenScaled The amount of rewards distributed per staking token, scaled by
     /// {Helpers.SCALE_FACTOR} to minimize precision loss.
-    function globalSnapshot(uint256 poolId)
+    function globalRewardsPerTokenSnapshot(uint256 poolId)
         external
         view
         returns (uint40 lastUpdateTime, uint256 rewardsDistributedPerTokenScaled);
@@ -90,6 +90,22 @@ interface ISablierStakingState {
     /// @dev Reverts if `poolId` references a non-existent pool or `user` is the zero address.
     function totalAmountStakedByUser(uint256 poolId, address user) external view returns (uint128);
 
+    /// @notice Retrieves the user rewards for the given Pool ID.
+    /// @dev Reverts if `poolId` references a non-existent pool or `user` is the zero address.
+    /// @param poolId The Pool ID for the query.
+    /// @param user The user address for the query.
+    /// @return rewardsEarnedPerTokenScaled The amount of rewards earned per staking token, scaled by
+    /// {Helpers.SCALE_FACTOR} to minimize precision loss.
+    /// @return pendingRewards The amount of rewards earned by the user until last snapshot, denoted in token's
+    /// decimals.
+    function userRewards(
+        uint256 poolId,
+        address user
+    )
+        external
+        view
+        returns (uint256 rewardsEarnedPerTokenScaled, uint128 pendingRewards);
+
     /// @notice Returns the user's shares of tokens staked in a pool.
     /// @dev Reverts if `poolId` references a non-existent pool or `user` is the zero address.
     /// @param poolId The Pool ID for the query.
@@ -105,19 +121,4 @@ interface ISablierStakingState {
         external
         view
         returns (uint128 streamAmountStaked, uint128 directAmountStaked);
-
-    /// @notice Retrieves the rewards snapshot of a user for the given Pool ID.
-    /// @dev Reverts if `poolId` references a non-existent pool or `user` is the zero address.
-    /// @param poolId The Pool ID for the query.
-    /// @param user The user address for the query.
-    /// @return rewardsEarnedPerTokenScaled The amount of rewards earned per staking token, scaled by
-    /// {Helpers.SCALE_FACTOR} to minimize precision loss.
-    /// @return rewards The amount of rewards earned by the user until last snapshot, denoted in token's decimals.
-    function userSnapshot(
-        uint256 poolId,
-        address user
-    )
-        external
-        view
-        returns (uint256 rewardsEarnedPerTokenScaled, uint128 rewards);
 }

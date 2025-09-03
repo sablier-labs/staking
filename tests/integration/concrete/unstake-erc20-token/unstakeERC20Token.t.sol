@@ -68,9 +68,9 @@ contract UnstakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concr
     {
         vars.expectedTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool) - DEFAULT_AMOUNT;
 
-        // It should emit {SnapshotRewards}, {Transfer} and {UnstakeERC20Token} events.
+        // It should emit {UpdateRewards}, {Transfer} and {UnstakeERC20Token} events.
         vm.expectEmit({ emitter: address(sablierStaking) });
-        emit ISablierStaking.SnapshotRewards(
+        emit ISablierStaking.UpdateRewards(
             poolIds.defaultPool,
             WARP_40_PERCENT,
             REWARDS_DISTRIBUTED_PER_TOKEN_SCALED,
@@ -95,7 +95,7 @@ contract UnstakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concr
 
         // It should update global rewards snapshot.
         (vars.actualLastUpdateTime, vars.actualRewardsPerTokenScaled) =
-            sablierStaking.globalSnapshot(poolIds.defaultPool);
+            sablierStaking.globalRewardsPerTokenSnapshot(poolIds.defaultPool);
         assertEq(vars.actualLastUpdateTime, WARP_40_PERCENT, "globalLastUpdateTime");
         assertEq(
             vars.actualRewardsPerTokenScaled, REWARDS_DISTRIBUTED_PER_TOKEN_SCALED, "rewardsDistributedPerTokenScaled"
@@ -103,7 +103,7 @@ contract UnstakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concr
 
         // It should update user rewards snapshot.
         (vars.actualRewardsPerTokenScaled, vars.actualUserRewards) =
-            sablierStaking.userSnapshot(poolIds.defaultPool, users.recipient);
+            sablierStaking.userRewards(poolIds.defaultPool, users.recipient);
         assertEq(vars.actualRewardsPerTokenScaled, REWARDS_DISTRIBUTED_PER_TOKEN_SCALED, "rewardsEarnedPerTokenScaled");
         assertEq(vars.actualUserRewards, REWARDS_EARNED_BY_RECIPIENT, "rewards");
     }

@@ -19,7 +19,7 @@ contract RewardsSinceLastSnapshot_Integration_Concrete_Test is Shared_Integratio
         warpStateTo(END_TIME);
 
         // Snapshot rewards so that last time update equals end time.
-        sablierStaking.snapshotRewards(poolIds.defaultPool, users.recipient);
+        sablierStaking.updateRewards(poolIds.defaultPool, users.recipient);
 
         // It should return zero.
         uint128 actualRewardRatePerTokenStaked = sablierStaking.rewardsSinceLastSnapshot(poolIds.defaultPool);

@@ -37,7 +37,7 @@ contract ConfigureNextRound_Integration_Fuzz_Test is Shared_Integration_Fuzz_Tes
         vm.expectRevert(
             abi.encodeWithSelector(Errors.SablierStaking_EndTimeNotInPast.selector, poolIds.defaultPool, END_TIME)
         );
-        sablierStaking.configureNextRound(poolIds.defaultPool, newEndTime, newStartTime, newRewardAmount);
+        sablierStaking.configureNextRound(poolIds.defaultPool, newStartTime, newEndTime, newRewardAmount);
     }
 
     function testFuzz_RevertGiven_StatusSCHEDULED(
@@ -74,7 +74,7 @@ contract ConfigureNextRound_Integration_Fuzz_Test is Shared_Integration_Fuzz_Tes
                 Errors.SablierStaking_EndTimeNotInPast.selector, poolIds.defaultPool, END_TIME + 365 days
             )
         );
-        sablierStaking.configureNextRound(poolIds.defaultPool, newEndTime, newStartTime, newRewardAmount);
+        sablierStaking.configureNextRound(poolIds.defaultPool, newStartTime, newEndTime, newRewardAmount);
     }
 
     function testFuzz_ConfigureNextRound_GivenStatusENDED(
@@ -106,9 +106,9 @@ contract ConfigureNextRound_Integration_Fuzz_Test is Shared_Integration_Fuzz_Tes
         deal({ token: address(rewardToken), to: users.poolCreator, give: newRewardAmount });
         rewardToken.approve(address(sablierStaking), newRewardAmount);
 
-        // It should emit {SnapshotRewards}, {Transfer} and {ConfigureNextRound} events.
+        // It should emit {UpdateRewards}, {Transfer} and {ConfigureNextRound} events.
         vm.expectEmit({ emitter: address(sablierStaking) });
-        emit ISablierStaking.SnapshotRewards(
+        emit ISablierStaking.UpdateRewards(
             poolIds.defaultPool,
             END_TIME + 1 seconds,
             REWARDS_DISTRIBUTED_PER_TOKEN_END_TIME_SCALED,
@@ -118,10 +118,10 @@ contract ConfigureNextRound_Integration_Fuzz_Test is Shared_Integration_Fuzz_Tes
         vm.expectEmit({ emitter: address(rewardToken) });
         emit IERC20.Transfer(users.poolCreator, address(sablierStaking), newRewardAmount);
         vm.expectEmit({ emitter: address(sablierStaking) });
-        emit ISablierStaking.ConfigureNextRound(poolIds.defaultPool, newEndTime, newStartTime, newRewardAmount);
+        emit ISablierStaking.ConfigureNextRound(poolIds.defaultPool, newStartTime, newEndTime, newRewardAmount);
 
         // Configure next round.
-        sablierStaking.configureNextRound(poolIds.defaultPool, newEndTime, newStartTime, newRewardAmount);
+        sablierStaking.configureNextRound(poolIds.defaultPool, newStartTime, newEndTime, newRewardAmount);
 
         // It should set the new start time.
         assertEq(sablierStaking.getStartTime(poolIds.defaultPool), newStartTime, "startTime");

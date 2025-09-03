@@ -117,7 +117,7 @@ contract StakingHandler is BaseHandler {
         rewardToken.approve(address(sablierStaking), newRewardAmount);
 
         // Configure next round.
-        sablierStaking.configureNextRound(selectedPoolId, newEndTime, newStartTime, newRewardAmount);
+        sablierStaking.configureNextRound(selectedPoolId, newStartTime, newEndTime, newRewardAmount);
 
         // Update handler store.
         handlerStore.addTotalRewardsDeposited(selectedPoolId, newRewardAmount);
@@ -176,26 +176,6 @@ contract StakingHandler is BaseHandler {
 
         // Update handler store.
         handlerStore.addTotalRewardsDeposited(poolId, createParams.rewardAmount);
-    }
-
-    function snapshotRewards(
-        uint256 timeJump,
-        uint256 poolIdIndex,
-        uint256 stakerIndex
-    )
-        external
-        useFuzzedPool(poolIdIndex)
-        useFuzzedStaker(stakerIndex)
-        adjustTimestamp(timeJump)
-        updateHandlerStoreForAllPools
-        instrument("snapshotRewards")
-    {
-        uint128 amountStakedByUser = handlerStore.amountStaked(selectedPoolId, selectedStaker);
-
-        // Discard if the amount staked is zero.
-        vm.assume(amountStakedByUser > 0);
-
-        sablierStaking.snapshotRewards(selectedPoolId, selectedStaker);
     }
 
     function stakeERC20Token(
@@ -263,5 +243,25 @@ contract StakingHandler is BaseHandler {
 
         // Update handler store.
         handlerStore.subtractUserStake(selectedPoolId, selectedStaker, amount);
+    }
+
+    function updateRewards(
+        uint256 timeJump,
+        uint256 poolIdIndex,
+        uint256 stakerIndex
+    )
+        external
+        useFuzzedPool(poolIdIndex)
+        useFuzzedStaker(stakerIndex)
+        adjustTimestamp(timeJump)
+        updateHandlerStoreForAllPools
+        instrument("updateRewards")
+    {
+        uint128 amountStakedByUser = handlerStore.amountStaked(selectedPoolId, selectedStaker);
+
+        // Discard if the amount staked is zero.
+        vm.assume(amountStakedByUser > 0);
+
+        sablierStaking.updateRewards(selectedPoolId, selectedStaker);
     }
 }

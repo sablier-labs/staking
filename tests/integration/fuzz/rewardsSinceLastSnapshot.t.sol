@@ -15,7 +15,7 @@ contract RewardsSinceLastSnapshot_Integration_Fuzz_Test is Shared_Integration_Fu
 
         // Warp the EVM state to the given timestamp and take snapshot.
         warpStateTo(timestamp);
-        sablierStaking.snapshotRewards(poolIds.defaultPool, users.recipient);
+        sablierStaking.updateRewards(poolIds.defaultPool, users.recipient);
 
         // Bound timestamp to a new value which is greater than the current block time.
         timestamp = boundUint40(timestamp, getBlockTimestamp() + 1, END_TIME + 365 days);
@@ -39,7 +39,7 @@ contract RewardsSinceLastSnapshot_Integration_Fuzz_Test is Shared_Integration_Fu
 
         // Warp the EVM state to the given timestamp and snapshot rewards.
         warpStateTo(timestamp);
-        sablierStaking.snapshotRewards(poolIds.defaultPool, users.recipient);
+        sablierStaking.updateRewards(poolIds.defaultPool, users.recipient);
 
         // Bound timestamp to a new value which is greater than the current block time.
         timestamp = boundUint40(timestamp, getBlockTimestamp() + 1, END_TIME + 365 days);

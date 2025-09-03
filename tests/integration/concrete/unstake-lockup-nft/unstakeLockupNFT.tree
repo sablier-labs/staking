@@ -12,4 +12,4 @@ UnstakeLockupNFT_Integration_Concrete_Test
          ├── it should decrease total amount staked
          ├── it should update global rewards snapshot
          ├── it should update user rewards snapshot
-         └── it should emit {SnapshotRewards}, {Transfer} and {UnstakeLockupNFT} events
+         └── it should emit {UpdateRewards}, {Transfer} and {UnstakeLockupNFT} events

@@ -755,7 +755,7 @@ contract SablierStaking is
         returns (uint128 userRewards)
     {
         // Load the struct.
-        UserAccount memory userAccount = _userAccounts[user][poolId];
+        UserAccount storage userAccount = _userAccounts[user][poolId];
 
         // Calculate the total amount staked by the user.
         uint128 userTotalAmountStaked = userAccount.directAmountStaked + userAccount.streamAmountStaked;
@@ -778,10 +778,10 @@ contract SablierStaking is
             userRewards += userRewardsSinceLastSnapshot;
 
             // Effect: update the rewards earned by the user.
-            _userAccounts[user][poolId].pendingRewards = userRewards;
+            userAccount.pendingRewards = userRewards;
         }
 
         // Effect: update the rewards earned per ERC20 token by the user.
-        _userAccounts[user][poolId].rewardsEarnedPerTokenScaled = rewardsPerTokenScaled;
+        userAccount.rewardsEarnedPerTokenScaled = rewardsPerTokenScaled;
     }
 }

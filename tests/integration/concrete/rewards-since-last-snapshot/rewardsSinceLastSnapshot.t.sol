@@ -15,18 +15,18 @@ contract RewardsSinceLastSnapshot_Integration_Concrete_Test is Shared_Integratio
         assertEq(actualRewardRatePerTokenStaked, 0, "rewardsSinceLastSnapshot");
     }
 
-    function test_GivensnapshotTimeNotLessThanEndTime() external whenNotNull givenTotalStakedNotZero {
+    function test_GivenSnapshotTimeNotLessThanEndTime() external whenNotNull givenTotalStakedNotZero {
         warpStateTo(END_TIME);
 
         // Snapshot rewards so that last time update equals end time.
-        sablierStaking.updateRewards(poolIds.defaultPool, users.recipient);
+        sablierStaking.snapshotRewards(poolIds.defaultPool, users.recipient);
 
         // It should return zero.
         uint128 actualRewardRatePerTokenStaked = sablierStaking.rewardsSinceLastSnapshot(poolIds.defaultPool);
         assertEq(actualRewardRatePerTokenStaked, 0, "rewardsSinceLastSnapshot");
     }
 
-    function test_GivensnapshotTimeLessThanEndTime() external whenNotNull givenTotalStakedNotZero {
+    function test_GivenSnapshotTimeLessThanEndTime() external whenNotNull givenTotalStakedNotZero {
         warpStateTo(END_TIME);
 
         // It should return correct rewards per token since last snapshot.

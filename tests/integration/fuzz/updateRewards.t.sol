@@ -6,7 +6,7 @@ import { ISablierStaking } from "src/interfaces/ISablierStaking.sol";
 import { Shared_Integration_Fuzz_Test } from "./Fuzz.t.sol";
 
 contract SnapshotRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
-    function testFuzz_GivensnapshotTimeNotLessThanEndTime(
+    function testFuzz_GivenSnapshotTimeNotLessThanEndTime(
         uint256 userSeed,
         uint40 timestamp
     )
@@ -20,7 +20,7 @@ contract SnapshotRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
 
         // Warp EVM state to the end time and take a snapshot so that snapshot time equals the end time.
         warpStateTo(END_TIME);
-        sablierStaking.updateRewards(poolIds.defaultPool, user);
+        sablierStaking.snapshotRewards(poolIds.defaultPool, user);
 
         // Bound timestamp so that it is greater than or equal to the end time.
         timestamp = boundUint40(timestamp, END_TIME, END_TIME + 365 days);
@@ -31,7 +31,7 @@ contract SnapshotRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         (uint256 beforerptEarnedScaled, uint128 beforeRewards) = sablierStaking.userRewards(poolIds.defaultPool, user);
 
         // It should do nothing.
-        sablierStaking.updateRewards(poolIds.defaultPool, user);
+        sablierStaking.snapshotRewards(poolIds.defaultPool, user);
 
         (uint256 afterrptEarnedScaled, uint128 afterRewards) = sablierStaking.userRewards(poolIds.defaultPool, user);
 
@@ -70,7 +70,7 @@ contract SnapshotRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
 
         // Update rewards.
         setMsgSender(caller);
-        sablierStaking.updateRewards(poolIds.defaultPool, user);
+        sablierStaking.snapshotRewards(poolIds.defaultPool, user);
 
         // It should update global rewards snapshot.
         (uint40 snapshotTime, uint256 snapshotRptDistributedScaled) =

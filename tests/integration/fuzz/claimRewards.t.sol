@@ -145,7 +145,7 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
     function _test_ClaimRewards(address caller, uint256 fee, UD60x18 feeOnRewards, uint40 timestamp) private {
         uint256 initialComptrollerEthBalance = address(comptroller).balance;
 
-        (uint256 expectedRewardsPerTokenScaled, uint128 expectedUserRewards) = calculateLatestRewards(caller);
+        (uint256 expectedRptScaled, uint128 expectedUserRewards) = calculateLatestRewards(caller);
 
         uint128 expectedRewardsTransferredToComptroller = ud(expectedUserRewards).mul(feeOnRewards).intoUint128();
         uint128 expectedRewardsTransferredToRecipient = expectedUserRewards - expectedRewardsTransferredToComptroller;
@@ -153,7 +153,7 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         // It should emit 1 {SnapshotRewards}, 2 {Transfer} and 1 {ClaimRewards} events.
         vm.expectEmit({ emitter: address(sablierStaking) });
         emit ISablierStaking.SnapshotRewards(
-            poolIds.defaultPool, timestamp, expectedRewardsPerTokenScaled, caller, expectedUserRewards
+            poolIds.defaultPool, timestamp, expectedRptScaled, caller, expectedUserRewards
         );
         if (feeOnRewards > ZERO) {
             vm.expectEmit({ emitter: address(rewardToken) });
@@ -170,13 +170,13 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         // It should return the rewards.
         assertEq(actualRewards, expectedRewardsTransferredToRecipient, "return value");
 
-        (uint256 actualRewardsPerTokenScaled,) = sablierStaking.userRewards(poolIds.defaultPool, caller);
+        (uint256 actualRptScaled,) = sablierStaking.userRewards(poolIds.defaultPool, caller);
 
         // It should set rewards to zero.
         assertEq(sablierStaking.claimableRewards(poolIds.defaultPool, caller), 0, "rewards");
 
         // It should set the rewards earned per token.
-        assertEq(actualRewardsPerTokenScaled, expectedRewardsPerTokenScaled, "rptEarnedScaled");
+        assertEq(actualRptScaled, expectedRptScaled, "rptEarnedScaled");
 
         // It should transfer the min fee to comptroller.
         assertEq(address(comptroller).balance, initialComptrollerEthBalance + fee, "comptroller ETH balance");

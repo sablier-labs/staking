@@ -41,7 +41,7 @@ contract StakeLockupNFT_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         setMsgSender(caller);
         IERC721(address(lockup)).setApprovalForAll({ operator: address(sablierStaking), approved: true });
 
-        (vars.expectedRewardsPerTokenScaled, vars.expectedUserRewards) = calculateLatestRewards(caller);
+        (vars.expectedRptScaled, vars.expectedUserRewards) = calculateLatestRewards(caller);
         (uint128 initialStreamAmountStaked,) = sablierStaking.userShares(poolIds.defaultPool, caller);
 
         vars.expectedTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool) + amount;
@@ -49,7 +49,7 @@ contract StakeLockupNFT_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         // It should emit {SnapshotRewards}, {Transfer} and {StakeLockupNFT} events.
         vm.expectEmit({ emitter: address(sablierStaking) });
         emit ISablierStaking.SnapshotRewards(
-            poolIds.defaultPool, timestamp, vars.expectedRewardsPerTokenScaled, caller, vars.expectedUserRewards
+            poolIds.defaultPool, timestamp, vars.expectedRptScaled, caller, vars.expectedUserRewards
         );
         vm.expectEmit({ emitter: address(lockup) });
         emit IERC721.Transfer(caller, address(sablierStaking), streamId);
@@ -68,9 +68,8 @@ contract StakeLockupNFT_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         assertEq(vars.actualTotalAmountStaked, vars.expectedTotalAmountStaked, "total amount staked");
 
         // It should update user rewards snapshot.
-        (vars.actualRewardsPerTokenScaled, vars.actualUserRewards) =
-            sablierStaking.userRewards(poolIds.defaultPool, caller);
-        assertEq(vars.actualRewardsPerTokenScaled, vars.expectedRewardsPerTokenScaled, "rptEarnedScaled");
+        (vars.actualRptScaled, vars.actualUserRewards) = sablierStaking.userRewards(poolIds.defaultPool, caller);
+        assertEq(vars.actualRptScaled, vars.expectedRptScaled, "rptEarnedScaled");
         assertEq(vars.actualUserRewards, vars.expectedUserRewards, "rewards");
     }
 }

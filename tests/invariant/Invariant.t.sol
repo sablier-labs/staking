@@ -52,20 +52,16 @@ contract Invariant_Test is Base_Test, StdInvariant {
         assertEq(nextPoolId, lastPoolId + 1, "Invariant violation: next pool ID not incremented");
     }
 
-    function invariant_GlobalRewardsPerTokenSnapshot() external view {
+    function invariant_GlobalRptSnapshot() external view {
         for (uint256 i = 0; i < handlerStore.totalPools(); ++i) {
             uint256 poolId = handlerStore.poolIds(i);
-            (uint40 snapshotTime, uint256 currentRewardsPerToken) = sablierStaking.globalRptAtSnapshot(poolId);
+            (uint40 snapshotTime, uint256 currentRpt) = sablierStaking.globalRptAtSnapshot(poolId);
             uint40 previousSnapshotTime = handlerStore.globalSnapshotTime(poolId);
-            uint256 previousRewardsPerToken = handlerStore.globalRewardsPerTokenScaled(poolId);
+            uint256 previousRpt = handlerStore.globalRptScaled(poolId);
 
             assertGe(snapshotTime, previousSnapshotTime, "Invariant violation: global snapshot time decreased");
 
-            assertGe(
-                currentRewardsPerToken,
-                previousRewardsPerToken,
-                "Invariant violation: global rewards per token decreased"
-            );
+            assertGe(currentRpt, previousRpt, "Invariant violation: global rewards per token decreased");
         }
     }
 
@@ -155,32 +151,24 @@ contract Invariant_Test is Base_Test, StdInvariant {
 
             for (uint256 j = 0; j < handlerStore.totalStakers(poolId); ++j) {
                 address staker = handlerStore.poolStakers(poolId, j);
-                (uint256 currentRewardsPerToken,) = sablierStaking.userRewards(poolId, staker);
-                uint256 previousRewardsPerToken = handlerStore.userRewardsPerTokenScaled(poolId, staker);
+                (uint256 currentRpt,) = sablierStaking.userRewards(poolId, staker);
+                uint256 previousRpt = handlerStore.userRptScaled(poolId, staker);
 
-                assertGe(
-                    currentRewardsPerToken,
-                    previousRewardsPerToken,
-                    "Invariant violation: user rewards per token decreased"
-                );
+                assertGe(currentRpt, previousRpt, "Invariant violation: user rewards per token decreased");
             }
         }
     }
 
-    function invariant_UserRewardsLeGlobalRewardsPerTokenSnapshot() external view {
+    function invariant_UserRewardsLeGlobalRptSnapshot() external view {
         for (uint256 i = 0; i < handlerStore.totalPools(); ++i) {
             uint256 poolId = handlerStore.poolIds(i);
-            (, uint256 globalRewardsPerToken) = sablierStaking.globalRptAtSnapshot(poolId);
+            (, uint256 globalRpt) = sablierStaking.globalRptAtSnapshot(poolId);
 
             for (uint256 j = 0; j < handlerStore.totalStakers(poolId); ++j) {
                 address staker = handlerStore.poolStakers(poolId, j);
-                (uint256 userRewardsPerToken,) = sablierStaking.userRewards(poolId, staker);
+                (uint256 userRpt,) = sablierStaking.userRewards(poolId, staker);
 
-                assertLe(
-                    userRewardsPerToken,
-                    globalRewardsPerToken,
-                    "Invariant violation: user rewards per token > global rewards per token"
-                );
+                assertLe(userRpt, globalRpt, "Invariant violation: user rewards per token > global rewards per token");
             }
         }
     }

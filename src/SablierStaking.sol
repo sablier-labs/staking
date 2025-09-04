@@ -448,7 +448,7 @@ contract SablierStaking is
         notNull(poolId)
     {
         // Check: the lockup is whitelisted.
-        if (!_lockupWhitelists[lockup]) {
+        if (!_whitelistedLockups[lockup]) {
             revert Errors.SablierStaking_LockupNotWhitelisted(lockup);
         }
 
@@ -550,17 +550,6 @@ contract SablierStaking is
     }
 
     /// @inheritdoc ISablierStaking
-    function updateRewards(uint256 poolId, address user) external override noDelegateCall notNull(poolId) {
-        // Check: the total amount staked by user is not zero.
-        if (_userAccounts[user][poolId].directAmountStaked + _userAccounts[user][poolId].streamAmountStaked == 0) {
-            revert Errors.SablierStaking_NoStakedAmount(poolId, user);
-        }
-
-        // Effect: update rewards data to the latest values for `user`.
-        _snapshotRewards(poolId, user);
-    }
-
-    /// @inheritdoc ISablierStaking
     function whitelistLockups(ISablierLockupNFT[] calldata lockups) external override noDelegateCall onlyComptroller {
         uint256 length = lockups.length;
 
@@ -571,7 +560,7 @@ contract SablierStaking is
             }
 
             // Check: the lockup contract is not already whitelisted.
-            if (_lockupWhitelists[lockups[i]]) {
+            if (_whitelistedLockups[lockups[i]]) {
                 revert Errors.SablierStaking_LockupAlreadyWhitelisted(i, lockups[i]);
             }
 
@@ -581,11 +570,33 @@ contract SablierStaking is
             }
 
             // Effect: whitelist the lockup contract.
-            _lockupWhitelists[lockups[i]] = true;
+            _whitelistedLockups[lockups[i]] = true;
 
             // Log the event.
             emit LockupWhitelisted(address(comptroller), lockups[i]);
         }
+    }
+
+    /*//////////////////////////////////////////////////////////////////////////
+                         INTERNAL STATE-CHANGING FUNCTIONS
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @notice Snapshot rewards data for the specified pool and user.
+    function _snapshotRewards(uint256 poolId, address user) internal {
+        // Snapshot the global rewards.
+        uint256 rptDistributedScaled = _snapshotGlobalRewards(poolId);
+
+        // Snapshot the user rewards.
+        uint128 userRewards = _snapshotUserRewards(poolId, user, rptDistributedScaled);
+
+        // Log the event.
+        emit SnapshotRewards({
+            poolId: poolId,
+            snapshotTime: uint40(block.timestamp),
+            snapshotRptDistributedScaled: rptDistributedScaled,
+            user: user,
+            userRewards: userRewards
+        });
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -723,24 +734,6 @@ contract SablierStaking is
 
         // Effect: snapshot the timestamp.
         _pools[poolId].snapshotTime = uint40(block.timestamp);
-    }
-
-    /// @notice Snapshot rewards data for the specified pool and user.
-    function _snapshotRewards(uint256 poolId, address user) private {
-        // Snapshot the global rewards.
-        uint256 rptDistributedScaled = _snapshotGlobalRewards(poolId);
-
-        // Snapshot the user rewards.
-        uint128 userRewards = _snapshotUserRewards(poolId, user, rptDistributedScaled);
-
-        // Log the event.
-        emit SnapshotRewards({
-            poolId: poolId,
-            snapshotTime: uint40(block.timestamp),
-            snapshotRptDistributedScaled: rptDistributedScaled,
-            user: user,
-            userRewards: userRewards
-        });
     }
 
     /// @dev Private function to snapshot the user rewards.

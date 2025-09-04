@@ -3,7 +3,7 @@ pragma solidity >=0.8.26;
 
 import { Shared_Integration_Concrete_Test } from "../Concrete.t.sol";
 
-contract RewardsPerTokenSinceLastSnapshot_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
+contract RptSinceLastSnapshot_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     function test_RevertWhen_Null() external {
         bytes memory callData = abi.encodeCall(sablierStaking.rewardsPerTokenSinceLastSnapshot, (poolIds.nullPool));
         expectRevert_Null(callData);
@@ -15,18 +15,18 @@ contract RewardsPerTokenSinceLastSnapshot_Integration_Concrete_Test is Shared_In
         assertEq(actualRewardRatePerTokenStaked, 0, "rewardsPerTokenSinceLastSnapshot");
     }
 
-    function test_GivensnapshotTimeNotLessThanEndTime() external whenNotNull givenTotalStakedNotZero {
+    function test_GivenSnapshotTimeNotLessThanEndTime() external whenNotNull givenTotalStakedNotZero {
         warpStateTo(END_TIME);
 
         // Snapshot rewards so that last time update equals end time.
-        sablierStaking.updateRewards(poolIds.defaultPool, users.recipient);
+        sablierStaking.snapshotRewards(poolIds.defaultPool, users.recipient);
 
         // It should return zero.
         uint128 actualRewardRatePerTokenStaked = sablierStaking.rewardsPerTokenSinceLastSnapshot(poolIds.defaultPool);
         assertEq(actualRewardRatePerTokenStaked, 0, "rewardsPerTokenSinceLastSnapshot");
     }
 
-    function test_GivensnapshotTimeLessThanEndTime() external whenNotNull givenTotalStakedNotZero {
+    function test_GivenSnapshotTimeLessThanEndTime() external whenNotNull givenTotalStakedNotZero {
         warpStateTo(END_TIME);
 
         // It should return correct rewards per token since last snapshot.

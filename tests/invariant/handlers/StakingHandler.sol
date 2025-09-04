@@ -4,7 +4,8 @@ pragma solidity >=0.8.26;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { ud } from "@prb/math/src/UD60x18.sol";
-import { ISablierStaking } from "src/interfaces/ISablierStaking.sol";
+
+import { SablierStakingMock } from "../../mocks/SablierStakingMock.sol";
 import { HandlerStore } from "../stores/HandlerStore.sol";
 
 import { BaseHandler } from "./BaseHandler.sol";
@@ -33,7 +34,7 @@ contract StakingHandler is BaseHandler {
 
     constructor(
         HandlerStore handlerStore_,
-        ISablierStaking sablierStaking_,
+        SablierStakingMock sablierStaking_,
         IERC20[] memory tokens_
     )
         BaseHandler(handlerStore_, sablierStaking_, tokens_)
@@ -262,6 +263,6 @@ contract StakingHandler is BaseHandler {
         // Discard if the amount staked is zero.
         vm.assume(amountStakedByUser > 0);
 
-        sablierStaking.updateRewards(selectedPoolId, selectedStaker);
+        sablierStaking.snapshotRewards(selectedPoolId, selectedStaker);
     }
 }

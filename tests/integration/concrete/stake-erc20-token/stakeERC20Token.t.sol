@@ -51,7 +51,7 @@ contract StakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concret
         warpStateTo(START_TIME - 1);
 
         // It should stake tokens.
-        _test_StakeERC20Token({ expectedRewardsPerTokenScaled: 0, expectedUserRewards: 0 });
+        _test_StakeERC20Token({ expectedRptScaled: 0, expectedUserRewards: 0 });
     }
 
     function test_WhenStartTimeInPresent()
@@ -64,30 +64,26 @@ contract StakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concret
         warpStateTo(START_TIME);
 
         // It should stake tokens.
-        _test_StakeERC20Token({ expectedRewardsPerTokenScaled: 0, expectedUserRewards: 0 });
+        _test_StakeERC20Token({ expectedRptScaled: 0, expectedUserRewards: 0 });
     }
 
     function test_WhenStartTimeInPast() external whenNoDelegateCall whenNotNull whenAmountNotZero whenEndTimeInFuture {
         // It should stake tokens.
         _test_StakeERC20Token({
-            expectedRewardsPerTokenScaled: REWARDS_DISTRIBUTED_PER_TOKEN_SCALED,
+            expectedRptScaled: REWARDS_DISTRIBUTED_PER_TOKEN_SCALED,
             expectedUserRewards: REWARDS_EARNED_BY_RECIPIENT
         });
     }
 
     /// @dev Helper function to test the staking of ERC20 tokens.
-    function _test_StakeERC20Token(uint256 expectedRewardsPerTokenScaled, uint128 expectedUserRewards) private {
+    function _test_StakeERC20Token(uint256 expectedRptScaled, uint128 expectedUserRewards) private {
         (, uint128 initialDirectAmountStaked) = sablierStaking.userShares(poolIds.defaultPool, users.recipient);
         vars.expectedTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool) + DEFAULT_AMOUNT;
 
         // It should emit {SnapshotRewards}, {Transfer} and {StakeERC20Token} events.
         vm.expectEmit({ emitter: address(sablierStaking) });
         emit ISablierStaking.SnapshotRewards(
-            poolIds.defaultPool,
-            getBlockTimestamp(),
-            expectedRewardsPerTokenScaled,
-            users.recipient,
-            expectedUserRewards
+            poolIds.defaultPool, getBlockTimestamp(), expectedRptScaled, users.recipient, expectedUserRewards
         );
         vm.expectEmit({ emitter: address(stakingToken) });
         emit IERC20.Transfer(users.recipient, address(sablierStaking), DEFAULT_AMOUNT);
@@ -105,15 +101,14 @@ contract StakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concret
         assertEq(vars.actualTotalAmountStaked, vars.expectedTotalAmountStaked, "total amount staked");
 
         // It should update global rewards snapshot.
-        (vars.actualsnapshotTime, vars.actualRewardsPerTokenScaled) =
-            sablierStaking.globalRptAtSnapshot(poolIds.defaultPool);
+        (vars.actualsnapshotTime, vars.actualRptScaled) = sablierStaking.globalRptAtSnapshot(poolIds.defaultPool);
         assertEq(vars.actualsnapshotTime, getBlockTimestamp(), "globalsnapshotTime");
-        assertEq(vars.actualRewardsPerTokenScaled, expectedRewardsPerTokenScaled, "snapshotRptDistributedScaled");
+        assertEq(vars.actualRptScaled, expectedRptScaled, "snapshotRptDistributedScaled");
 
         // It should update user rewards snapshot.
-        (vars.actualRewardsPerTokenScaled, vars.actualUserRewards) =
+        (vars.actualRptScaled, vars.actualUserRewards) =
             sablierStaking.userRewards(poolIds.defaultPool, users.recipient);
-        assertEq(vars.actualRewardsPerTokenScaled, expectedRewardsPerTokenScaled, "rptEarnedScaled");
+        assertEq(vars.actualRptScaled, expectedRptScaled, "rptEarnedScaled");
         assertEq(vars.actualUserRewards, expectedUserRewards, "rewards");
     }
 }

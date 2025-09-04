@@ -5,7 +5,8 @@ pragma solidity >=0.8.26;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
-import { ISablierStaking } from "src/interfaces/ISablierStaking.sol";
+
+import { SablierStakingMock } from "../../mocks/SablierStakingMock.sol";
 import { Utils } from "../../utils/Utils.sol";
 import { HandlerStore } from "./../stores/HandlerStore.sol";
 
@@ -18,7 +19,7 @@ contract BaseHandler is Utils, StdCheats {
 
     HandlerStore public immutable handlerStore;
 
-    ISablierStaking public immutable sablierStaking;
+    SablierStakingMock public immutable sablierStaking;
 
     /// @dev An immutable array of all the tokens used in the invariant test.
     IERC20[] public tokens;
@@ -81,7 +82,7 @@ contract BaseHandler is Utils, StdCheats {
             // Update global rewards per token in handler store.
             (uint40 globalSnapshotTime, uint256 snapshotRptDistributedScaled) =
                 sablierStaking.globalRptAtSnapshot(poolId);
-            handlerStore.updateGlobalRewardsPerTokenSnapshot(poolId, globalSnapshotTime, snapshotRptDistributedScaled);
+            handlerStore.updateGlobalRptSnapshot(poolId, globalSnapshotTime, snapshotRptDistributedScaled);
 
             // Update status.
             handlerStore.updateStatus(poolId, sablierStaking.status(poolId));
@@ -91,7 +92,7 @@ contract BaseHandler is Utils, StdCheats {
                 address staker = handlerStore.poolStakers(poolId, j);
                 // Update user rewards per token in handler store.
                 (uint256 rptScaled,) = sablierStaking.userRewards(poolId, staker);
-                handlerStore.updateUserRewardsPerTokenScaled(poolId, staker, rptScaled);
+                handlerStore.updateUserRptScaled(poolId, staker, rptScaled);
             }
         }
 
@@ -138,7 +139,7 @@ contract BaseHandler is Utils, StdCheats {
                                     CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
 
-    constructor(HandlerStore handlerStore_, ISablierStaking sablierStaking_, IERC20[] memory tokens_) {
+    constructor(HandlerStore handlerStore_, SablierStakingMock sablierStaking_, IERC20[] memory tokens_) {
         handlerStore = handlerStore_;
         sablierStaking = sablierStaking_;
 

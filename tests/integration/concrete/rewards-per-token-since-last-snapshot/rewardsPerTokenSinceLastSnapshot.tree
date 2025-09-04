@@ -1,4 +1,4 @@
-RewardsPerTokenSinceLastSnapshot_Integration_Concrete_Test
+RptSinceLastSnapshot_Integration_Concrete_Test
 ├── when null
 │  └── it should revert
 └── when not null

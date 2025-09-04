@@ -41,13 +41,13 @@ struct Users {
 struct Vars {
     // Actual values.
     uint128 actualDirectAmountStaked;
-    uint256 actualRewardsPerTokenScaled;
+    uint256 actualRptScaled;
     uint128 actualStreamAmountStaked;
     uint128 actualTotalAmountStaked;
     uint40 actualsnapshotTime;
     uint128 actualUserRewards;
     // Expected values.
-    uint256 expectedRewardsPerTokenScaled;
+    uint256 expectedRptScaled;
     uint128 expectedTotalAmountStaked;
     uint128 expectedUserRewards;
 }

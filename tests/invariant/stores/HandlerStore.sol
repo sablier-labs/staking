@@ -22,7 +22,7 @@ contract HandlerStore {
     mapping(uint256 poolId => address[] stakers) public poolStakers;
 
     /// @dev Stores previous values for global rewards per token for each pool.
-    mapping(uint256 poolId => uint256 rptScaled) public globalRewardsPerTokenScaled;
+    mapping(uint256 poolId => uint256 rptScaled) public globalRptScaled;
 
     /// @dev Tracks the previous time global snapshot was taken for each pool.
     mapping(uint256 poolId => uint40 time) public globalSnapshotTime;
@@ -40,7 +40,7 @@ contract HandlerStore {
     mapping(uint256 poolId => uint256 totalRewardsDeposited) public totalRewardsDeposited;
 
     /// @dev Stores previous values for user rewards per token for each pool.
-    mapping(uint256 poolId => mapping(address staker => uint256 rptScaled)) public userRewardsPerTokenScaled;
+    mapping(uint256 poolId => mapping(address staker => uint256 rptScaled)) public userRptScaled;
 
     /*//////////////////////////////////////////////////////////////////////////
                                       GETTERS
@@ -90,8 +90,8 @@ contract HandlerStore {
         amountStaked[poolId][staker] -= amount;
     }
 
-    function updateGlobalRewardsPerTokenSnapshot(uint256 poolId, uint40 time, uint256 rptScaled) external {
-        globalRewardsPerTokenScaled[poolId] = rptScaled;
+    function updateGlobalRptSnapshot(uint256 poolId, uint40 time, uint256 rptScaled) external {
+        globalRptScaled[poolId] = rptScaled;
         globalSnapshotTime[poolId] = time;
     }
 
@@ -103,7 +103,7 @@ contract HandlerStore {
         status[poolId] = currentStatus;
     }
 
-    function updateUserRewardsPerTokenScaled(uint256 poolId, address staker, uint256 rptScaled) external {
-        userRewardsPerTokenScaled[poolId][staker] = rptScaled;
+    function updateUserRptScaled(uint256 poolId, address staker, uint256 rptScaled) external {
+        userRptScaled[poolId][staker] = rptScaled;
     }
 }

@@ -24,7 +24,7 @@ abstract contract SablierStakingState is ISablierStakingState {
     uint256 public override nextPoolId;
 
     /// @notice Indicates whether the Lockup contract is whitelisted to stake into this contract.
-    mapping(ISablierLockupNFT lockup => bool isWhitelisted) internal _lockupWhitelists;
+    mapping(ISablierLockupNFT lockup => bool isWhitelisted) internal _whitelistedLockups;
 
     /// @notice The Pool parameters mapped by the Pool ID.
     /// @dev See the documentation for Pool in {DataTypes}.
@@ -111,7 +111,7 @@ abstract contract SablierStakingState is ISablierStakingState {
             revert Errors.SablierStakingState_ZeroAddress();
         }
 
-        return _lockupWhitelists[lockup];
+        return _whitelistedLockups[lockup];
     }
 
     /// @inheritdoc ISablierStakingState

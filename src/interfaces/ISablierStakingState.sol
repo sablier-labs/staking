@@ -49,7 +49,7 @@ interface ISablierStakingState {
     /// @dev Reverts if `poolId` references a non-existent pool.
     function getTotalStakedAmount(uint256 poolId) external view returns (uint128);
 
-    /// @notice Retrieves the global rewards per token at last update time for the given Pool ID.
+    /// @notice Retrieves the global rewards per token at snapshot time for the given Pool ID.
     /// @dev Reverts if `poolId` references a non-existent pool.
     /// @param poolId The Pool ID for the query.
     /// @return snapshotTime The time the snapshot was taken, denoted in UNIX timestamp.

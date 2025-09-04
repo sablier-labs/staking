@@ -99,11 +99,11 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
                                   GLOBAL-SNAPSHOT
     //////////////////////////////////////////////////////////////////////////*/
 
-    function test_GlobalRptSnapshotRevertWhen_Null() external {
+    function test_GlobalRptAtSnapshotRevertWhen_Null() external {
         expectRevert_Null({ callData: abi.encodeCall(sablierStaking.globalRptAtSnapshot, poolIds.nullPool) });
     }
 
-    function test_GlobalRptSnapshotWhenStartTimeInFuture() external whenNotNull {
+    function test_GlobalRptAtSnapshotWhenStartTimeInFuture() external whenNotNull {
         warpStateTo(START_TIME - 1);
 
         (uint40 snapshotTime, uint256 rptScaled) = sablierStaking.globalRptAtSnapshot(poolIds.defaultPool);
@@ -120,7 +120,7 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         );
     }
 
-    function test_GlobalRptSnapshotWhenStartTimeInPresent() external whenNotNull {
+    function test_GlobalRptAtSnapshotWhenStartTimeInPresent() external whenNotNull {
         warpStateTo(START_TIME);
 
         (uint40 snapshotTime, uint256 rptScaled) = sablierStaking.globalRptAtSnapshot(poolIds.defaultPool);
@@ -137,7 +137,7 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         );
     }
 
-    function test_GlobalRptSnapshotWhenEndTimeInFuture() external view whenNotNull whenStartTimeInPast {
+    function test_GlobalRptAtSnapshotWhenEndTimeInFuture() external view whenNotNull whenStartTimeInPast {
         (uint40 snapshotTime, uint256 rptScaled) = sablierStaking.globalRptAtSnapshot(poolIds.defaultPool);
 
         // It should return correct snapshot time.
@@ -151,7 +151,7 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         assertEq(sablierStaking.getTotalStakedAmount(poolIds.defaultPool), TOTAL_STAKED, "getTotalStakedAmount");
     }
 
-    function test_GlobalRptSnapshotWhenEndTimeNotInFuture() external whenNotNull whenStartTimeInPast {
+    function test_GlobalRptAtSnapshotWhenEndTimeNotInFuture() external whenNotNull whenStartTimeInPast {
         warpStateTo(END_TIME);
 
         // Take global snapshot of the rewards.

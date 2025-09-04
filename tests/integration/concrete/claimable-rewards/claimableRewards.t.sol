@@ -27,7 +27,7 @@ contract ClaimableRewards_Integration_Concrete_Test is Shared_Integration_Concre
         assertEq(actualRewards, 0, "rewards");
     }
 
-    function test_WhenCurrentTimeEqualssnapshotTime()
+    function test_WhenCurrentTimeEqualsSnapshotTime()
         external
         view
         whenNotNull
@@ -39,7 +39,7 @@ contract ClaimableRewards_Integration_Concrete_Test is Shared_Integration_Concre
         assertEq(actualRewards, REWARDS_EARNED_BY_RECIPIENT, "rewards");
     }
 
-    function test_WhenCurrentTimeExceedssnapshotTime()
+    function test_WhenCurrentTimeExceedsSnapshotTime()
         external
         whenNotNull
         whenUserNotZeroAddress

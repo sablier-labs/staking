@@ -112,7 +112,12 @@ contract SablierStaking is
     }
 
     /// @inheritdoc ISablierStaking
-    function rewardRate(uint256 poolId) external view override notNull(poolId) isActive(poolId) returns (uint128) {
+    function rewardRate(uint256 poolId) external view override notNull(poolId) returns (uint128) {
+        // Check: the pool is active.
+        if (!_isActive(poolId)) {
+            revert Errors.SablierStaking_PoolNotActive(poolId);
+        }
+
         return _rewardRate(poolId);
     }
 

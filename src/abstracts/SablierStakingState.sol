@@ -42,12 +42,6 @@ abstract contract SablierStakingState is ISablierStakingState {
                                      MODIFIERS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice Modifier that checks that the pool is active.
-    modifier isActive(uint256 poolId) {
-        _revertIfNotActive(poolId);
-        _;
-    }
-
     /// @notice Modifier that checks that `poolId` does not reference to a non-existent pool.
     modifier notNull(uint256 poolId) {
         _revertIfNull(poolId);
@@ -202,21 +196,18 @@ abstract contract SablierStakingState is ISablierStakingState {
     }
 
     /*//////////////////////////////////////////////////////////////////////////
-                            PRIVATE READ-ONLY FUNCTIONS
+                            INTERNAL READ-ONLY FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev Returns true if the pool is active.
-    function _isActive(uint256 poolId) private view returns (bool) {
+    function _isActive(uint256 poolId) internal view returns (bool) {
         uint40 currentTimestamp = uint40(block.timestamp);
         return _pools[poolId].startTime <= currentTimestamp && currentTimestamp <= _pools[poolId].endTime;
     }
 
-    /// @dev Reverts if the pool is not active.
-    function _revertIfNotActive(uint256 poolId) private view {
-        if (!_isActive(poolId)) {
-            revert Errors.SablierStakingState_NotActive(poolId);
-        }
-    }
+    /*//////////////////////////////////////////////////////////////////////////
+                            PRIVATE READ-ONLY FUNCTIONS
+    //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev Reverts if the pool ID does not exist.
     function _revertIfNull(uint256 poolId) private view {

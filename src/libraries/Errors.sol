@@ -13,9 +13,6 @@ library Errors {
                                SABLIER-STAKING-STATE
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice Thrown when an unauthorized action is attempted on an inactive pool.
-    error SablierStakingState_NotActive(uint256 poolId);
-
     /// @notice Thrown when pool ID does not exist.
     error SablierStakingState_PoolDoesNotExist(uint256 poolId);
 
@@ -72,6 +69,9 @@ library Errors {
 
     /// @notice Thrown when the user attempts to unstake more than their staked amount.
     error SablierStaking_Overflow(uint256 poolId, uint256 unstakedAmount, uint256 totalStakedAmount);
+
+    /// @notice Thrown when an unauthorized action is attempted on an inactive pool.
+    error SablierStaking_PoolNotActive(uint256 poolId);
 
     /// @notice Thrown when rewards amount is zero.
     error SablierStaking_RewardAmountZero();

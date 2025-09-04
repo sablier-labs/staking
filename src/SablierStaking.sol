@@ -117,28 +117,6 @@ contract SablierStaking is
     }
 
     /// @inheritdoc ISablierStaking
-    function rewardRatePerTokenStaked(uint256 poolId)
-        external
-        view
-        override
-        notNull(poolId)
-        isActive(poolId)
-        returns (uint128)
-    {
-        uint128 totalStakedAmount = _pools[poolId].totalStakedAmount;
-
-        // If the total staked amount is zero, return 0.
-        if (totalStakedAmount == 0) {
-            return 0;
-        }
-
-        uint128 rewardPerSecond = _rewardRate(poolId);
-
-        // Calculate the reward distributed per second.
-        return rewardPerSecond / totalStakedAmount;
-    }
-
-    /// @inheritdoc ISablierStaking
     function rewardsPerTokenSinceLastSnapshot(uint256 poolId)
         external
         view

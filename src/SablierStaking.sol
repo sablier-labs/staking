@@ -132,12 +132,13 @@ contract SablierStaking is
             return 0;
         }
 
-        // Else, calculate it.
+        // Else, calculate it. Safe casting because rewards distributed is guaranteed to be less than 2^128.
         return uint128(rewardsDistributedSinceLastSnapshot / _pools[poolId].totalStakedAmount);
     }
 
     /// @inheritdoc ISablierStaking
     function rewardsSinceLastSnapshot(uint256 poolId) external view override notNull(poolId) returns (uint128) {
+        // Safe casting because rewards distributed is guaranteed to be less than 2^128.
         return uint128(_rewardsDistributedSinceLastSnapshot(poolId));
     }
 

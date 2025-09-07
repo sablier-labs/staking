@@ -3,6 +3,7 @@ pragma solidity >=0.8.26;
 
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { ISablierLockup } from "@sablier/lockup/src/interfaces/ISablierLockup.sol";
+import { ISablierLockupNFT } from "src/interfaces/ISablierLockupNFT.sol";
 import { ISablierStaking } from "src/interfaces/ISablierStaking.sol";
 import { Errors } from "src/libraries/Errors.sol";
 import { UserAccount } from "src/types/DataTypes.sol";
@@ -105,7 +106,12 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
     {
         warpStateTo(START_TIME - 1);
 
-        _test_StakeLockupNFT({ expectedRptScaled: 0, expectedUserRewards: 0 });
+        _test_StakeLockupNFT({
+            lockupContract: lockup,
+            streamId: streamIds.defaultStream,
+            expectedRptScaled: 0,
+            expectedUserRewards: 0
+        });
     }
 
     function test_WhenStartTimeInPresent()
@@ -120,10 +126,15 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
     {
         warpStateTo(START_TIME);
 
-        _test_StakeLockupNFT({ expectedRptScaled: 0, expectedUserRewards: 0 });
+        _test_StakeLockupNFT({
+            lockupContract: lockup,
+            streamId: streamIds.defaultStream,
+            expectedRptScaled: 0,
+            expectedUserRewards: 0
+        });
     }
 
-    function test_WhenStartTimeInPast()
+    function test_WhenLockupImplementsGetAsset()
         external
         whenNoDelegateCall
         whenNotNull
@@ -132,15 +143,44 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
         whenStreamTokenMatchesStakingToken
         givenStreamNotStaked
         givenAmountInStreamNotZero
+        whenStartTimeInPast
     {
         _test_StakeLockupNFT({
+            lockupContract: lockupV12,
+            streamId: streamIds.lockupV12Stream,
+            expectedRptScaled: REWARDS_DISTRIBUTED_PER_TOKEN_SCALED,
+            expectedUserRewards: REWARDS_EARNED_BY_RECIPIENT
+        });
+    }
+
+    function test_WhenLockupImplementsGetUnderlying()
+        external
+        whenNoDelegateCall
+        whenNotNull
+        whenEndTimeInFuture
+        givenLockupWhitelisted
+        whenStreamTokenMatchesStakingToken
+        givenStreamNotStaked
+        givenAmountInStreamNotZero
+        whenStartTimeInPast
+    {
+        _test_StakeLockupNFT({
+            lockupContract: lockup,
+            streamId: streamIds.defaultStream,
             expectedRptScaled: REWARDS_DISTRIBUTED_PER_TOKEN_SCALED,
             expectedUserRewards: REWARDS_EARNED_BY_RECIPIENT
         });
     }
 
     /// @dev Helper function to test the staking of a lockup NFT.
-    function _test_StakeLockupNFT(uint256 expectedRptScaled, uint128 expectedUserRewards) private {
+    function _test_StakeLockupNFT(
+        ISablierLockupNFT lockupContract,
+        uint256 streamId,
+        uint256 expectedRptScaled,
+        uint128 expectedUserRewards
+    )
+        private
+    {
         UserAccount memory initialUserAccount = sablierStaking.userAccount(poolIds.defaultPool, users.recipient);
 
         vars.expectedTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool) + DEFAULT_AMOUNT;
@@ -150,15 +190,15 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
         emit ISablierStaking.SnapshotRewards(
             poolIds.defaultPool, getBlockTimestamp(), expectedRptScaled, users.recipient, expectedUserRewards
         );
-        vm.expectEmit({ emitter: address(lockup) });
-        emit IERC721.Transfer(users.recipient, address(sablierStaking), streamIds.defaultStream);
+        vm.expectEmit({ emitter: address(lockupContract) });
+        emit IERC721.Transfer(users.recipient, address(sablierStaking), streamId);
         vm.expectEmit({ emitter: address(sablierStaking) });
         emit ISablierStaking.StakeLockupNFT(
-            poolIds.defaultPool, users.recipient, lockup, streamIds.defaultStream, DEFAULT_AMOUNT
+            poolIds.defaultPool, users.recipient, lockupContract, streamId, DEFAULT_AMOUNT
         );
 
         // Stake Lockup NFT.
-        sablierStaking.stakeLockupNFT(poolIds.defaultPool, lockup, streamIds.defaultStream);
+        sablierStaking.stakeLockupNFT(poolIds.defaultPool, lockupContract, streamId);
 
         // It should update user account.
         UserAccount memory actualUserAccount = sablierStaking.userAccount(poolIds.defaultPool, users.recipient);

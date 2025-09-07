@@ -435,8 +435,10 @@ contract SablierStaking is
             revert Errors.SablierStaking_LockupNotWhitelisted(lockup);
         }
 
-        // Check: the stream's underlying token is the same as the pool's staking token.
-        IERC20 underlyingToken = lockup.getUnderlyingToken(streamId);
+        // Get the stream's underlying token.
+        IERC20 underlyingToken = _getUnderlyingToken(lockup, streamId);
+
+        // Check: the underlying token is the same as the pool's staking token.
         if (underlyingToken != _pools[poolId].stakingToken) {
             revert Errors.SablierStaking_UnderlyingTokenDifferent(underlyingToken, _pools[poolId].stakingToken);
         }
@@ -534,26 +536,26 @@ contract SablierStaking is
         uint256 length = lockups.length;
 
         for (uint256 i = 0; i < length; ++i) {
-            // Check: the lockup contract is not the zero address.
-            if (address(lockups[i]) == address(0)) {
-                revert Errors.SablierStaking_LockupZeroAddress(i);
-            }
+            ISablierLockupNFT lockup = lockups[i];
 
             // Check: the lockup contract is not already whitelisted.
-            if (_whitelistedLockups[lockups[i]]) {
-                revert Errors.SablierStaking_LockupAlreadyWhitelisted(i, lockups[i]);
+            if (_whitelistedLockups[lockup]) {
+                revert Errors.SablierStaking_LockupAlreadyWhitelisted(lockup);
             }
 
+            // Check: the lockup contract supports {ISablierLockupNFT} interface.
+            _hasRequiredInterface(lockup);
+
             // Check: the lockup contract returns `true` when `isAllowedToHook` is called.
-            if (!lockups[i].isAllowedToHook(address(this))) {
-                revert Errors.SablierStaking_UnsupportedOnAllowedToHook(i, lockups[i]);
+            if (!lockup.isAllowedToHook(address(this))) {
+                revert Errors.SablierStaking_UnsupportedOnAllowedToHook(lockup);
             }
 
             // Effect: whitelist the lockup contract.
-            _whitelistedLockups[lockups[i]] = true;
+            _whitelistedLockups[lockup] = true;
 
             // Log the event.
-            emit LockupWhitelisted(address(comptroller), lockups[i]);
+            emit LockupWhitelisted(address(comptroller), lockup);
         }
     }
 
@@ -582,6 +584,50 @@ contract SablierStaking is
     /*//////////////////////////////////////////////////////////////////////////
                             PRIVATE READ-ONLY FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
+
+    /// @notice Retrieves the token being streamed in the specified stream ID.
+    function _getUnderlyingToken(ISablierLockupNFT lockup, uint256 streamId) private returns (IERC20 token) {
+        // Since, Lockup v1.2 does not implement `getUnderlyingToken`, low-level call is used to call this function. If
+        // the call fails, `getAsset` will be called as a fallback.
+        (bool success, bytes memory data) =
+            address(lockup).call(abi.encodeCall(ISablierLockupNFT.getUnderlyingToken, (streamId)));
+
+        if (!success) {
+            (, data) = address(lockup).call(abi.encodeCall(ISablierLockupNFT.getAsset, (streamId)));
+        }
+
+        token = abi.decode(data, (IERC20));
+    }
+
+    /// @notice Check if the lockup contract implements the functions from {ISablierLockupNFT}.
+    function _hasRequiredInterface(ISablierLockupNFT lockup) private {
+        // Prepare an array of selectors to check.
+        bytes4[] memory selectors = new bytes4[](5);
+        selectors[0] = ISablierLockupNFT.getDepositedAmount.selector;
+        selectors[1] = ISablierLockupNFT.getWithdrawnAmount.selector;
+        selectors[2] = ISablierLockupNFT.getRefundedAmount.selector;
+
+        // The following order is critical for the `for` loop.
+        selectors[3] = ISablierLockupNFT.getUnderlyingToken.selector;
+        selectors[4] = ISablierLockupNFT.getAsset.selector;
+
+        for (uint256 i = 0; i < selectors.length; ++i) {
+            // Use a low-level call to check if the function is implemented.
+            (bool success,) = address(lockup).call(abi.encodeWithSelector(selectors[i], 1));
+
+            // If the call succeeds and the selector is `getUnderlyingToken`, then break the loop since there is no need
+            // to check for `getAsset`.
+            if (success && selectors[i] == ISablierLockupNFT.getUnderlyingToken.selector) {
+                break;
+            }
+
+            // If the call fails, revert except for `getUnderlyingToken`, for that we check whether `getAsset` is
+            // implemented or not in the next loop.
+            if (!success && selectors[i] != ISablierLockupNFT.getUnderlyingToken.selector) {
+                revert Errors.SablierStaking_LockupMissesSelector(lockup, selectors[i]);
+            }
+        }
+    }
 
     /// @notice Calculates the reward distributed per second without checking if the pool is active.
     function _rewardRate(uint256 poolId) private view returns (uint128) {

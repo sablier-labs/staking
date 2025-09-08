@@ -42,6 +42,15 @@ interface ISablierStaking is
     /// @notice Emitted when a Lockup contract is whitelisted.
     event LockupWhitelisted(address indexed comptroller, ISablierLockupNFT indexed lockup);
 
+    /// @notice Emitted when the pool and user rewards are snapshotted.
+    event SnapshotRewards(
+        uint256 indexed poolId,
+        uint40 snapshotTime,
+        uint256 snapshotRptDistributedScaled,
+        address indexed user,
+        uint128 userRewards
+    );
+
     /// @notice Emitted when a user stakes ERC20 tokens in a pool.
     event StakeERC20Token(uint256 indexed poolId, address indexed user, uint256 amountStaked);
 
@@ -60,15 +69,6 @@ interface ISablierStaking is
     /// @notice Emitted when a user unstakes a Lockup stream from a pool.
     event UnstakeLockupNFT(
         uint256 indexed poolId, address indexed user, ISablierLockupNFT indexed lockup, uint256 streamId
-    );
-
-    /// @notice Emitted when the pool and user rewards are snapshotted.
-    event SnapshotRewards(
-        uint256 indexed poolId,
-        uint40 snapshotTime,
-        uint256 snapshotRptDistributedScaled,
-        address indexed user,
-        uint128 userRewards
     );
 
     /*//////////////////////////////////////////////////////////////////////////

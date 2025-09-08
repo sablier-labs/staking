@@ -407,8 +407,8 @@ contract SablierStaking is
         // Checks and Effects: stake the `amount`.
         _stake(poolId, amount);
 
-        // Effect: update direct amount staked by `msg.sender`. Safe to use `unchecked` here because it's already
-        // validated by `totalStakedAmount`.
+        // Effect: update direct amount staked by `msg.sender`. Safe to use `unchecked` because it would first overflow
+        // in `_stake`.
         unchecked {
             _userAccounts[msg.sender][poolId].directAmountStaked += amount;
         }
@@ -448,8 +448,8 @@ contract SablierStaking is
         // Checks and Effects: stake the `amountInStream`.
         _stake(poolId, amountInStream);
 
-        // Effect: update stream amount staked by `msg.sender`. Safe to use `unchecked` here because it's already
-        // validated by `totalStakedAmount`.
+        // Effect: update stream amount staked by `msg.sender`. Safe to use `unchecked` because it would first overflow
+        // in `_stake`.
         unchecked {
             _userAccounts[msg.sender][poolId].streamAmountStaked += amountInStream;
         }

@@ -52,7 +52,7 @@ interface ISablierStakingState {
     /// @notice Retrieves the global rewards per token at snapshot time for the given Pool ID.
     /// @dev Reverts if `poolId` references a non-existent pool.
     /// @param poolId The Pool ID for the query.
-    /// @return snapshotTime The time the snapshot was taken, denoted in UNIX timestamp.
+    /// @return snapshotTime The time when the snapshot was taken, denoted in UNIX timestamp.
     /// @return snapshotRptDistributedScaled The amount of rewards distributed per staking token, scaled by
     /// {Helpers.SCALE_FACTOR} to minimize precision loss.
     function globalRptAtSnapshot(uint256 poolId)
@@ -96,8 +96,7 @@ interface ISablierStakingState {
     /// @param user The user address for the query.
     /// @return snapshotRptEarnedScaled The amount of rewards earned per staking token, scaled by
     /// {Helpers.SCALE_FACTOR} to minimize precision loss.
-    /// @return snapshotRewards The amount of claimable rewards for the user at last user snapshot, denoted in token's
-    /// decimals.
+    /// @return snapshotRewards The amount of claimable rewards at last user snapshot, denoted in token's decimals.
     function userRewards(
         uint256 poolId,
         address user

@@ -177,7 +177,6 @@ interface ISablierStaking is
     ///  - `startTime` must be greater than or equal to the `block.timestamp`.
     ///  - `startTime` must be less than `endTime`.
     ///  - `stakingToken` must not be the zero address.
-    ///  - `rewardToken` must not be the zero address.
     ///  - `rewardAmount` must be greater than 0.
     ///  - `msg.sender` must have approved this contract to spend the `rewardAmount` of reward ERC20 token.
     ///

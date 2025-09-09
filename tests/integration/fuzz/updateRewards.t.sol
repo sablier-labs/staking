@@ -74,7 +74,7 @@ contract SnapshotRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
 
         // It should update global rewards snapshot.
         (uint40 snapshotTime, uint256 snapshotRptDistributedScaled) =
-            sablierStaking.globalRptAtSnapshot(poolIds.defaultPool);
+            sablierStaking.globalRewardsPerTokenAtSnapshot(poolIds.defaultPool);
         assertEq(snapshotTime, timestamp, "globalsnapshotTime");
         assertEq(snapshotRptDistributedScaled, rptEarnedScaled, "snapshotRptDistributedScaled");
 

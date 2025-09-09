@@ -65,7 +65,7 @@ abstract contract Integration_Test is Base_Test {
         }
 
         (uint40 snapshotTime, uint256 snapshotRptDistributedScaled) =
-            sablierStaking.globalRptAtSnapshot(poolIds.defaultPool);
+            sablierStaking.globalRewardsPerTokenAtSnapshot(poolIds.defaultPool);
 
         // Calculate starting point in time for rewards calculation.
         uint40 startingPointInTime = snapshotTime >= START_TIME ? snapshotTime : START_TIME;

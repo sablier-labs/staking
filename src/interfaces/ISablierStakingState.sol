@@ -55,7 +55,7 @@ interface ISablierStakingState {
     /// @return snapshotTime The time when the snapshot was taken, denoted in UNIX timestamp.
     /// @return snapshotRptDistributedScaled The amount of rewards distributed per staking token, scaled by
     /// {Helpers.SCALE_FACTOR} to minimize precision loss.
-    function globalRptAtSnapshot(uint256 poolId)
+    function globalRewardsPerTokenAtSnapshot(uint256 poolId)
         external
         view
         returns (uint40 snapshotTime, uint256 snapshotRptDistributedScaled);

@@ -388,7 +388,7 @@ contract SablierStaking is
         // Get the owner of the stream.
         address owner = _streamsLookup[msgSenderAsLockup][streamId].owner;
 
-        // Effect: snapshot rewards for the NFT owner.
+        // Effect: snapshot user rewards.
         _snapshotRewards(poolId, owner);
 
         // Effect: decrease the total staked amount in the pool.
@@ -478,15 +478,14 @@ contract SablierStaking is
             revert Errors.SablierStaking_Overflow(poolId, amount, directAmountStaked);
         }
 
-        // Effects: common unstaking logic.
-        _unstake(poolId, amount);
+        // Effect: snapshot rewards for `msg.sender`.
+        _snapshotRewards(poolId, msg.sender);
 
-        // Effect: decrease direct amount staked by `msg.sender`. Safe to use `unchecked` here because it's already
-        // validated by `totalStakedAmount`.
-        unchecked {
-            // Effect: reduce direct amount staked by `msg.sender`.
-            _userAccounts[msg.sender][poolId].directAmountStaked = directAmountStaked - amount;
-        }
+        // Effect: decrease total staked amount in the pool.
+        _pools[poolId].totalStakedAmount -= amount;
+
+        // Effect: decrease direct amount staked by `msg.sender`.
+        _userAccounts[msg.sender][poolId].directAmountStaked = directAmountStaked - amount;
 
         // Interaction: transfer the tokens to `msg.sender`.
         _pools[poolId].stakingToken.safeTransfer({ to: msg.sender, value: amount });
@@ -514,14 +513,14 @@ contract SablierStaking is
         // Retrieves the amount of token available in the stream.
         uint128 amountInStream = Helpers.amountInStream(lockup, streamId);
 
-        // Effects: common unstaking logic.
-        _unstake(poolId, amountInStream);
+        // Effect: snapshot rewards for `msg.sender`.
+        _snapshotRewards(poolId, msg.sender);
 
-        // Effect: decrease stream amount staked by `msg.sender`. Safe to use `unchecked` here because it's already
-        // validated by `totalStakedAmount`.
-        unchecked {
-            _userAccounts[msg.sender][poolId].streamAmountStaked -= amountInStream;
-        }
+        // Effect: decrease total staked amount in the pool.
+        _pools[poolId].totalStakedAmount -= amountInStream;
+
+        // Effect: decrease stream amount staked by `msg.sender`.
+        _userAccounts[msg.sender][poolId].streamAmountStaked -= amountInStream;
 
         // Effect: delete the `StreamLookup` mapping.
         delete _streamsLookup[lockup][streamId];
@@ -699,15 +698,6 @@ contract SablierStaking is
         _pools[poolId].totalStakedAmount += amount;
     }
 
-    /// @dev Common logic between unstaking functions.
-    function _unstake(uint256 poolId, uint128 amount) private {
-        // Effect: snapshot rewards for `msg.sender`.
-        _snapshotRewards(poolId, msg.sender);
-
-        // Effect: decrease total staked amount in the pool.
-        _pools[poolId].totalStakedAmount -= amount;
-    }
-
     /// @notice Private function to snapshot the global rewards.
     function _snapshotGlobalRewards(uint256 poolId) private returns (uint256 rptDistributedScaled) {
         // Get the latest value of the cumulative rewards distributed per ERC20 token.
@@ -716,7 +706,7 @@ contract SablierStaking is
         // Effect: snapshot the rewards distributed per ERC20 token.
         _pools[poolId].snapshotRptDistributedScaled = rptDistributedScaled;
 
-        // Effect: snapshot the timestamp.
+        // Effect: update the snapshot time.
         _pools[poolId].snapshotTime = uint40(block.timestamp);
     }
 
@@ -737,7 +727,7 @@ contract SablierStaking is
 
         userRewards = userAccount.snapshotRewards;
 
-        // If the user has tokens staked, snapshot the user rewards earned.
+        // If the user has tokens staked, update the user rewards earned.
         if (userTotalAmountStaked > 0) {
             // Compute the rewards earned per ERC20 token by the user since the previous snapshot.
             uint256 userRptSinceLastSnapshotScaled = rptDistributedScaled - userAccount.snapshotRptEarnedScaled;

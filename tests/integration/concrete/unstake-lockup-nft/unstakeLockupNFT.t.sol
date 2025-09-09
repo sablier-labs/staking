@@ -65,7 +65,8 @@ contract UnstakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concre
         assertEq(vars.actualTotalAmountStaked, vars.expectedTotalAmountStaked, "total amount staked");
 
         // It should update global rewards snapshot.
-        (vars.actualsnapshotTime, vars.actualRptScaled) = sablierStaking.globalRptAtSnapshot(poolIds.defaultPool);
+        (vars.actualsnapshotTime, vars.actualRptScaled) =
+            sablierStaking.globalRewardsPerTokenAtSnapshot(poolIds.defaultPool);
         assertEq(vars.actualsnapshotTime, WARP_40_PERCENT, "globalsnapshotTime");
         assertEq(vars.actualRptScaled, REWARDS_DISTRIBUTED_PER_TOKEN_SCALED, "snapshotRptDistributedScaled");
 

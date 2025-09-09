@@ -81,7 +81,7 @@ contract BaseHandler is Utils, StdCheats {
 
             // Update global rewards per token in handler store.
             (uint40 globalSnapshotTime, uint256 snapshotRptDistributedScaled) =
-                sablierStaking.globalRptAtSnapshot(poolId);
+                sablierStaking.globalRewardsPerTokenAtSnapshot(poolId);
             handlerStore.updateGlobalRptSnapshot(poolId, globalSnapshotTime, snapshotRptDistributedScaled);
 
             // Update status.

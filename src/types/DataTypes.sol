@@ -14,13 +14,13 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 /// @param endTime The end time of the rewards period, denoted in UNIX timestamp.
 /// @param startTime The start time of the rewards period, denoted in UNIX timestamp.
 /// @param rewardToken The address of the ERC20 token to used as staking rewards.
-/// @param snapshotTime The Unix timestamp used to calculate the global amount of rewards distributed per staking token.
+/// @param snapshotTime The Unix timestamp for calculating the amount of rewards distributed per staked token.
 /// @param stakingToken The address of the ERC20 token that can be staked either directly or through Sablier stream.
 /// @param rewardAmount The amount of rewards to be distributed between the start and end times, denoted in reward
 /// token's decimals.
 /// @param totalStakedAmount The total amount of tokens staked in a pool (both direct staking and through Sablier
 /// streams), denoted in staking token's decimals.
-/// @param snapshotRptDistributedScaled The global amount of rewards distributed per staking token at snapshot time,
+/// @param snapshotRptDistributedScaled Cumulative amount of rewards distributed per staking token at snapshot time,
 /// includes both direct staking and through Sablier Lockup streams, scaled by {Helpers.SCALE_FACTOR} to minimize
 /// precision loss.
 struct Pool {

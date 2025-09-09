@@ -82,7 +82,7 @@ contract SnapshotRewards_Integration_Concrete_Test is Shared_Integration_Concret
 
         // It should update global rewards snapshot.
         (uint40 snapshotTime, uint256 snapshotRptDistributedScaled) =
-            sablierStaking.globalRptAtSnapshot(poolIds.defaultPool);
+            sablierStaking.globalRewardsPerTokenAtSnapshot(poolIds.defaultPool);
         assertEq(snapshotTime, getBlockTimestamp(), "globalsnapshotTime");
         assertEq(snapshotRptDistributedScaled, rptEarnedScaled, "snapshotRptDistributedScaled");
 

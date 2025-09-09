@@ -114,7 +114,8 @@ contract UnstakeERC20Token_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test
         assertEq(vars.actualTotalAmountStaked, vars.expectedTotalAmountStaked, "total amount staked");
 
         // It should update global rewards snapshot.
-        (vars.actualsnapshotTime, vars.actualRptScaled) = sablierStaking.globalRptAtSnapshot(poolIds.defaultPool);
+        (vars.actualsnapshotTime, vars.actualRptScaled) =
+            sablierStaking.globalRewardsPerTokenAtSnapshot(poolIds.defaultPool);
         assertEq(vars.actualsnapshotTime, timestamp, "globalsnapshotTime");
         assertEq(vars.actualRptScaled, vars.expectedRptScaled, "snapshotRptDistributedScaled");
 

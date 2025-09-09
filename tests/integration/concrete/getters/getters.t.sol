@@ -100,13 +100,13 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     //////////////////////////////////////////////////////////////////////////*/
 
     function test_GlobalRptAtSnapshotRevertWhen_Null() external {
-        expectRevert_Null({ callData: abi.encodeCall(sablierStaking.globalRptAtSnapshot, poolIds.nullPool) });
+        expectRevert_Null({ callData: abi.encodeCall(sablierStaking.globalRewardsPerTokenAtSnapshot, poolIds.nullPool) });
     }
 
     function test_GlobalRptAtSnapshotWhenStartTimeInFuture() external whenNotNull {
         warpStateTo(START_TIME - 1);
 
-        (uint40 snapshotTime, uint256 rptScaled) = sablierStaking.globalRptAtSnapshot(poolIds.defaultPool);
+        (uint40 snapshotTime, uint256 rptScaled) = sablierStaking.globalRewardsPerTokenAtSnapshot(poolIds.defaultPool);
 
         // It should return zero snapshot time.
         assertEq(snapshotTime, FEB_1_2025, "snapshotTime");
@@ -123,7 +123,7 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     function test_GlobalRptAtSnapshotWhenStartTimeInPresent() external whenNotNull {
         warpStateTo(START_TIME);
 
-        (uint40 snapshotTime, uint256 rptScaled) = sablierStaking.globalRptAtSnapshot(poolIds.defaultPool);
+        (uint40 snapshotTime, uint256 rptScaled) = sablierStaking.globalRewardsPerTokenAtSnapshot(poolIds.defaultPool);
 
         // It should return correct snapshot time.
         assertEq(snapshotTime, START_TIME, "snapshotTime");
@@ -138,7 +138,7 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     }
 
     function test_GlobalRptAtSnapshotWhenEndTimeInFuture() external view whenNotNull whenStartTimeInPast {
-        (uint40 snapshotTime, uint256 rptScaled) = sablierStaking.globalRptAtSnapshot(poolIds.defaultPool);
+        (uint40 snapshotTime, uint256 rptScaled) = sablierStaking.globalRewardsPerTokenAtSnapshot(poolIds.defaultPool);
 
         // It should return correct snapshot time.
         assertEq(snapshotTime, WARP_40_PERCENT, "snapshotTime");
@@ -157,7 +157,7 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         // Take global snapshot of the rewards.
         sablierStaking.snapshotRewards(poolIds.defaultPool, users.staker);
 
-        (uint40 snapshotTime, uint256 rptScaled) = sablierStaking.globalRptAtSnapshot(poolIds.defaultPool);
+        (uint40 snapshotTime, uint256 rptScaled) = sablierStaking.globalRewardsPerTokenAtSnapshot(poolIds.defaultPool);
 
         // It should return correct snapshot time.
         assertEq(snapshotTime, END_TIME, "snapshotTime");

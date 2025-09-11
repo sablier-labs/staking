@@ -4,6 +4,7 @@ pragma solidity >=0.8.26;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ISablierStaking } from "src/interfaces/ISablierStaking.sol";
 import { Errors } from "src/libraries/Errors.sol";
+import { UserAccount } from "src/types/DataTypes.sol";
 
 import { Shared_Integration_Concrete_Test } from "../Concrete.t.sol";
 
@@ -77,7 +78,7 @@ contract StakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concret
 
     /// @dev Helper function to test the staking of ERC20 tokens.
     function _test_StakeERC20Token(uint256 expectedRptScaled, uint128 expectedUserRewards) private {
-        (, uint128 initialDirectAmountStaked) = sablierStaking.userShares(poolIds.defaultPool, users.recipient);
+        UserAccount memory initialUserAccount = sablierStaking.userAccount(poolIds.defaultPool, users.recipient);
         vars.expectedTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool) + DEFAULT_AMOUNT;
 
         // It should emit {SnapshotRewards}, {Transfer} and {StakeERC20Token} events.
@@ -92,24 +93,23 @@ contract StakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concret
 
         sablierStaking.stakeERC20Token(poolIds.defaultPool, DEFAULT_AMOUNT);
 
-        // It should stake tokens.
-        (, vars.actualDirectAmountStaked) = sablierStaking.userShares(poolIds.defaultPool, users.recipient);
-        assertEq(vars.actualDirectAmountStaked, initialDirectAmountStaked + DEFAULT_AMOUNT, "directAmountStakedByUser");
+        // It should update user account.
+        UserAccount memory actualUserAccount = sablierStaking.userAccount(poolIds.defaultPool, users.recipient);
+        assertEq(
+            actualUserAccount.directAmountStaked,
+            initialUserAccount.directAmountStaked + DEFAULT_AMOUNT,
+            "directAmountStakedByUser"
+        );
+        assertEq(actualUserAccount.snapshotRptEarnedScaled, expectedRptScaled, "rptEarnedScaled");
+        assertEq(actualUserAccount.snapshotRewards, expectedUserRewards, "rewards");
 
         // It should increase total amount staked.
         vars.actualTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool);
         assertEq(vars.actualTotalAmountStaked, vars.expectedTotalAmountStaked, "total amount staked");
 
         // It should update global rewards snapshot.
-        (vars.actualsnapshotTime, vars.actualRptScaled) =
-            sablierStaking.globalRewardsPerTokenAtSnapshot(poolIds.defaultPool);
-        assertEq(vars.actualsnapshotTime, getBlockTimestamp(), "globalsnapshotTime");
+        (vars.actualSnapshotTime, vars.actualRptScaled) = sablierStaking.globalRptScaledAtSnapshot(poolIds.defaultPool);
+        assertEq(vars.actualSnapshotTime, getBlockTimestamp(), "globalSnapshotTime");
         assertEq(vars.actualRptScaled, expectedRptScaled, "snapshotRptDistributedScaled");
-
-        // It should update user rewards snapshot.
-        (vars.actualRptScaled, vars.actualUserRewards) =
-            sablierStaking.userRewards(poolIds.defaultPool, users.recipient);
-        assertEq(vars.actualRptScaled, expectedRptScaled, "rptEarnedScaled");
-        assertEq(vars.actualUserRewards, expectedUserRewards, "rewards");
     }
 }

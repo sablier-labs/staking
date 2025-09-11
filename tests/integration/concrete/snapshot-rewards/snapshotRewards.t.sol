@@ -2,6 +2,7 @@
 pragma solidity >=0.8.26;
 
 import { ISablierStaking } from "src/interfaces/ISablierStaking.sol";
+import { UserAccount } from "src/types/DataTypes.sol";
 
 import { Shared_Integration_Concrete_Test } from "../Concrete.t.sol";
 
@@ -20,17 +21,19 @@ contract SnapshotRewards_Integration_Concrete_Test is Shared_Integration_Concret
         // Forward time.
         vm.warp(END_TIME + 1 days);
 
-        (uint256 beforerptEarnedScaled, uint128 beforeRewards) =
-            sablierStaking.userRewards(poolIds.defaultPool, users.recipient);
+        UserAccount memory beforeUserAccount = sablierStaking.userAccount(poolIds.defaultPool, users.recipient);
 
         // It should do nothing.
         sablierStaking.snapshotRewards(poolIds.defaultPool, users.recipient);
 
-        (uint256 afterrptEarnedScaled, uint128 afterRewards) =
-            sablierStaking.userRewards(poolIds.defaultPool, users.recipient);
+        UserAccount memory afterUserAccount = sablierStaking.userAccount(poolIds.defaultPool, users.recipient);
 
-        assertEq(afterrptEarnedScaled, beforerptEarnedScaled, "rptEarnedScaled");
-        assertEq(afterRewards, beforeRewards, "rewards");
+        assertEq(
+            afterUserAccount.snapshotRptEarnedScaled,
+            beforeUserAccount.snapshotRptEarnedScaled,
+            "snapshotRptEarnedScaled"
+        );
+        assertEq(afterUserAccount.snapshotRewards, beforeUserAccount.snapshotRewards, "snapshotRewards");
     }
 
     function test_WhenEndTimeInFuture()
@@ -82,13 +85,13 @@ contract SnapshotRewards_Integration_Concrete_Test is Shared_Integration_Concret
 
         // It should update global rewards snapshot.
         (uint40 snapshotTime, uint256 snapshotRptDistributedScaled) =
-            sablierStaking.globalRewardsPerTokenAtSnapshot(poolIds.defaultPool);
-        assertEq(snapshotTime, getBlockTimestamp(), "globalsnapshotTime");
+            sablierStaking.globalRptScaledAtSnapshot(poolIds.defaultPool);
+        assertEq(snapshotTime, getBlockTimestamp(), "globalSnapshotTime");
         assertEq(snapshotRptDistributedScaled, rptEarnedScaled, "snapshotRptDistributedScaled");
 
         // It should update user rewards snapshot.
-        (rptEarnedScaled, rewards) = sablierStaking.userRewards(poolIds.defaultPool, users.recipient);
-        assertEq(rptEarnedScaled, rptEarnedScaled, "rptEarnedScaled");
-        assertEq(rewards, rewards, "rewards");
+        UserAccount memory userAccount = sablierStaking.userAccount(poolIds.defaultPool, users.recipient);
+        assertEq(userAccount.snapshotRptEarnedScaled, rptEarnedScaled, "snapshotRptEarnedScaled");
+        assertEq(userAccount.snapshotRewards, rewards, "snapshotRewards");
     }
 }

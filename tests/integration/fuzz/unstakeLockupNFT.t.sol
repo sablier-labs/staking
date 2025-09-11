@@ -5,6 +5,7 @@ import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { ISablierLockup } from "@sablier/lockup/src/interfaces/ISablierLockup.sol";
 import { ISablierStaking } from "src/interfaces/ISablierStaking.sol";
 import { Errors } from "src/libraries/Errors.sol";
+import { UserAccount } from "src/types/DataTypes.sol";
 
 import { Shared_Integration_Fuzz_Test } from "./Fuzz.t.sol";
 
@@ -83,7 +84,7 @@ contract UnstakeLockupNFT_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test 
 
     /// @dev A shared private function to test the unstaking of a Lockup NFT.
     function _test_UnstakeLockupNFT(uint40 timestamp, uint128 amountUnstaked) private {
-        (uint128 previousStreamAmountStaked,) = sablierStaking.userShares(poolIds.defaultPool, users.recipient);
+        UserAccount memory initialUserAccount = sablierStaking.userAccount(poolIds.defaultPool, users.recipient);
 
         (vars.expectedRptScaled, vars.expectedUserRewards) = calculateLatestRewards(users.recipient);
 
@@ -105,24 +106,23 @@ contract UnstakeLockupNFT_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test 
         setMsgSender(users.recipient);
         sablierStaking.unstakeLockupNFT(lockup, streamIds.defaultStakedStream);
 
-        // It should unstake NFT.
-        (vars.actualStreamAmountStaked,) = sablierStaking.userShares(poolIds.defaultPool, users.recipient);
-        assertEq(vars.actualStreamAmountStaked, previousStreamAmountStaked - amountUnstaked, "streamAmountStakedByUser");
+        // It should update user account.
+        UserAccount memory actualUserAccount = sablierStaking.userAccount(poolIds.defaultPool, users.recipient);
+        assertEq(
+            actualUserAccount.streamAmountStaked,
+            initialUserAccount.streamAmountStaked - amountUnstaked,
+            "streamAmountStakedByUser"
+        );
+        assertEq(actualUserAccount.snapshotRptEarnedScaled, vars.expectedRptScaled, "rptEarnedScaled");
+        assertEq(actualUserAccount.snapshotRewards, vars.expectedUserRewards, "rewards");
 
         // It should decrease total amount staked.
         vars.actualTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool);
         assertEq(vars.actualTotalAmountStaked, vars.expectedTotalAmountStaked, "total amount staked");
 
         // It should update global rewards snapshot.
-        (vars.actualsnapshotTime, vars.actualRptScaled) =
-            sablierStaking.globalRewardsPerTokenAtSnapshot(poolIds.defaultPool);
-        assertEq(vars.actualsnapshotTime, timestamp, "actualsnapshotTime");
+        (vars.actualSnapshotTime, vars.actualRptScaled) = sablierStaking.globalRptScaledAtSnapshot(poolIds.defaultPool);
+        assertEq(vars.actualSnapshotTime, timestamp, "actualSnapshotTime");
         assertEq(vars.actualRptScaled, vars.expectedRptScaled, "snapshotRptDistributedScaled");
-
-        // It should update user rewards snapshot.
-        (vars.actualRptScaled, vars.actualUserRewards) =
-            sablierStaking.userRewards(poolIds.defaultPool, users.recipient);
-        assertEq(vars.actualRptScaled, vars.expectedRptScaled, "rptEarnedScaled");
-        assertEq(vars.actualUserRewards, vars.expectedUserRewards, "rewards");
     }
 }

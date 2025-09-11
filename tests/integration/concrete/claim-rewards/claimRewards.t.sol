@@ -6,7 +6,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import { ISablierStaking } from "src/interfaces/ISablierStaking.sol";
 import { Errors } from "src/libraries/Errors.sol";
-import { Status } from "src/types/DataTypes.sol";
+import { Status, UserAccount } from "src/types/DataTypes.sol";
 
 import { Shared_Integration_Concrete_Test } from "../Concrete.t.sol";
 
@@ -75,7 +75,7 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
         // It should claim rewards.
         _test_claimRewards({
             expectedSnapshotTime: END_TIME + 1 seconds,
-            expectedrptEarnedScaled: REWARDS_DISTRIBUTED_PER_TOKEN_END_TIME_SCALED,
+            expectedRptEarnedScaled: REWARDS_DISTRIBUTED_PER_TOKEN_END_TIME_SCALED,
             expectedRewardsEarnedByRecipient: REWARDS_EARNED_BY_RECIPIENT_END_TIME
         });
     }
@@ -97,7 +97,7 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
         // It should claim rewards.
         _test_claimRewards({
             expectedSnapshotTime: END_TIME + 1 seconds,
-            expectedrptEarnedScaled: REWARDS_DISTRIBUTED_PER_TOKEN_END_TIME_SCALED,
+            expectedRptEarnedScaled: REWARDS_DISTRIBUTED_PER_TOKEN_END_TIME_SCALED,
             expectedRewardsEarnedByRecipient: REWARDS_EARNED_BY_RECIPIENT_END_TIME
         });
     }
@@ -113,7 +113,7 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
         // It should claim rewards.
         _test_claimRewards({
             expectedSnapshotTime: WARP_40_PERCENT,
-            expectedrptEarnedScaled: REWARDS_DISTRIBUTED_PER_TOKEN_SCALED,
+            expectedRptEarnedScaled: REWARDS_DISTRIBUTED_PER_TOKEN_SCALED,
             expectedRewardsEarnedByRecipient: REWARDS_EARNED_BY_RECIPIENT
         });
     }
@@ -121,7 +121,7 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
     /// @dev Helper function.
     function _test_claimRewards(
         uint40 expectedSnapshotTime,
-        uint256 expectedrptEarnedScaled,
+        uint256 expectedRptEarnedScaled,
         uint128 expectedRewardsEarnedByRecipient
     )
         private
@@ -141,7 +141,7 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
         emit ISablierStaking.SnapshotRewards(
             poolIds.defaultPool,
             expectedSnapshotTime,
-            expectedrptEarnedScaled,
+            expectedRptEarnedScaled,
             users.recipient,
             expectedRewardsEarnedByRecipient
         );
@@ -157,7 +157,7 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
         uint128 actualRewards =
             sablierStaking.claimRewards{ value: STAKING_MIN_FEE_WEI }(poolIds.defaultPool, FEE_ON_REWARDS);
 
-        (uint256 actualrptEarnedScaled,) = sablierStaking.userRewards(poolIds.defaultPool, users.recipient);
+        UserAccount memory userAccount = sablierStaking.userAccount(poolIds.defaultPool, users.recipient);
 
         // It should set rewards to zero.
         assertEq(sablierStaking.claimableRewards(poolIds.defaultPool, users.recipient), 0, "rewards");
@@ -188,6 +188,6 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
         assertEq(actualRewards, expectedRewardsTransferredToRecipient, "return value");
 
         // It should update the user snapshot correctly.
-        assertEq(actualrptEarnedScaled, expectedrptEarnedScaled, "rptEarnedScaled");
+        assertEq(userAccount.snapshotRptEarnedScaled, expectedRptEarnedScaled, "rptEarnedScaled");
     }
 }

@@ -40,7 +40,7 @@ Getters_Integration_Concrete_Test::getTotalStakedAmount
 └── when not null
    └── it should return the total staked amount
 
-Getters_Integration_Concrete_Test::globalRptAtSnapshot
+Getters_Integration_Concrete_Test::globalRptScaledAtSnapshot
 ├── when null
 │  └── it should revert
 └── when not null
@@ -93,28 +93,11 @@ Getters_Integration_Concrete_Test::totalAmountStakedByUser
    └── when not zero address
       └── it should return the total amount staked by user
 
-Getters_Integration_Concrete_Test::userRewards
+Getters_Integration_Concrete_Test::userAccount
 ├── when null
 │  └── it should revert
 └── when not null
    ├── when zero address
    │  └── it should revert
    └── when not zero address
-      ├── when start time in future
-      │  └── it should return correct return values
-      ├── when start time in present
-      │  └── it should return correct return values
-      └── when start time in past
-         ├── when end time in future
-         │  └── it should return correct return values
-         └── when end time not in future
-            └── it should return correct return values
-
-Getters_Integration_Concrete_Test::userShares
-├── when null
-│  └── it should revert
-└── when not null
-   ├── when zero address
-   │  └── it should revert
-   └── when not zero address
-      └── it should return correct user shares
+      └── it should return correct user account details

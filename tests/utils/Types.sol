@@ -44,7 +44,7 @@ struct Vars {
     uint256 actualRptScaled;
     uint128 actualStreamAmountStaked;
     uint128 actualTotalAmountStaked;
-    uint40 actualsnapshotTime;
+    uint40 actualSnapshotTime;
     uint128 actualUserRewards;
     // Expected values.
     uint256 expectedRptScaled;

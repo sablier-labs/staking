@@ -5,6 +5,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ud, UD60x18, ZERO } from "@prb/math/src/UD60x18.sol";
 import { ISablierStaking } from "src/interfaces/ISablierStaking.sol";
 import { Errors } from "src/libraries/Errors.sol";
+import { UserAccount } from "src/types/DataTypes.sol";
 
 import { Shared_Integration_Fuzz_Test } from "./Fuzz.t.sol";
 
@@ -170,13 +171,13 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         // It should return the rewards.
         assertEq(actualRewards, expectedRewardsTransferredToRecipient, "return value");
 
-        (uint256 actualRptScaled,) = sablierStaking.userRewards(poolIds.defaultPool, caller);
+        UserAccount memory userAccount = sablierStaking.userAccount(poolIds.defaultPool, caller);
 
         // It should set rewards to zero.
         assertEq(sablierStaking.claimableRewards(poolIds.defaultPool, caller), 0, "rewards");
 
         // It should set the rewards earned per token.
-        assertEq(actualRptScaled, expectedRptScaled, "rptEarnedScaled");
+        assertEq(userAccount.snapshotRptEarnedScaled, expectedRptScaled, "rptEarnedScaled");
 
         // It should transfer the min fee to comptroller.
         assertEq(address(comptroller).balance, initialComptrollerEthBalance + fee, "comptroller ETH balance");

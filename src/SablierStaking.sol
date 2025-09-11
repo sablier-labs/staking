@@ -395,9 +395,7 @@ contract SablierStaking is
         _pools[poolId].totalStakedAmount -= senderAmount;
 
         // Effect: decrease the user's share of stream amount staked.
-        unchecked {
-            _userAccounts[owner][poolId].streamAmountStaked -= senderAmount;
-        }
+        _userAccounts[owner][poolId].streamAmountStaked -= senderAmount;
 
         return ISablierLockupRecipient.onSablierLockupCancel.selector;
     }
@@ -484,8 +482,11 @@ contract SablierStaking is
         // Effect: decrease total staked amount in the pool.
         _pools[poolId].totalStakedAmount -= amount;
 
-        // Effect: decrease direct amount staked by `msg.sender`.
-        _userAccounts[msg.sender][poolId].directAmountStaked = directAmountStaked - amount;
+        // Safe to use `unchecked` because `amount` can not exceed `directAmountStaked`.
+        unchecked {
+            // Effect: decrease direct amount staked by `msg.sender`.
+            _userAccounts[msg.sender][poolId].directAmountStaked = directAmountStaked - amount;
+        }
 
         // Interaction: transfer the tokens to `msg.sender`.
         _pools[poolId].stakingToken.safeTransfer({ to: msg.sender, value: amount });

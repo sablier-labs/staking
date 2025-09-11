@@ -88,7 +88,7 @@ abstract contract SablierStakingState is ISablierStakingState {
     }
 
     /// @inheritdoc ISablierStakingState
-    function globalRewardsPerTokenAtSnapshot(uint256 poolId)
+    function globalRptScaledAtSnapshot(uint256 poolId)
         external
         view
         notNull(poolId)
@@ -158,41 +158,13 @@ abstract contract SablierStakingState is ISablierStakingState {
     }
 
     /// @inheritdoc ISablierStakingState
-    function userShares(
-        uint256 poolId,
-        address user
-    )
-        external
-        view
-        notNull(poolId)
-        returns (uint128 streamAmountStaked, uint128 directAmountStaked)
-    {
+    function userAccount(uint256 poolId, address user) external view notNull(poolId) returns (UserAccount memory) {
         // Check: the user is not the zero address.
         if (user == address(0)) {
             revert Errors.SablierStakingState_ZeroAddress();
         }
 
-        streamAmountStaked = _userAccounts[user][poolId].streamAmountStaked;
-        directAmountStaked = _userAccounts[user][poolId].directAmountStaked;
-    }
-
-    /// @inheritdoc ISablierStakingState
-    function userRewards(
-        uint256 poolId,
-        address user
-    )
-        external
-        view
-        notNull(poolId)
-        returns (uint256 snapshotRptEarnedScaled, uint128 snapshotRewards)
-    {
-        // Check: the user is not the zero address.
-        if (user == address(0)) {
-            revert Errors.SablierStakingState_ZeroAddress();
-        }
-
-        snapshotRptEarnedScaled = _userAccounts[user][poolId].snapshotRptEarnedScaled;
-        snapshotRewards = _userAccounts[user][poolId].snapshotRewards;
+        return _userAccounts[user][poolId];
     }
 
     /*//////////////////////////////////////////////////////////////////////////

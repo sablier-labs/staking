@@ -3,6 +3,7 @@ pragma solidity >=0.8.26;
 
 import { Errors as EvmUtilsErrors } from "@sablier/evm-utils/src/libraries/Errors.sol";
 import { Errors } from "src/libraries/Errors.sol";
+import { UserAccount } from "src/types/DataTypes.sol";
 
 import { Base_Test } from "../Base.t.sol";
 import { PoolIds, Vars } from "../utils/Types.sol";
@@ -65,7 +66,7 @@ abstract contract Integration_Test is Base_Test {
         }
 
         (uint40 snapshotTime, uint256 snapshotRptDistributedScaled) =
-            sablierStaking.globalRewardsPerTokenAtSnapshot(poolIds.defaultPool);
+            sablierStaking.globalRptScaledAtSnapshot(poolIds.defaultPool);
 
         // Calculate starting point in time for rewards calculation.
         uint40 startingPointInTime = snapshotTime >= START_TIME ? snapshotTime : START_TIME;
@@ -82,15 +83,17 @@ abstract contract Integration_Test is Base_Test {
             getScaledValue(rewardsDistributedSinceLastUpdate) / sablierStaking.getTotalStakedAmount(poolIds.defaultPool);
 
         // Get user rewards snapshot.
-        (rptEarnedScaled, rewards) = sablierStaking.userRewards(poolIds.defaultPool, user);
+        UserAccount memory userAccount = sablierStaking.userAccount(poolIds.defaultPool, user);
 
         // Calculate latest rewards earned per token scaled.
-        uint256 rptEarnedScaledDelta = snapshotRptDistributedScaled - rptEarnedScaled;
-        rptEarnedScaled += rptEarnedScaledDelta;
+        uint256 rptEarnedScaledDelta = snapshotRptDistributedScaled - userAccount.snapshotRptEarnedScaled;
+        userAccount.snapshotRptEarnedScaled += rptEarnedScaledDelta;
 
         // Calculate latest rewards for user.
         uint128 totalAmountStakedByUser = sablierStaking.totalAmountStakedByUser(poolIds.defaultPool, user);
-        rewards += getDescaledValue(rptEarnedScaledDelta * totalAmountStakedByUser);
+        userAccount.snapshotRewards += getDescaledValue(rptEarnedScaledDelta * totalAmountStakedByUser);
+
+        return (userAccount.snapshotRptEarnedScaled, userAccount.snapshotRewards);
     }
 
     /// @notice Configures the next round.

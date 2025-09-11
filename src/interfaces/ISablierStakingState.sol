@@ -4,7 +4,7 @@ pragma solidity >=0.8.26;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { UD60x18 } from "@prb/math/src/UD60x18.sol";
 
-import { Status } from "../types/DataTypes.sol";
+import { Status, UserAccount } from "../types/DataTypes.sol";
 import { ISablierLockupNFT } from "./ISablierLockupNFT.sol";
 
 /// @title ISablierStakingState
@@ -55,7 +55,7 @@ interface ISablierStakingState {
     /// @return snapshotTime The time when the snapshot was taken, denoted in UNIX timestamp.
     /// @return snapshotRptDistributedScaled The amount of rewards distributed per staking token, scaled by
     /// {Helpers.SCALE_FACTOR} to minimize precision loss.
-    function globalRewardsPerTokenAtSnapshot(uint256 poolId)
+    function globalRptScaledAtSnapshot(uint256 poolId)
         external
         view
         returns (uint40 snapshotTime, uint256 snapshotRptDistributedScaled);
@@ -90,34 +90,10 @@ interface ISablierStakingState {
     /// @dev Reverts if `poolId` references a non-existent pool or `user` is the zero address.
     function totalAmountStakedByUser(uint256 poolId, address user) external view returns (uint128);
 
-    /// @notice Retrieves the user rewards at last user snapshot for the given Pool ID.
+    /// @notice Returns the user's account details for a pool.
     /// @dev Reverts if `poolId` references a non-existent pool or `user` is the zero address.
     /// @param poolId The Pool ID for the query.
     /// @param user The user address for the query.
-    /// @return snapshotRptEarnedScaled The amount of rewards earned per staking token, scaled by
-    /// {Helpers.SCALE_FACTOR} to minimize precision loss.
-    /// @return snapshotRewards The amount of claimable rewards at last user snapshot, denoted in token's decimals.
-    function userRewards(
-        uint256 poolId,
-        address user
-    )
-        external
-        view
-        returns (uint256 snapshotRptEarnedScaled, uint128 snapshotRewards);
-
-    /// @notice Returns the user's shares of tokens staked in a pool.
-    /// @dev Reverts if `poolId` references a non-existent pool or `user` is the zero address.
-    /// @param poolId The Pool ID for the query.
-    /// @param user The user address for the query.
-    /// @return streamAmountStaked The total amount of ERC20 tokens staked through Sablier streams, denoted in staking
-    /// token's decimals.
-    /// @return directAmountStaked The total amount of ERC20 tokens staked directly by the user, denoted in staking
-    /// token's decimals.
-    function userShares(
-        uint256 poolId,
-        address user
-    )
-        external
-        view
-        returns (uint128 streamAmountStaked, uint128 directAmountStaked);
+    /// @return A {UserAccount} struct containing the user's staked amounts and reward data.
+    function userAccount(uint256 poolId, address user) external view returns (UserAccount memory);
 }

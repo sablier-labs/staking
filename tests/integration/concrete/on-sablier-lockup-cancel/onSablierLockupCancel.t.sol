@@ -4,6 +4,7 @@ pragma solidity >=0.8.26;
 import { ISablierLockup } from "@sablier/lockup/src/interfaces/ISablierLockup.sol";
 import { ISablierStaking } from "src/interfaces/ISablierStaking.sol";
 import { Errors } from "src/libraries/Errors.sol";
+import { UserAccount } from "src/types/DataTypes.sol";
 
 import { Shared_Integration_Concrete_Test } from "../Concrete.t.sol";
 
@@ -54,8 +55,7 @@ contract OnSablierLockupCancel_Integration_Concrete_Test is Shared_Integration_C
     function test_GivenStreamStaked() external whenNoDelegateCall whenCallerLockup givenLockupWhitelisted {
         uint128 amountToRefund = ISablierLockup(address(lockup)).refundableAmountOf(streamIds.defaultStakedStream);
         uint128 expectedGlobalStakedAmount = sablierStaking.getTotalStakedAmount(poolIds.defaultPool) - amountToRefund;
-        (uint128 previousStreamAmount, uint128 previousDirectAmount) =
-            sablierStaking.userShares(poolIds.defaultPool, users.recipient);
+        UserAccount memory initialUserAccount = sablierStaking.userAccount(poolIds.defaultPool, users.recipient);
 
         // It should emit {SnapshotRewards} event.
         vm.expectEmit({ emitter: address(sablierStaking) });
@@ -80,10 +80,15 @@ contract OnSablierLockupCancel_Integration_Concrete_Test is Shared_Integration_C
         );
 
         // It should adjust user staked amount.
-        (uint128 streamAmountStaked, uint128 directAmountStaked) =
-            sablierStaking.userShares(poolIds.defaultPool, users.recipient);
+        UserAccount memory actualUserAccount = sablierStaking.userAccount(poolIds.defaultPool, users.recipient);
 
-        assertEq(directAmountStaked, previousDirectAmount, "user direct staked amount");
-        assertEq(streamAmountStaked, previousStreamAmount - amountToRefund, "user stream staked amount");
+        assertEq(
+            actualUserAccount.directAmountStaked, initialUserAccount.directAmountStaked, "user direct staked amount"
+        );
+        assertEq(
+            actualUserAccount.streamAmountStaked,
+            initialUserAccount.streamAmountStaked - amountToRefund,
+            "user stream staked amount"
+        );
     }
 }

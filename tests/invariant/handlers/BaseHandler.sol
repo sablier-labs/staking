@@ -5,6 +5,7 @@ pragma solidity >=0.8.26;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
+import { UserAccount } from "src/types/DataTypes.sol";
 
 import { SablierStakingMock } from "../../mocks/SablierStakingMock.sol";
 import { Utils } from "../../utils/Utils.sol";
@@ -81,7 +82,7 @@ contract BaseHandler is Utils, StdCheats {
 
             // Update global rewards per token in handler store.
             (uint40 globalSnapshotTime, uint256 snapshotRptDistributedScaled) =
-                sablierStaking.globalRewardsPerTokenAtSnapshot(poolId);
+                sablierStaking.globalRptScaledAtSnapshot(poolId);
             handlerStore.updateGlobalRptSnapshot(poolId, globalSnapshotTime, snapshotRptDistributedScaled);
 
             // Update status.
@@ -91,8 +92,8 @@ contract BaseHandler is Utils, StdCheats {
             for (uint256 j = 0; j < handlerStore.totalStakers(poolId); ++j) {
                 address staker = handlerStore.poolStakers(poolId, j);
                 // Update user rewards per token in handler store.
-                (uint256 rptScaled,) = sablierStaking.userRewards(poolId, staker);
-                handlerStore.updateUserRptScaled(poolId, staker, rptScaled);
+                UserAccount memory userAccount = sablierStaking.userAccount(poolId, staker);
+                handlerStore.updateUserRptScaled(poolId, staker, userAccount.snapshotRptEarnedScaled);
             }
         }
 

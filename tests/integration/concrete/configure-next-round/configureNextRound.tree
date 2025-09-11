@@ -20,9 +20,19 @@ ConfigureNextRound_Integration_Concrete_Test
             ├── when new reward amount zero
             │  └── it should revert
             └── when new reward amount not zero
-              ├── it should set the new start time
-              ├── it should set the new end time
-              ├── it should set the new reward amount
-              ├── it should set the status to scheduled
-              ├── it should transfer new reward amount to this contract
-              └── it should emit {SnapshotRewards}, {Transfer} and {ConfigureNextRound} events
+              ├── given admin staked
+              │  ├── it should update global rpt and admin rpt
+              │  ├── it should set the new start time
+              │  ├── it should set the new end time
+              │  ├── it should set the new reward amount
+              │  ├── it should set the status to scheduled
+              │  ├── it should transfer new reward amount to this contract
+              │  └── it should emit {SnapshotRewards}, {Transfer} and {ConfigureNextRound} events
+              └── given admin not staked
+                 ├── it should update global rpt and admin rpt
+                 ├── it should set the new start time
+                 ├── it should set the new end time
+                 ├── it should set the new reward amount
+                 ├── it should set the status to scheduled
+                 ├── it should transfer new reward amount to this contract
+                 └── it should emit {Transfer} and {ConfigureNextRound} events

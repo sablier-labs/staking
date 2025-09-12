@@ -67,7 +67,7 @@ library Errors {
     /// @notice Thrown when snapshotting rewards for a user when the user has no staked amount.
     error SablierStaking_NoStakedAmount(uint256 poolId, address user);
 
-    /// @notice Thrown when the user attempts to unstake more than they are allowed.
+    /// @notice Thrown when a user attempts to unstake more than allowed.
     error SablierStaking_Overflow(uint256 poolId, uint128 unstakeAmount, uint128 maxAllowed);
 
     /// @notice Thrown when an unauthorized action is attempted on an inactive pool.

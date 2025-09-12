@@ -11,7 +11,6 @@ import { SablierLockup } from "@sablier/lockup/src/SablierLockup.sol";
 import { Lockup, LockupLinear, Broker } from "@sablier/lockup/src/types/DataTypes.sol";
 import { SafeCastLib } from "solady/src/utils/SafeCastLib.sol";
 import { ISablierLockupNFT } from "src/interfaces/ISablierLockupNFT.sol";
-import { SablierStaking } from "src/SablierStaking.sol";
 
 import { SablierStakingMock } from "./mocks/SablierStakingMock.sol";
 import { Assertions } from "./utils/Assertions.sol";
@@ -36,6 +35,9 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
     //////////////////////////////////////////////////////////////////////////*/
 
     ISablierLockupNFT internal lockup;
+
+    /// @dev Since `_snapshotRewards` function contains core logic, a mock contract is used to allow testing it
+    /// separately.
     SablierStakingMock internal sablierStaking;
 
     /*//////////////////////////////////////////////////////////////////////////

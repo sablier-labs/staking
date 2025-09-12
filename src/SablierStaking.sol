@@ -403,7 +403,7 @@ contract SablierStaking is
 
     /// @inheritdoc ISablierStaking
     function stakeERC20Token(uint256 poolId, uint128 amount) external override noDelegateCall notNull(poolId) {
-        // Checks and Effects: stake the `amount`.
+        // Checks and Effects: stake the amount.
         _stake(poolId, amount);
 
         // Effect: update direct amount staked by `msg.sender`. Safe to use `unchecked` because it would first overflow
@@ -444,7 +444,7 @@ contract SablierStaking is
         // Retrieves the amount of token available in the stream.
         uint128 amountInStream = Helpers.amountInStream(lockup, streamId);
 
-        // Checks and Effects: stake the `amountInStream`.
+        // Checks and Effects: stake the amount.
         _stake(poolId, amountInStream);
 
         // Effect: update stream amount staked by `msg.sender`. Safe to use `unchecked` because it would first overflow
@@ -475,7 +475,7 @@ contract SablierStaking is
         // Checks and Effects: unstake the `amount` for the user.
         _unstake(poolId, amount, directAmountStaked, msg.sender);
 
-        // Safe to use `unchecked` because `amount` is less than or equal to `streamAmountStaked`.
+        // Safe to use `unchecked` because `amount` can not exceed `directAmountStaked`.
         unchecked {
             // Effect: decrease direct amount staked by `msg.sender`.
             _userAccounts[msg.sender][poolId].directAmountStaked = directAmountStaked - amount;
@@ -675,25 +675,6 @@ contract SablierStaking is
                           PRIVATE STATE-CHANGING FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @dev Common logic between stake functions.
-    function _stake(uint256 poolId, uint128 amount) private {
-        // Check: the end time is in the future.
-        if (_pools[poolId].endTime <= uint40(block.timestamp)) {
-            revert Errors.SablierStaking_EndTimeNotInFuture(poolId, _pools[poolId].endTime);
-        }
-
-        // Check: the amount is not zero.
-        if (amount == 0) {
-            revert Errors.SablierStaking_StakingZeroAmount(poolId);
-        }
-
-        // Effect: snapshot rewards for `msg.sender`.
-        _snapshotRewards(poolId, msg.sender);
-
-        // Effect: update total staked amount in the pool.
-        _pools[poolId].totalStakedAmount += amount;
-    }
-
     /// @notice Private function to snapshot the global rewards.
     function _snapshotGlobalRewards(uint256 poolId) private returns (uint256 rptDistributedScaled) {
         // Get the latest value of the cumulative rewards distributed per ERC20 token.
@@ -742,6 +723,25 @@ contract SablierStaking is
 
         // Effect: snapshot the rewards earned per ERC20 token by the user.
         userAccount.snapshotRptEarnedScaled = rptDistributedScaled;
+    }
+
+    /// @dev Common logic between stake functions.
+    function _stake(uint256 poolId, uint128 amount) private {
+        // Check: the end time is in the future.
+        if (_pools[poolId].endTime <= uint40(block.timestamp)) {
+            revert Errors.SablierStaking_EndTimeNotInFuture(poolId, _pools[poolId].endTime);
+        }
+
+        // Check: the amount is not zero.
+        if (amount == 0) {
+            revert Errors.SablierStaking_StakingZeroAmount(poolId);
+        }
+
+        // Effect: snapshot rewards for `msg.sender`.
+        _snapshotRewards(poolId, msg.sender);
+
+        // Effect: update total staked amount in the pool.
+        _pools[poolId].totalStakedAmount += amount;
     }
 
     /// @dev Common logic between unstake functions.

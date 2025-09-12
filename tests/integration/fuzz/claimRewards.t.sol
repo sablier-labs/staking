@@ -171,12 +171,11 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         // It should return the rewards.
         assertEq(actualRewards, expectedRewardsTransferredToRecipient, "return value");
 
-        UserAccount memory userAccount = sablierStaking.userAccount(poolIds.defaultPool, caller);
-
         // It should set rewards to zero.
         assertEq(sablierStaking.claimableRewards(poolIds.defaultPool, caller), 0, "rewards");
 
         // It should set the rewards earned per token.
+        UserAccount memory userAccount = sablierStaking.userAccount(poolIds.defaultPool, caller);
         assertEq(userAccount.snapshotRptEarnedScaled, expectedRptScaled, "rptEarnedScaled");
 
         // It should transfer the min fee to comptroller.

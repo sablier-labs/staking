@@ -12,8 +12,8 @@ contract HandlerStore {
     /// @dev Tracks all pools created by the invariant handler.
     uint256[] public poolIds;
 
-    /// @dev Tracks the time when rewards period was last updated for all pools.
-    uint40 public rewardsPeriodUpdatedAt;
+    /// @dev Tracks the time when last snapshot is taken for all pools.
+    uint40 public snapshotTime;
 
     /// @dev Tracks the amount of tokens staked by each staker in each pool.
     mapping(uint256 poolId => mapping(address staker => uint128 amount)) public amountStaked;
@@ -95,8 +95,8 @@ contract HandlerStore {
         globalSnapshotTime[poolId] = time;
     }
 
-    function updateRewardsPeriodUpdatedAt(uint40 time) external {
-        rewardsPeriodUpdatedAt = time;
+    function updateSnapshotTime(uint40 time) external {
+        snapshotTime = time;
     }
 
     function updateStatus(uint256 poolId, Status currentStatus) external {

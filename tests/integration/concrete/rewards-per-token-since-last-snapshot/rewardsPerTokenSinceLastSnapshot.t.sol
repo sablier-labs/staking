@@ -3,7 +3,7 @@ pragma solidity >=0.8.26;
 
 import { Shared_Integration_Concrete_Test } from "../Concrete.t.sol";
 
-contract RptSinceLastSnapshot_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
+contract RewardsPerTokenSinceLastSnapshot_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     function test_RevertWhen_Null() external {
         bytes memory callData = abi.encodeCall(sablierStaking.rewardsPerTokenSinceLastSnapshot, (poolIds.nullPool));
         expectRevert_Null(callData);
@@ -18,7 +18,7 @@ contract RptSinceLastSnapshot_Integration_Concrete_Test is Shared_Integration_Co
     function test_GivenSnapshotTimeNotLessThanEndTime() external whenNotNull givenTotalStakedNotZero {
         warpStateTo(END_TIME);
 
-        // Snapshot rewards so that last time update equals end time.
+        // Snapshot rewards so that the snapshot time equals the end time.
         sablierStaking.snapshotRewards(poolIds.defaultPool, users.recipient);
 
         // It should return zero.

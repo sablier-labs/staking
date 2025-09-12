@@ -127,7 +127,7 @@ interface ISablierStaking is
     /// @dev Emits {SnapshotRewards}, {Transfer} and {ClaimRewards} events.
     ///
     /// Notes:
-    ///  - Updates global rewards and user rewards data.
+    ///  - Updates global rewards, and user rewards for `msg.sender`.
     ///
     /// Requirements:
     ///  - Must not be delegate called.
@@ -144,6 +144,9 @@ interface ISablierStaking is
 
     /// @notice Configures the next staking round for the specified pool.
     /// @dev Emits a {SnapshotRewards} and {ConfigureNextRound} events.
+    ///
+    /// Notes:
+    ///  - Updates global rewards, and user rewards for `msg.sender`.
     ///
     /// Requirements:
     ///  - Must not be delegate called.
@@ -203,7 +206,7 @@ interface ISablierStaking is
     /// @dev Emits a {SnapshotRewards} event.
     ///
     /// Notes:
-    ///  - Updates global rewards and user rewards data.
+    ///  - Updates global rewards, and user rewards for staker of `streamId`.
     ///
     /// Requirements:
     ///  - Must not be delegate called.
@@ -230,7 +233,7 @@ interface ISablierStaking is
     /// @dev Emits {SnapshotRewards}, {Transfer} and {StakeERC20Token} events.
     ///
     /// Notes:
-    ///  - Updates global rewards and user rewards data.
+    ///  - Updates global rewards, and user rewards for `msg.sender`.
     ///  - Users can start staking before the start time but the rewards can only be earned after the start time.
     ///
     /// Requirements:
@@ -247,7 +250,7 @@ interface ISablierStaking is
     /// @dev Emits {SnapshotRewards}, {Transfer} and {StakeLockupNFT} events.
     ///
     /// Notes:
-    ///  - Updates global rewards and user rewards data.
+    ///  - Updates global rewards, and user rewards for `msg.sender`.
     ///  - Users can start staking before the start time but the rewards can only be earned after the start time.
     ///
     /// Requirements:
@@ -268,7 +271,7 @@ interface ISablierStaking is
     /// @dev Emits {SnapshotRewards}, {Transfer} and {UnstakeERC20Token} events.
     ///
     /// Notes:
-    ///  - Updates global rewards and user rewards data.
+    ///  - Updates global rewards, and user rewards for `msg.sender`.
     ///  - Unstaking does not claim any rewards.
     ///
     /// Requirements:
@@ -284,7 +287,7 @@ interface ISablierStaking is
     /// @dev Emits {SnapshotRewards}, {Transfer} and {UnstakeLockupNFT} events.
     ///
     /// Notes:
-    ///  - Updates global rewards and user rewards data.
+    ///  - Updates global rewards, and user rewards for `msg.sender`.
     ///  - Unstaking does not claim any rewards.
     ///
     /// Requirements:

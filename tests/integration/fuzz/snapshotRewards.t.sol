@@ -69,7 +69,7 @@ contract SnapshotRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         vm.expectEmit({ emitter: address(sablierStaking) });
         emit ISablierStaking.SnapshotRewards(poolIds.defaultPool, timestamp, rptEarnedScaled, user, rewards);
 
-        // Update rewards.
+        // Snapshot rewards.
         setMsgSender(caller);
         sablierStaking.snapshotRewards(poolIds.defaultPool, user);
 

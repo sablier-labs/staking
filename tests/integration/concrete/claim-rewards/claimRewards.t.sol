@@ -159,6 +159,9 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
 
         UserAccount memory userAccount = sablierStaking.userAccount(poolIds.defaultPool, users.recipient);
 
+        // It should update the user snapshot correctly.
+        assertEq(userAccount.snapshotRptEarnedScaled, expectedRptEarnedScaled, "rptEarnedScaled");
+
         // It should set rewards to zero.
         assertEq(sablierStaking.claimableRewards(poolIds.defaultPool, users.recipient), 0, "rewards");
 
@@ -186,8 +189,5 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
 
         // It should return the rewards.
         assertEq(actualRewards, expectedRewardsTransferredToRecipient, "return value");
-
-        // It should update the user snapshot correctly.
-        assertEq(userAccount.snapshotRptEarnedScaled, expectedRptEarnedScaled, "rptEarnedScaled");
     }
 }

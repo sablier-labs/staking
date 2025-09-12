@@ -15,7 +15,7 @@ contract SnapshotRewards_Integration_Concrete_Test is Shared_Integration_Concret
     {
         warpStateTo(END_TIME);
 
-        // Update rewards so that the last update time is not less than the end time.
+        // Snapshot rewards so that the snapshot time is not less than the end time.
         sablierStaking.snapshotRewards(poolIds.defaultPool, users.recipient);
 
         // Forward time.
@@ -80,7 +80,7 @@ contract SnapshotRewards_Integration_Concrete_Test is Shared_Integration_Concret
             poolIds.defaultPool, getBlockTimestamp(), rptEarnedScaled, users.recipient, rewards
         );
 
-        // Update rewards.
+        // Snapshot rewards.
         sablierStaking.snapshotRewards(poolIds.defaultPool, users.recipient);
 
         // It should update global rewards snapshot.

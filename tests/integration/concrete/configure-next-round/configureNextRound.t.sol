@@ -99,10 +99,6 @@ contract ConfigureNextRound_Integration_Concrete_Test is Shared_Integration_Conc
         sablierStaking.configureNextRound(poolIds.defaultPool, newStartTime, newEndTime, newRewardAmount);
     }
 
-    modifier whenNewRewardAmountNotZero() {
-        _;
-    }
-
     function test_GivenAdminStaked()
         external
         whenNoDelegateCall

@@ -3,3 +3,6 @@
 # Run just --list to see all available commands
 
 import "./node_modules/@sablier/devkit/just/evm.just"
+
+default:
+  @just --list

@@ -42,6 +42,15 @@ interface ISablierStaking is
     /// @notice Emitted when a Lockup contract is whitelisted.
     event LockupWhitelisted(address indexed comptroller, ISablierLockupNFT indexed lockup);
 
+    /// @notice Emitted when the pool and user rewards are snapshotted.
+    event SnapshotRewards(
+        uint256 indexed poolId,
+        uint40 snapshotTime,
+        uint256 snapshotRptDistributedScaled,
+        address indexed user,
+        uint128 userRewards
+    );
+
     /// @notice Emitted when a user stakes ERC20 tokens in a pool.
     event StakeERC20Token(uint256 indexed poolId, address indexed user, uint256 amountStaked);
 
@@ -60,15 +69,6 @@ interface ISablierStaking is
     /// @notice Emitted when a user unstakes a Lockup stream from a pool.
     event UnstakeLockupNFT(
         uint256 indexed poolId, address indexed user, ISablierLockupNFT indexed lockup, uint256 streamId
-    );
-
-    /// @notice Emitted when the pool and user rewards are updated.
-    event UpdateRewards(
-        uint256 indexed poolId,
-        uint40 lastUpdateTime,
-        uint256 rewardsDistributedPerTokenScaled,
-        address indexed user,
-        uint128 pendingRewards
     );
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -111,11 +111,6 @@ interface ISablierStaking is
     /// @dev Reverts if `poolId` references a non-existent pool or is not active.
     function rewardRate(uint256 poolId) external view returns (uint128);
 
-    /// @notice Returns the amount of reward ERC20 token that each staked ERC20 token is earning every second. Returns 0
-    /// if total staked tokens are 0.
-    /// @dev Reverts if `poolId` references a non-existent pool or is not active.
-    function rewardRatePerTokenStaked(uint256 poolId) external view returns (uint128);
-
     /// @notice Calculates rewards distributed per ERC20 token since the last snapshot.
     /// @dev Reverts if `poolId` references a non-existent pool.
     function rewardsPerTokenSinceLastSnapshot(uint256 poolId) external view returns (uint128);
@@ -129,11 +124,10 @@ interface ISablierStaking is
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Claims the rewards earned by `msg.sender` in the specified pool.
-    /// @dev Emits {UpdateRewards}, {Transfer} and {ClaimRewards} events.
+    /// @dev Emits {SnapshotRewards}, {Transfer} and {ClaimRewards} events.
     ///
     /// Notes:
-    ///  - Updates global rewards and user rewards data.
-    ///  - Sets the last time update for user.
+    ///  - Updates global rewards, and user rewards for `msg.sender`.
     ///
     /// Requirements:
     ///  - Must not be delegate called.
@@ -149,7 +143,10 @@ interface ISablierStaking is
     function claimRewards(uint256 poolId, UD60x18 feeOnRewards) external payable returns (uint128 rewardsClaimed);
 
     /// @notice Configures the next staking round for the specified pool.
-    /// @dev Emits a {UpdateRewards} and {ConfigureNextRound} events.
+    /// @dev Emits a {SnapshotRewards} and {ConfigureNextRound} events.
+    ///
+    /// Notes:
+    ///  - Updates global rewards, and user rewards for `msg.sender`.
     ///
     /// Requirements:
     ///  - Must not be delegate called.
@@ -183,7 +180,6 @@ interface ISablierStaking is
     ///  - `startTime` must be greater than or equal to the `block.timestamp`.
     ///  - `startTime` must be less than `endTime`.
     ///  - `stakingToken` must not be the zero address.
-    ///  - `rewardToken` must not be the zero address.
     ///  - `rewardAmount` must be greater than 0.
     ///  - `msg.sender` must have approved this contract to spend the `rewardAmount` of reward ERC20 token.
     ///
@@ -207,10 +203,10 @@ interface ISablierStaking is
 
     /// @notice Handles the hook call from the Lockup contract when a staked stream is cancelled. This adjusts the total
     /// staked tokens in the pool accordingly.
-    /// @dev Emits a {UpdateRewards} event.
+    /// @dev Emits a {SnapshotRewards} event.
     ///
     /// Notes:
-    ///  - Updates global rewards and user rewards data.
+    ///  - Updates global rewards, and user rewards for staker of `streamId`.
     ///
     /// Requirements:
     ///  - Must not be delegate called.
@@ -234,10 +230,10 @@ interface ISablierStaking is
         returns (bytes4 selector);
 
     /// @notice Stakes ERC20 staking token in the specified pool.
-    /// @dev Emits {UpdateRewards}, {Transfer} and {StakeERC20Token} events.
+    /// @dev Emits {SnapshotRewards}, {Transfer} and {StakeERC20Token} events.
     ///
     /// Notes:
-    ///  - Updates global rewards and user rewards data.
+    ///  - Updates global rewards, and user rewards for `msg.sender`.
     ///  - Users can start staking before the start time but the rewards can only be earned after the start time.
     ///
     /// Requirements:
@@ -251,10 +247,10 @@ interface ISablierStaking is
     function stakeERC20Token(uint256 poolId, uint128 amount) external;
 
     /// @notice Stakes a Lockup stream in the specified pool.
-    /// @dev Emits {UpdateRewards}, {Transfer} and {StakeLockupNFT} events.
+    /// @dev Emits {SnapshotRewards}, {Transfer} and {StakeLockupNFT} events.
     ///
     /// Notes:
-    ///  - Updates global rewards and user rewards data.
+    ///  - Updates global rewards, and user rewards for `msg.sender`.
     ///  - Users can start staking before the start time but the rewards can only be earned after the start time.
     ///
     /// Requirements:
@@ -272,10 +268,10 @@ interface ISablierStaking is
     function stakeLockupNFT(uint256 poolId, ISablierLockupNFT lockup, uint256 streamId) external;
 
     /// @notice Unstakes the amount specified of the staking token from the specified pool.
-    /// @dev Emits {UpdateRewards}, {Transfer} and {UnstakeERC20Token} events.
+    /// @dev Emits {SnapshotRewards}, {Transfer} and {UnstakeERC20Token} events.
     ///
     /// Notes:
-    ///  - Updates global rewards and user rewards data.
+    ///  - Updates global rewards, and user rewards for `msg.sender`.
     ///  - Unstaking does not claim any rewards.
     ///
     /// Requirements:
@@ -288,10 +284,10 @@ interface ISablierStaking is
     function unstakeERC20Token(uint256 poolId, uint128 amount) external;
 
     /// @notice Unstakes the Lockup stream from the specified pool.
-    /// @dev Emits {UpdateRewards}, {Transfer} and {UnstakeLockupNFT} events.
+    /// @dev Emits {SnapshotRewards}, {Transfer} and {UnstakeLockupNFT} events.
     ///
     /// Notes:
-    ///  - Updates global rewards and user rewards data.
+    ///  - Updates global rewards, and user rewards for `msg.sender`.
     ///  - Unstaking does not claim any rewards.
     ///
     /// Requirements:
@@ -302,18 +298,6 @@ interface ISablierStaking is
     /// @param lockup The Lockup contract associated with the stream ID.
     /// @param streamId The ID of the stream to unstake.
     function unstakeLockupNFT(ISablierLockupNFT lockup, uint256 streamId) external;
-
-    /// @notice Updates global rewards and user rewards data for the specified pool and user.
-    /// @dev Emits a {UpdateRewards} event.
-    ///
-    /// Requirements:
-    ///  - Must not be delegate called.
-    ///  - `poolId` must not reference a non-existent pool.
-    ///  - User must be staking in the pool.
-    ///
-    /// @param poolId The Pool ID to update rewards data for.
-    /// @param user The address of the user to update rewards data for.
-    function updateRewards(uint256 poolId, address user) external;
 
     /// @notice Whitelist a list of Lockup contracts enabling their stream IDs to be staked in any pool.
     /// @dev Emits {LockupWhitelisted} event for each Lockup contract.

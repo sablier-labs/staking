@@ -11,7 +11,7 @@ ClaimableRewards_Integration_Concrete_Test
          ├── given claimable rewards zero
          │  └── it should return zero
          └── given claimable rewards not zero
-            ├── when current time equals last update time
+            ├── when current time equals snapshot time
             │  └── it should return correct rewards
-            └── when current time exceeds last update time
+            └── when current time exceeds snapshot time
                └── it should return correct rewards

@@ -4,6 +4,7 @@ pragma solidity >=0.8.26;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ISablierStaking } from "src/interfaces/ISablierStaking.sol";
 import { Errors } from "src/libraries/Errors.sol";
+import { UserAccount } from "src/types/DataTypes.sol";
 
 import { Shared_Integration_Fuzz_Test } from "./Fuzz.t.sol";
 
@@ -76,26 +77,26 @@ contract UnstakeERC20Token_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test
         warpStateTo(timestamp);
 
         // If direct amount staked is 0, forward time to 20% through the rewards period.
-        (, uint128 previousDirectAmountStaked) = sablierStaking.userShares(poolIds.defaultPool, caller);
-        if (previousDirectAmountStaked == 0) {
+        UserAccount memory initialUserAccount = sablierStaking.userAccount(poolIds.defaultPool, caller);
+        if (initialUserAccount.directAmountStaked == 0) {
             timestamp = boundUint40(timestamp, WARP_20_PERCENT, END_TIME + 365 days);
             warpStateTo(timestamp);
-            (, previousDirectAmountStaked) = sablierStaking.userShares(poolIds.defaultPool, caller);
+            initialUserAccount = sablierStaking.userAccount(poolIds.defaultPool, caller);
         }
 
         // Warp amount so that it does not exceed direct staked amount.
-        amount = boundUint128(amount, 1, previousDirectAmountStaked);
+        amount = boundUint128(amount, 1, initialUserAccount.directAmountStaked);
 
         setMsgSender(caller);
 
-        (vars.expectedRewardsPerTokenScaled, vars.expectedUserRewards) = calculateLatestRewards(caller);
+        (vars.expectedRptScaled, vars.expectedUserRewards) = calculateLatestRewards(caller);
 
         vars.expectedTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool) - amount;
 
-        // It should emit {UpdateRewards}, {Transfer} and {UnstakeERC20Token} events.
+        // It should emit {SnapshotRewards}, {Transfer} and {UnstakeERC20Token} events.
         vm.expectEmit({ emitter: address(sablierStaking) });
-        emit ISablierStaking.UpdateRewards(
-            poolIds.defaultPool, timestamp, vars.expectedRewardsPerTokenScaled, caller, vars.expectedUserRewards
+        emit ISablierStaking.SnapshotRewards(
+            poolIds.defaultPool, timestamp, vars.expectedRptScaled, caller, vars.expectedUserRewards
         );
         vm.expectEmit({ emitter: address(stakingToken) });
         emit IERC20.Transfer(address(sablierStaking), caller, amount);
@@ -105,26 +106,23 @@ contract UnstakeERC20Token_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test
         // Unstake from the default pool.
         sablierStaking.unstakeERC20Token(poolIds.defaultPool, amount);
 
-        // It should unstake.
-        (, vars.actualDirectAmountStaked) = sablierStaking.userShares(poolIds.defaultPool, caller);
-        assertEq(vars.actualDirectAmountStaked, previousDirectAmountStaked - amount, "directAmountStakedByUser");
+        // It should update user account.
+        UserAccount memory actualUserAccount = sablierStaking.userAccount(poolIds.defaultPool, caller);
+        assertEq(
+            actualUserAccount.directAmountStaked,
+            initialUserAccount.directAmountStaked - amount,
+            "directAmountStakedByUser"
+        );
+        assertEq(actualUserAccount.snapshotRptEarnedScaled, vars.expectedRptScaled, "rptEarnedScaled");
+        assertEq(actualUserAccount.snapshotRewards, vars.expectedUserRewards, "rewards");
 
         // It should decrease total amount staked.
         vars.actualTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool);
         assertEq(vars.actualTotalAmountStaked, vars.expectedTotalAmountStaked, "total amount staked");
 
         // It should update global rewards snapshot.
-        (vars.actualLastUpdateTime, vars.actualRewardsPerTokenScaled) =
-            sablierStaking.globalRewardsPerTokenSnapshot(poolIds.defaultPool);
-        assertEq(vars.actualLastUpdateTime, timestamp, "globalLastUpdateTime");
-        assertEq(
-            vars.actualRewardsPerTokenScaled, vars.expectedRewardsPerTokenScaled, "rewardsDistributedPerTokenScaled"
-        );
-
-        // It should update user rewards snapshot.
-        (vars.actualRewardsPerTokenScaled, vars.actualUserRewards) =
-            sablierStaking.userRewards(poolIds.defaultPool, caller);
-        assertEq(vars.actualRewardsPerTokenScaled, vars.expectedRewardsPerTokenScaled, "rewardsEarnedPerTokenScaled");
-        assertEq(vars.actualUserRewards, vars.expectedUserRewards, "rewards");
+        (vars.actualSnapshotTime, vars.actualRptScaled) = sablierStaking.globalRptScaledAtSnapshot(poolIds.defaultPool);
+        assertEq(vars.actualSnapshotTime, timestamp, "globalSnapshotTime");
+        assertEq(vars.actualRptScaled, vars.expectedRptScaled, "snapshotRptDistributedScaled");
     }
 }

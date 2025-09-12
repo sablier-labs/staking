@@ -12,8 +12,8 @@ contract HandlerStore {
     /// @dev Tracks all pools created by the invariant handler.
     uint256[] public poolIds;
 
-    /// @dev Tracks the time when rewards period was last updated for all pools.
-    uint40 public rewardsPeriodUpdatedAt;
+    /// @dev Tracks the time when last snapshot is taken for all pools.
+    uint40 public snapshotTime;
 
     /// @dev Tracks the amount of tokens staked by each staker in each pool.
     mapping(uint256 poolId => mapping(address staker => uint128 amount)) public amountStaked;
@@ -22,7 +22,7 @@ contract HandlerStore {
     mapping(uint256 poolId => address[] stakers) public poolStakers;
 
     /// @dev Stores previous values for global rewards per token for each pool.
-    mapping(uint256 poolId => uint256 rewardsPerTokenScaled) public globalRewardsPerTokenScaled;
+    mapping(uint256 poolId => uint256 rptScaled) public globalRptScaled;
 
     /// @dev Tracks the previous time global snapshot was taken for each pool.
     mapping(uint256 poolId => uint40 time) public globalSnapshotTime;
@@ -40,7 +40,7 @@ contract HandlerStore {
     mapping(uint256 poolId => uint256 totalRewardsDeposited) public totalRewardsDeposited;
 
     /// @dev Stores previous values for user rewards per token for each pool.
-    mapping(uint256 poolId => mapping(address staker => uint256 rewardsPerTokenScaled)) public userRewardsPerTokenScaled;
+    mapping(uint256 poolId => mapping(address staker => uint256 rptScaled)) public userRptScaled;
 
     /*//////////////////////////////////////////////////////////////////////////
                                       GETTERS
@@ -90,20 +90,20 @@ contract HandlerStore {
         amountStaked[poolId][staker] -= amount;
     }
 
-    function updateGlobalRewardsPerTokenSnapshot(uint256 poolId, uint40 time, uint256 rewardsPerTokenScaled) external {
-        globalRewardsPerTokenScaled[poolId] = rewardsPerTokenScaled;
+    function updateGlobalRptSnapshot(uint256 poolId, uint40 time, uint256 rptScaled) external {
+        globalRptScaled[poolId] = rptScaled;
         globalSnapshotTime[poolId] = time;
     }
 
-    function updateRewardsPeriodUpdatedAt(uint40 time) external {
-        rewardsPeriodUpdatedAt = time;
+    function updateSnapshotTime(uint40 time) external {
+        snapshotTime = time;
     }
 
     function updateStatus(uint256 poolId, Status currentStatus) external {
         status[poolId] = currentStatus;
     }
 
-    function updateUserRewardsPerTokenScaled(uint256 poolId, address staker, uint256 rewardsPerTokenScaled) external {
-        userRewardsPerTokenScaled[poolId][staker] = rewardsPerTokenScaled;
+    function updateUserRptScaled(uint256 poolId, address staker, uint256 rptScaled) external {
+        userRptScaled[poolId][staker] = rptScaled;
     }
 }

@@ -11,6 +11,6 @@ OnSablierLockupCancel_Integration_Concrete_Test
          ├── given stream not staked
          │  └── it should revert
          └── given stream staked
-            ├── it should emit {UpdateRewards} event
+            ├── it should emit {SnapshotRewards} event
             ├── it should adjust global staked amount
             └── it should adjust user staked amount

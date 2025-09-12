@@ -40,14 +40,11 @@ struct Users {
 /// @notice A struct to manage test variables, required to prevent stack too deep error.
 struct Vars {
     // Actual values.
-    uint128 actualDirectAmountStaked;
-    uint256 actualRewardsPerTokenScaled;
-    uint128 actualStreamAmountStaked;
+    uint256 actualRptScaled;
     uint128 actualTotalAmountStaked;
-    uint40 actualLastUpdateTime;
-    uint128 actualUserRewards;
+    uint40 actualSnapshotTime;
     // Expected values.
-    uint256 expectedRewardsPerTokenScaled;
+    uint256 expectedRptScaled;
     uint128 expectedTotalAmountStaked;
     uint128 expectedUserRewards;
 }

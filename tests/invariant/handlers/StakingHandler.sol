@@ -5,8 +5,8 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { ud } from "@prb/math/src/UD60x18.sol";
 import { ISablierStaking } from "src/interfaces/ISablierStaking.sol";
-import { HandlerStore } from "../stores/HandlerStore.sol";
 
+import { HandlerStore } from "../stores/HandlerStore.sol";
 import { BaseHandler } from "./BaseHandler.sol";
 
 // TODO: Add Lockup related handlers.
@@ -243,25 +243,5 @@ contract StakingHandler is BaseHandler {
 
         // Update handler store.
         handlerStore.subtractUserStake(selectedPoolId, selectedStaker, amount);
-    }
-
-    function updateRewards(
-        uint256 timeJump,
-        uint256 poolIdIndex,
-        uint256 stakerIndex
-    )
-        external
-        useFuzzedPool(poolIdIndex)
-        useFuzzedStaker(stakerIndex)
-        adjustTimestamp(timeJump)
-        updateHandlerStoreForAllPools
-        instrument("updateRewards")
-    {
-        uint128 amountStakedByUser = handlerStore.amountStaked(selectedPoolId, selectedStaker);
-
-        // Discard if the amount staked is zero.
-        vm.assume(amountStakedByUser > 0);
-
-        sablierStaking.updateRewards(selectedPoolId, selectedStaker);
     }
 }

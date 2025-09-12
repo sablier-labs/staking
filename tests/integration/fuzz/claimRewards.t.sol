@@ -5,6 +5,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ud, UD60x18, ZERO } from "@prb/math/src/UD60x18.sol";
 import { ISablierStaking } from "src/interfaces/ISablierStaking.sol";
 import { Errors } from "src/libraries/Errors.sol";
+import { UserAccount } from "src/types/DataTypes.sol";
 
 import { Shared_Integration_Fuzz_Test } from "./Fuzz.t.sol";
 
@@ -145,15 +146,15 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
     function _test_ClaimRewards(address caller, uint256 fee, UD60x18 feeOnRewards, uint40 timestamp) private {
         uint256 initialComptrollerEthBalance = address(comptroller).balance;
 
-        (uint256 expectedRewardsPerTokenScaled, uint128 expectedUserRewards) = calculateLatestRewards(caller);
+        (uint256 expectedRptScaled, uint128 expectedUserRewards) = calculateLatestRewards(caller);
 
         uint128 expectedRewardsTransferredToComptroller = ud(expectedUserRewards).mul(feeOnRewards).intoUint128();
         uint128 expectedRewardsTransferredToRecipient = expectedUserRewards - expectedRewardsTransferredToComptroller;
 
-        // It should emit 1 {UpdateRewards}, 2 {Transfer} and 1 {ClaimRewards} events.
+        // It should emit 1 {SnapshotRewards}, 2 {Transfer} and 1 {ClaimRewards} events.
         vm.expectEmit({ emitter: address(sablierStaking) });
-        emit ISablierStaking.UpdateRewards(
-            poolIds.defaultPool, timestamp, expectedRewardsPerTokenScaled, caller, expectedUserRewards
+        emit ISablierStaking.SnapshotRewards(
+            poolIds.defaultPool, timestamp, expectedRptScaled, caller, expectedUserRewards
         );
         if (feeOnRewards > ZERO) {
             vm.expectEmit({ emitter: address(rewardToken) });
@@ -170,13 +171,12 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         // It should return the rewards.
         assertEq(actualRewards, expectedRewardsTransferredToRecipient, "return value");
 
-        (uint256 actualRewardsPerTokenScaled,) = sablierStaking.userRewards(poolIds.defaultPool, caller);
-
         // It should set rewards to zero.
         assertEq(sablierStaking.claimableRewards(poolIds.defaultPool, caller), 0, "rewards");
 
         // It should set the rewards earned per token.
-        assertEq(actualRewardsPerTokenScaled, expectedRewardsPerTokenScaled, "rewardsEarnedPerTokenScaled");
+        UserAccount memory userAccount = sablierStaking.userAccount(poolIds.defaultPool, caller);
+        assertEq(userAccount.snapshotRptEarnedScaled, expectedRptScaled, "rptEarnedScaled");
 
         // It should transfer the min fee to comptroller.
         assertEq(address(comptroller).balance, initialComptrollerEthBalance + fee, "comptroller ETH balance");

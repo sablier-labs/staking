@@ -14,8 +14,7 @@ UnstakeERC20Token_Integration_Concrete_Test
             ├── when amount zero
             │  └── it should revert
             └── when amount not zero
-               ├── it should unstake
+               ├── it should update user account
                ├── it should decrease total amount staked
                ├── it should update global rewards snapshot
-               ├── it should update user rewards snapshot
-               └── it should emit {UpdateRewards}, {Transfer} and {UnstakeERC20Token} events
+               └── it should emit {SnapshotRewards}, {Transfer} and {UnstakeERC20Token} events

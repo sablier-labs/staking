@@ -3,7 +3,7 @@ pragma solidity >=0.8.26;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { StdInvariant } from "forge-std/src/StdInvariant.sol";
-import { Status } from "src/types/DataTypes.sol";
+import { Status, UserAccount } from "src/types/DataTypes.sol";
 
 import { Base_Test } from "../Base.t.sol";
 import { StakingHandler } from "./handlers/StakingHandler.sol";
@@ -52,20 +52,16 @@ contract Invariant_Test is Base_Test, StdInvariant {
         assertEq(nextPoolId, lastPoolId + 1, "Invariant violation: next pool ID not incremented");
     }
 
-    function invariant_GlobalRewardsPerTokenSnapshot() external view {
+    function invariant_GlobalRptSnapshot() external view {
         for (uint256 i = 0; i < handlerStore.totalPools(); ++i) {
             uint256 poolId = handlerStore.poolIds(i);
-            (uint40 snapshotTime, uint256 currentRewardsPerToken) = sablierStaking.globalRewardsPerTokenSnapshot(poolId);
+            (uint40 snapshotTime, uint256 currentRpt) = sablierStaking.globalRptScaledAtSnapshot(poolId);
             uint40 previousSnapshotTime = handlerStore.globalSnapshotTime(poolId);
-            uint256 previousRewardsPerToken = handlerStore.globalRewardsPerTokenScaled(poolId);
+            uint256 previousRpt = handlerStore.globalRptScaled(poolId);
 
             assertGe(snapshotTime, previousSnapshotTime, "Invariant violation: global snapshot time decreased");
 
-            assertGe(
-                currentRewardsPerToken,
-                previousRewardsPerToken,
-                "Invariant violation: global rewards per token decreased"
-            );
+            assertGe(currentRpt, previousRpt, "Invariant violation: global rewards per token decreased");
         }
     }
 
@@ -155,30 +151,30 @@ contract Invariant_Test is Base_Test, StdInvariant {
 
             for (uint256 j = 0; j < handlerStore.totalStakers(poolId); ++j) {
                 address staker = handlerStore.poolStakers(poolId, j);
-                (uint256 currentRewardsPerToken,) = sablierStaking.userRewards(poolId, staker);
-                uint256 previousRewardsPerToken = handlerStore.userRewardsPerTokenScaled(poolId, staker);
+                UserAccount memory currentUserAccount = sablierStaking.userAccount(poolId, staker);
+                uint256 previousRpt = handlerStore.userRptScaled(poolId, staker);
 
                 assertGe(
-                    currentRewardsPerToken,
-                    previousRewardsPerToken,
+                    currentUserAccount.snapshotRptEarnedScaled,
+                    previousRpt,
                     "Invariant violation: user rewards per token decreased"
                 );
             }
         }
     }
 
-    function invariant_UserRewardsLeGlobalRewardsPerTokenSnapshot() external view {
+    function invariant_UserRewardsLeGlobalRptSnapshot() external view {
         for (uint256 i = 0; i < handlerStore.totalPools(); ++i) {
             uint256 poolId = handlerStore.poolIds(i);
-            (, uint256 globalRewardsPerToken) = sablierStaking.globalRewardsPerTokenSnapshot(poolId);
+            (, uint256 globalRpt) = sablierStaking.globalRptScaledAtSnapshot(poolId);
 
             for (uint256 j = 0; j < handlerStore.totalStakers(poolId); ++j) {
                 address staker = handlerStore.poolStakers(poolId, j);
-                (uint256 userRewardsPerToken,) = sablierStaking.userRewards(poolId, staker);
+                UserAccount memory userAccount = sablierStaking.userAccount(poolId, staker);
 
                 assertLe(
-                    userRewardsPerToken,
-                    globalRewardsPerToken,
+                    userAccount.snapshotRptEarnedScaled,
+                    globalRpt,
                     "Invariant violation: user rewards per token > global rewards per token"
                 );
             }
@@ -193,12 +189,11 @@ contract Invariant_Test is Base_Test, StdInvariant {
                 address staker = handlerStore.poolStakers(poolId, j);
                 uint128 totalAmountStakedByUser = sablierStaking.totalAmountStakedByUser(poolId, staker);
 
-                (uint128 streamAmountStakedByUser, uint128 directAmountStakedByUser) =
-                    sablierStaking.userShares(poolId, staker);
+                UserAccount memory userAccount = sablierStaking.userAccount(poolId, staker);
 
                 assertEq(
                     totalAmountStakedByUser,
-                    streamAmountStakedByUser + directAmountStakedByUser,
+                    userAccount.streamAmountStaked + userAccount.directAmountStaked,
                     "Invariant violation: user total amount staked != user direct amount staked + user stream amount staked"
                 );
             }
@@ -233,9 +228,9 @@ contract Invariant_Test is Base_Test, StdInvariant {
             if (stakeLockupNFTCalls == 0) {
                 for (uint256 j = 0; j < handlerStore.totalStakers(poolId); ++j) {
                     address staker = handlerStore.poolStakers(poolId, j);
-                    (uint128 streamAmountStaked,) = sablierStaking.userShares(poolId, staker);
+                    UserAccount memory userAccount = sablierStaking.userAccount(poolId, staker);
 
-                    assertGe(streamAmountStaked, 0, "invariant violation: streamAmountStaked != 0");
+                    assertGe(userAccount.streamAmountStaked, 0, "invariant violation: streamAmountStaked != 0");
                 }
             }
         }
@@ -251,9 +246,9 @@ contract Invariant_Test is Base_Test, StdInvariant {
                 for (uint256 j = 0; j < handlerStore.totalStakers(poolId); ++j) {
                     address staker = handlerStore.poolStakers(poolId, j);
 
-                    (, uint128 directAmountStaked) = sablierStaking.userShares(poolId, staker);
+                    UserAccount memory userAccount = sablierStaking.userAccount(poolId, staker);
 
-                    assertGe(directAmountStaked, 0, "invariant violation: directAmountStaked != 0");
+                    assertGe(userAccount.directAmountStaked, 0, "invariant violation: directAmountStaked != 0");
                 }
             }
         }

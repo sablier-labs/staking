@@ -2,6 +2,8 @@
 pragma solidity >=0.8.26;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
 import { ISablierStaking } from "src/interfaces/ISablierStaking.sol";
 import { Errors } from "src/libraries/Errors.sol";
 
@@ -151,7 +153,7 @@ contract CreatePool_Integration_Concrete_Test is Shared_Integration_Concrete_Tes
         whenEndTimeGreaterThanStartTime
         whenStakingTokenNotZeroAddress
     {
-        vm.expectRevert(Errors.SablierStaking_RewardTokenZeroAddress.selector);
+        vm.expectRevert(abi.encodeWithSelector(SafeERC20.SafeERC20FailedOperation.selector, address(0)));
         sablierStaking.createPool({
             admin: users.poolCreator,
             stakingToken: stakingToken,

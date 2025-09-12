@@ -23,9 +23,6 @@ abstract contract SablierStakingState is ISablierStakingState {
     /// @inheritdoc ISablierStakingState
     uint256 public override nextPoolId;
 
-    /// @notice Indicates whether the Lockup contract is whitelisted to stake into this contract.
-    mapping(ISablierLockupNFT lockup => bool isWhitelisted) internal _lockupWhitelists;
-
     /// @notice The Pool parameters mapped by the Pool ID.
     /// @dev See the documentation for Pool in {DataTypes}.
     mapping(uint256 poolId => Pool pool) internal _pools;
@@ -38,15 +35,12 @@ abstract contract SablierStakingState is ISablierStakingState {
     /// @dev See the documentation for UserAccount in {DataTypes}.
     mapping(address user => mapping(uint256 poolId => UserAccount userAccount)) internal _userAccounts;
 
+    /// @notice Indicates whether the Lockup contract is whitelisted to stake into this contract.
+    mapping(ISablierLockupNFT lockup => bool isWhitelisted) internal _whitelistedLockups;
+
     /*//////////////////////////////////////////////////////////////////////////
                                      MODIFIERS
     //////////////////////////////////////////////////////////////////////////*/
-
-    /// @notice Modifier that checks that the pool is active.
-    modifier isActive(uint256 poolId) {
-        _revertIfNotActive(poolId);
-        _;
-    }
 
     /// @notice Modifier that checks that `poolId` does not reference to a non-existent pool.
     modifier notNull(uint256 poolId) {
@@ -94,14 +88,14 @@ abstract contract SablierStakingState is ISablierStakingState {
     }
 
     /// @inheritdoc ISablierStakingState
-    function globalRewardsPerTokenSnapshot(uint256 poolId)
+    function globalRptScaledAtSnapshot(uint256 poolId)
         external
         view
         notNull(poolId)
-        returns (uint40 lastUpdateTime, uint256 rewardsDistributedPerTokenScaled)
+        returns (uint40 snapshotTime, uint256 snapshotRptDistributedScaled)
     {
-        lastUpdateTime = _pools[poolId].lastUpdateTime;
-        rewardsDistributedPerTokenScaled = _pools[poolId].rewardsDistributedPerTokenScaled;
+        snapshotTime = _pools[poolId].snapshotTime;
+        snapshotRptDistributedScaled = _pools[poolId].snapshotRptDistributedScaled;
     }
 
     /// @inheritdoc ISablierStakingState
@@ -111,7 +105,7 @@ abstract contract SablierStakingState is ISablierStakingState {
             revert Errors.SablierStakingState_ZeroAddress();
         }
 
-        return _lockupWhitelists[lockup];
+        return _whitelistedLockups[lockup];
     }
 
     /// @inheritdoc ISablierStakingState
@@ -164,59 +158,28 @@ abstract contract SablierStakingState is ISablierStakingState {
     }
 
     /// @inheritdoc ISablierStakingState
-    function userShares(
-        uint256 poolId,
-        address user
-    )
-        external
-        view
-        notNull(poolId)
-        returns (uint128 streamAmountStaked, uint128 directAmountStaked)
-    {
+    function userAccount(uint256 poolId, address user) external view notNull(poolId) returns (UserAccount memory) {
         // Check: the user is not the zero address.
         if (user == address(0)) {
             revert Errors.SablierStakingState_ZeroAddress();
         }
 
-        streamAmountStaked = _userAccounts[user][poolId].streamAmountStaked;
-        directAmountStaked = _userAccounts[user][poolId].directAmountStaked;
+        return _userAccounts[user][poolId];
     }
 
-    /// @inheritdoc ISablierStakingState
-    function userRewards(
-        uint256 poolId,
-        address user
-    )
-        external
-        view
-        notNull(poolId)
-        returns (uint256 rewardsEarnedPerTokenScaled, uint128 pendingRewards)
-    {
-        // Check: the user is not the zero address.
-        if (user == address(0)) {
-            revert Errors.SablierStakingState_ZeroAddress();
-        }
+    /*//////////////////////////////////////////////////////////////////////////
+                            INTERNAL READ-ONLY FUNCTIONS
+    //////////////////////////////////////////////////////////////////////////*/
 
-        rewardsEarnedPerTokenScaled = _userAccounts[user][poolId].rewardsEarnedPerTokenScaled;
-        pendingRewards = _userAccounts[user][poolId].pendingRewards;
+    /// @dev Returns true if the pool is active.
+    function _isActive(uint256 poolId) internal view returns (bool) {
+        uint40 currentTimestamp = uint40(block.timestamp);
+        return _pools[poolId].startTime <= currentTimestamp && currentTimestamp <= _pools[poolId].endTime;
     }
 
     /*//////////////////////////////////////////////////////////////////////////
                             PRIVATE READ-ONLY FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
-
-    /// @dev Returns true if the pool is active.
-    function _isActive(uint256 poolId) private view returns (bool) {
-        uint40 currentTimestamp = uint40(block.timestamp);
-        return _pools[poolId].startTime <= currentTimestamp && currentTimestamp <= _pools[poolId].endTime;
-    }
-
-    /// @dev Reverts if the pool is not active.
-    function _revertIfNotActive(uint256 poolId) private view {
-        if (!_isActive(poolId)) {
-            revert Errors.SablierStakingState_NotActive(poolId);
-        }
-    }
 
     /// @dev Reverts if the pool ID does not exist.
     function _revertIfNull(uint256 poolId) private view {

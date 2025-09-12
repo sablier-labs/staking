@@ -18,8 +18,7 @@ StakeERC20Token_Integration_Concrete_Test
             ├── when start time in present
             │  └── it should stake tokens
             └── when start time in past
-               ├── it should stake tokens
+               ├── it should update user account
                ├── it should increase total amount staked
                ├── it should update global rewards snapshot
-               ├── it should update user rewards snapshot
-               └── it should emit {UpdateRewards}, {Transfer} and {StakeERC20Token} events
+               └── it should emit {SnapshotRewards}, {Transfer} and {StakeERC20Token} events

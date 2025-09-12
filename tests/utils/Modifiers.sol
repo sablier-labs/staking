@@ -32,15 +32,15 @@ abstract contract Modifiers is EvmUtilsBase {
         _;
     }
 
-    modifier givenLastUpdateTimeLessThanEndTime() {
-        _;
-    }
-
     modifier givenLockupWhitelisted() {
         _;
     }
 
     modifier givenNotWhitelisted() {
+        _;
+    }
+
+    modifier givenSnapshotTimeLessThanEndTime() {
         _;
     }
 

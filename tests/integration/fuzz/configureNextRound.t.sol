@@ -106,9 +106,9 @@ contract ConfigureNextRound_Integration_Fuzz_Test is Shared_Integration_Fuzz_Tes
         deal({ token: address(rewardToken), to: users.poolCreator, give: newRewardAmount });
         rewardToken.approve(address(sablierStaking), newRewardAmount);
 
-        // It should emit {UpdateRewards}, {Transfer} and {ConfigureNextRound} events.
+        // It should emit {SnapshotRewards}, {Transfer} and {ConfigureNextRound} events.
         vm.expectEmit({ emitter: address(sablierStaking) });
-        emit ISablierStaking.UpdateRewards(
+        emit ISablierStaking.SnapshotRewards(
             poolIds.defaultPool,
             END_TIME + 1 seconds,
             REWARDS_DISTRIBUTED_PER_TOKEN_END_TIME_SCALED,

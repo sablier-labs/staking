@@ -143,7 +143,6 @@ flowchart LR
         CLAIM_REWARDS([claimRewards])
         CONFIGURE([configureNextRound])
         CREATE([createPool])
-        SNAPSHOT([updateRewards])
         STAKE([stakeERC20Token / stakeLockupNFT])
         UNSTAKE([unstakeERC20Token / unstakeLockupNFT])
     end
@@ -162,13 +161,11 @@ flowchart LR
 
     CREATE  --> NULL
 
-    CONFIGURE -- "Update Rewards" -->  ENDED
+    CONFIGURE -- "Snapshot Rewards" -->  ENDED
 
-    CLAIM_REWARDS -- "Update Rewards" -->  ALL
+    CLAIM_REWARDS -- "Snapshot Rewards" -->  ALL
 
-    SNAPSHOT -- "Update Rewards" -->  ALL
+    STAKE -- "Snapshot Rewards" -->  AS
 
-    STAKE -- "Update Rewards" -->  AS
-
-    UNSTAKE -- "Update Rewards" -->  ALL
+    UNSTAKE -- "Snapshot Rewards" -->  ALL
 ```

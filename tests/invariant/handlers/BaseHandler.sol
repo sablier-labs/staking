@@ -6,6 +6,8 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
 import { ISablierStaking } from "src/interfaces/ISablierStaking.sol";
+import { UserAccount } from "src/types/DataTypes.sol";
+
 import { Utils } from "../../utils/Utils.sol";
 import { HandlerStore } from "./../stores/HandlerStore.sol";
 
@@ -57,7 +59,7 @@ contract BaseHandler is Utils, StdCheats {
     /// - Updates the global snapshot time and rewards per token for all the pools.
     /// - Updates the user snapshot time and rewards per token for all the stakers in all the pools.
     modifier updateHandlerStoreForAllPools() {
-        uint40 previousCalculationTime = handlerStore.rewardsPeriodUpdatedAt();
+        uint40 previousCalculationTime = handlerStore.snapshotTime();
 
         // Loop over all pools.
         for (uint256 i = 0; i < handlerStore.totalPools(); ++i) {
@@ -79,11 +81,9 @@ contract BaseHandler is Utils, StdCheats {
             }
 
             // Update global rewards per token in handler store.
-            (uint40 globalSnapshotTime, uint256 rewardsDistributedPerTokenScaled) =
-                sablierStaking.globalRewardsPerTokenSnapshot(poolId);
-            handlerStore.updateGlobalRewardsPerTokenSnapshot(
-                poolId, globalSnapshotTime, rewardsDistributedPerTokenScaled
-            );
+            (uint40 globalSnapshotTime, uint256 snapshotRptDistributedScaled) =
+                sablierStaking.globalRptScaledAtSnapshot(poolId);
+            handlerStore.updateGlobalRptSnapshot(poolId, globalSnapshotTime, snapshotRptDistributedScaled);
 
             // Update status.
             handlerStore.updateStatus(poolId, sablierStaking.status(poolId));
@@ -92,13 +92,13 @@ contract BaseHandler is Utils, StdCheats {
             for (uint256 j = 0; j < handlerStore.totalStakers(poolId); ++j) {
                 address staker = handlerStore.poolStakers(poolId, j);
                 // Update user rewards per token in handler store.
-                (uint256 rewardsPerTokenScaled,) = sablierStaking.userRewards(poolId, staker);
-                handlerStore.updateUserRewardsPerTokenScaled(poolId, staker, rewardsPerTokenScaled);
+                UserAccount memory userAccount = sablierStaking.userAccount(poolId, staker);
+                handlerStore.updateUserRptScaled(poolId, staker, userAccount.snapshotRptEarnedScaled);
             }
         }
 
         // Update the timestamp for the last rewards period update.
-        handlerStore.updateRewardsPeriodUpdatedAt(getBlockTimestamp());
+        handlerStore.updateSnapshotTime(getBlockTimestamp());
 
         _;
     }

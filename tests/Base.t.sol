@@ -11,8 +11,8 @@ import { SablierLockup } from "@sablier/lockup/src/SablierLockup.sol";
 import { Lockup, LockupLinear, Broker } from "@sablier/lockup/src/types/DataTypes.sol";
 import { SafeCastLib } from "solady/src/utils/SafeCastLib.sol";
 import { ISablierLockupNFT } from "src/interfaces/ISablierLockupNFT.sol";
-import { ISablierStaking } from "src/interfaces/ISablierStaking.sol";
-import { SablierStaking } from "src/SablierStaking.sol";
+
+import { SablierStakingMock } from "./mocks/SablierStakingMock.sol";
 import { Assertions } from "./utils/Assertions.sol";
 import { Modifiers } from "./utils/Modifiers.sol";
 import { StreamIds, Users } from "./utils/Types.sol";
@@ -35,7 +35,10 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
     //////////////////////////////////////////////////////////////////////////*/
 
     ISablierLockupNFT internal lockup;
-    ISablierStaking internal sablierStaking;
+
+    /// @dev Since `_snapshotRewards` function contains core logic, a mock contract is used to allow testing it
+    /// separately.
+    SablierStakingMock internal sablierStaking;
 
     /*//////////////////////////////////////////////////////////////////////////
                                   SET-UP FUNCTION
@@ -54,7 +57,7 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
 
         // Deploy the staking protocol.
         if (!isTestOptimizedProfile()) {
-            sablierStaking = new SablierStaking(address(comptroller));
+            sablierStaking = new SablierStakingMock(address(comptroller));
         } else {
             sablierStaking = deployOptimizedSablierStaking(address(comptroller));
         }
@@ -109,9 +112,11 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
         users.staker = createUser("Staker", spenders);
     }
 
-    /// @dev Deploys {SablierStaking} from an optimized source compiled with `--via-ir`.
-    function deployOptimizedSablierStaking(address admin) internal returns (SablierStaking) {
-        return SablierStaking(deployCode("out-optimized/SablierStaking.sol/SablierStaking.json", abi.encode(admin)));
+    /// @dev Deploys {SablierStakingMock} from an optimized source compiled with `--via-ir`.
+    function deployOptimizedSablierStaking(address admin) internal returns (SablierStakingMock) {
+        return SablierStakingMock(
+            deployCode("out-optimized/SablierStakingMock.sol/SablierStakingMock.json", abi.encode(admin))
+        );
     }
 
     /*//////////////////////////////////////////////////////////////////////////

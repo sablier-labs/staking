@@ -385,14 +385,14 @@ contract SablierStaking is
             revert Errors.SablierStaking_StreamNotStaked(msgSenderAsLockup, streamId);
         }
 
-        // Load the variables in memory.
+        // Load the storage in memory.
         address owner = _streamsLookup[msgSenderAsLockup][streamId].owner;
         uint128 streamAmountStaked = _userAccounts[owner][poolId].streamAmountStaked;
 
         // Checks and Effects: unstake the `senderAmount` for the user.
-        _unstake(poolId, senderAmount, streamAmountStaked, owner);
+        _unstake({ poolId: poolId, unstakeAmount: senderAmount, maxAllowed: streamAmountStaked, user: owner });
 
-        // Safe to use `unchecked` because `senderAmount` is less than or equal to `streamAmountStaked`.
+        // Safe to use `unchecked` because `_unstake` verifies that `senderAmount` does not exceed `streamAmountStaked`.
         unchecked {
             // Effect: decrease the user's stream amount staked.
             _userAccounts[owner][poolId].streamAmountStaked = streamAmountStaked - senderAmount;
@@ -406,9 +406,9 @@ contract SablierStaking is
         // Checks and Effects: stake the amount.
         _stake(poolId, amount);
 
-        // Effect: update direct amount staked by `msg.sender`. Safe to use `unchecked` because it would first overflow
-        // in `_stake`.
+        // Safe to use `unchecked` because it would first overflow in `_stake`.
         unchecked {
+            // Effect: update direct amount staked by `msg.sender`.
             _userAccounts[msg.sender][poolId].directAmountStaked += amount;
         }
 
@@ -447,9 +447,9 @@ contract SablierStaking is
         // Checks and Effects: stake the amount.
         _stake(poolId, amountInStream);
 
-        // Effect: update stream amount staked by `msg.sender`. Safe to use `unchecked` because it would first overflow
-        // in `_stake`.
+        // Safe to use `unchecked` because it would first overflow in `_stake`.
         unchecked {
+            // Effect: update stream amount staked by `msg.sender`.
             _userAccounts[msg.sender][poolId].streamAmountStaked += amountInStream;
         }
 
@@ -473,7 +473,7 @@ contract SablierStaking is
         uint128 directAmountStaked = _userAccounts[msg.sender][poolId].directAmountStaked;
 
         // Checks and Effects: unstake the `amount` for the user.
-        _unstake(poolId, amount, directAmountStaked, msg.sender);
+        _unstake({ poolId: poolId, unstakeAmount: amount, maxAllowed: directAmountStaked, user: msg.sender });
 
         // Safe to use `unchecked` because `amount` can not exceed `directAmountStaked`.
         unchecked {
@@ -510,9 +510,10 @@ contract SablierStaking is
         uint128 streamAmountStaked = _userAccounts[msg.sender][poolId].streamAmountStaked;
 
         // Checks and Effects: unstake the `amountInStream` for the user.
-        _unstake(poolId, amountInStream, streamAmountStaked, msg.sender);
+        _unstake({ poolId: poolId, unstakeAmount: amountInStream, maxAllowed: streamAmountStaked, user: msg.sender });
 
-        // Safe to use `unchecked` because `amountInStream` is less than or equal to `streamAmountStaked`.
+        // Safe to use `unchecked` because `_unstake` verifies that `amountInStream` does not exceed
+        // `streamAmountStaked`.
         unchecked {
             // Effect: decrease stream amount staked by `msg.sender`.
             _userAccounts[msg.sender][poolId].streamAmountStaked = streamAmountStaked - amountInStream;
@@ -745,10 +746,10 @@ contract SablierStaking is
     }
 
     /// @dev Common logic between unstake functions.
-    function _unstake(uint256 poolId, uint128 unstakeAmount, uint128 userStakedAmount, address user) private {
+    function _unstake(uint256 poolId, uint128 unstakeAmount, uint128 maxAllowed, address user) private {
         // Check: unstake amount is not greater than the user's staked amount.
-        if (unstakeAmount > userStakedAmount) {
-            revert Errors.SablierStaking_Overflow(poolId, unstakeAmount, userStakedAmount);
+        if (unstakeAmount > maxAllowed) {
+            revert Errors.SablierStaking_Overflow(poolId, unstakeAmount, maxAllowed);
         }
 
         // Effect: snapshot rewards for user.

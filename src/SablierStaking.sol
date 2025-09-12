@@ -385,17 +385,18 @@ contract SablierStaking is
             revert Errors.SablierStaking_StreamNotStaked(msgSenderAsLockup, streamId);
         }
 
-        // Get the owner of the stream.
+        // Load the variables in memory.
         address owner = _streamsLookup[msgSenderAsLockup][streamId].owner;
+        uint128 streamAmountStaked = _userAccounts[owner][poolId].streamAmountStaked;
 
-        // Effect: snapshot user rewards.
-        _snapshotRewards(poolId, owner);
+        // Checks and Effects: unstake the `senderAmount` for the user.
+        _unstake(poolId, senderAmount, streamAmountStaked, owner);
 
-        // Effect: decrease the total staked amount in the pool.
-        _pools[poolId].totalStakedAmount -= senderAmount;
-
-        // Effect: decrease the user's share of stream amount staked.
-        _userAccounts[owner][poolId].streamAmountStaked -= senderAmount;
+        // Safe to use `unchecked` because `senderAmount` is less than or equal to `streamAmountStaked`.
+        unchecked {
+            // Effect: decrease the user's stream amount staked.
+            _userAccounts[owner][poolId].streamAmountStaked = streamAmountStaked - senderAmount;
+        }
 
         return ISablierLockupRecipient.onSablierLockupCancel.selector;
     }
@@ -471,18 +472,10 @@ contract SablierStaking is
 
         uint128 directAmountStaked = _userAccounts[msg.sender][poolId].directAmountStaked;
 
-        // Check: `amount` is not greater than the direct amount staked.
-        if (amount > directAmountStaked) {
-            revert Errors.SablierStaking_Overflow(poolId, amount, directAmountStaked);
-        }
+        // Checks and Effects: unstake the `amount` for the user.
+        _unstake(poolId, amount, directAmountStaked, msg.sender);
 
-        // Effect: snapshot rewards for `msg.sender`.
-        _snapshotRewards(poolId, msg.sender);
-
-        // Effect: decrease total staked amount in the pool.
-        _pools[poolId].totalStakedAmount -= amount;
-
-        // Safe to use `unchecked` because `amount` can not exceed `directAmountStaked`.
+        // Safe to use `unchecked` because `amount` is less than or equal to `streamAmountStaked`.
         unchecked {
             // Effect: decrease direct amount staked by `msg.sender`.
             _userAccounts[msg.sender][poolId].directAmountStaked = directAmountStaked - amount;
@@ -514,14 +507,16 @@ contract SablierStaking is
         // Retrieves the amount of token available in the stream.
         uint128 amountInStream = Helpers.amountInStream(lockup, streamId);
 
-        // Effect: snapshot rewards for `msg.sender`.
-        _snapshotRewards(poolId, msg.sender);
+        uint128 streamAmountStaked = _userAccounts[msg.sender][poolId].streamAmountStaked;
 
-        // Effect: decrease total staked amount in the pool.
-        _pools[poolId].totalStakedAmount -= amountInStream;
+        // Checks and Effects: unstake the `amountInStream` for the user.
+        _unstake(poolId, amountInStream, streamAmountStaked, msg.sender);
 
-        // Effect: decrease stream amount staked by `msg.sender`.
-        _userAccounts[msg.sender][poolId].streamAmountStaked -= amountInStream;
+        // Safe to use `unchecked` because `amountInStream` is less than or equal to `streamAmountStaked`.
+        unchecked {
+            // Effect: decrease stream amount staked by `msg.sender`.
+            _userAccounts[msg.sender][poolId].streamAmountStaked = streamAmountStaked - amountInStream;
+        }
 
         // Effect: delete the `StreamLookup` mapping.
         delete _streamsLookup[lockup][streamId];
@@ -747,5 +742,22 @@ contract SablierStaking is
 
         // Effect: snapshot the rewards earned per ERC20 token by the user.
         userAccount.snapshotRptEarnedScaled = rptDistributedScaled;
+    }
+
+    /// @dev Common logic between unstake functions.
+    function _unstake(uint256 poolId, uint128 unstakeAmount, uint128 userStakedAmount, address user) private {
+        // Check: unstake amount is not greater than the user's staked amount.
+        if (unstakeAmount > userStakedAmount) {
+            revert Errors.SablierStaking_Overflow(poolId, unstakeAmount, userStakedAmount);
+        }
+
+        // Effect: snapshot rewards for user.
+        _snapshotRewards(poolId, user);
+
+        // Safe to use `unchecked` because `unstakeAmount` is checked above.
+        unchecked {
+            // Effect: decrease total staked amount in the pool.
+            _pools[poolId].totalStakedAmount -= unstakeAmount;
+        }
     }
 }

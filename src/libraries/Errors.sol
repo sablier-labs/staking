@@ -68,7 +68,7 @@ library Errors {
     error SablierStaking_NoStakedAmount(uint256 poolId, address user);
 
     /// @notice Thrown when the user attempts to unstake more than their staked amount.
-    error SablierStaking_Overflow(uint256 poolId, uint256 unstakedAmount, uint256 totalStakedAmount);
+    error SablierStaking_Overflow(uint256 poolId, uint128 unstakeAmount, uint128 userStakedAmount);
 
     /// @notice Thrown when an unauthorized action is attempted on an inactive pool.
     error SablierStaking_PoolNotActive(uint256 poolId);

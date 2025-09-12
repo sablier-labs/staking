@@ -475,7 +475,7 @@ contract SablierStaking is
         // Checks and Effects: unstake the `amount` for the user.
         _unstake({ poolId: poolId, unstakeAmount: amount, maxAllowed: directAmountStaked, user: msg.sender });
 
-        // Safe to use `unchecked` because `amount` can not exceed `directAmountStaked`.
+        // Safe to use `unchecked` because `_unstake` verifies that `amount` does not exceed `directAmountStaked`.
         unchecked {
             // Effect: decrease direct amount staked by `msg.sender`.
             _userAccounts[msg.sender][poolId].directAmountStaked = directAmountStaked - amount;

@@ -109,8 +109,11 @@ contract ConfigureNextRound_Integration_Concrete_Test is Shared_Integration_Conc
         whenNewEndTimeGreaterThanNewStartTime
         whenNewRewardAmountNotZero
     {
+        // Warp to 1 seconds before the end time so that the admin can stake.
         vm.warp(END_TIME - 1 seconds);
         sablierStaking.stakeERC20Token(poolIds.defaultPool, DEFAULT_AMOUNT);
+
+        // Warp to past end time so that next round can be configured.
         vm.warp(END_TIME + 1 seconds);
 
         _test_ConfigureNextRound({ adminStaked: true });
@@ -132,7 +135,7 @@ contract ConfigureNextRound_Integration_Concrete_Test is Shared_Integration_Conc
     function _test_ConfigureNextRound(bool adminStaked) private {
         (uint256 rptEarned, uint128 expectedUserRewards) = calculateLatestRewards(users.poolCreator);
 
-        // If the admin has staked, it should emit a {SnapshotRewards} event.
+        // It should emit a {SnapshotRewards} event if the admin has staked.
         if (adminStaked) {
             vm.expectEmit({ emitter: address(sablierStaking) });
             emit ISablierStaking.SnapshotRewards(
@@ -153,8 +156,9 @@ contract ConfigureNextRound_Integration_Concrete_Test is Shared_Integration_Conc
         if (adminStaked) {
             assertEq(userAccount.snapshotRptEarnedScaled, rptEarned, "snapshotRptEarnedScaled");
             assertEq(userAccount.snapshotRewards, expectedUserRewards, "snapshotRewards");
-        } else {
-            // Otherwise, it should not update the admin's rewards snapshot.
+        }
+        // Otherwise, it should not update the admin's rewards snapshot.
+        else {
             assertEq(userAccount.snapshotRptEarnedScaled, 0, "snapshotRptEarnedScaled");
             assertEq(userAccount.snapshotRewards, 0, "snapshotRewards");
         }

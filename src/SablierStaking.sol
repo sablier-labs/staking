@@ -271,8 +271,23 @@ contract SablierStaking is
             revert Errors.SablierStaking_RewardAmountZero();
         }
 
-        // Effect: snapshot rewards.
-        _snapshotRewards(poolId, msg.sender);
+        uint128 adminTotalAmountStaked;
+
+        // Safe to use `unchecked` because the user's total staked amount cannot overflow.
+        unchecked {
+            // Calculate the total amount staked by the admin.
+            adminTotalAmountStaked = _userAccounts[msg.sender][poolId].directAmountStaked
+                + _userAccounts[msg.sender][poolId].streamAmountStaked;
+        }
+
+        // Effect: snapshot both global, and user rewards if the amount staked is greater than 0.
+        if (adminTotalAmountStaked > 0) {
+            _snapshotRewards(poolId, msg.sender);
+        }
+        // Otherwise, only snapshot the global rewards.
+        else {
+            _snapshotGlobalRewards(poolId);
+        }
 
         // Effect: set the next staking round parameters.
         pool.endTime = newEndTime;

@@ -88,8 +88,8 @@ interface ISablierStaking is
     /// @dev This function reverts and does not permit withdrawing from a staked stream
     ///
     /// Requirements:
-    ///  - Must not be delegate called.
-    ///  - `streamId` must be staked in a pool.
+    /// - Must not be delegate called.
+    /// - `streamId` must be staked in a pool.
     ///
     /// @param streamId The ID of the stream on which withdraw is called.
     /// @param caller The original `msg.sender` address that triggered the withdrawal.
@@ -127,12 +127,12 @@ interface ISablierStaking is
     /// @dev Emits {SnapshotRewards}, {Transfer} and {ClaimRewards} events.
     ///
     /// Notes:
-    ///  - Updates global rewards, and user rewards for `msg.sender`.
+    /// - Updates global rewards, and user rewards for `msg.sender`.
     ///
     /// Requirements:
-    ///  - Must not be delegate called.
-    ///  - `poolId` must not reference a non-existent pool.
-    ///  - Claimable rewards must be greater than 0.
+    /// - Must not be delegate called.
+    /// - `poolId` must not reference a non-existent pool.
+    /// - Claimable rewards must be greater than 0.
     /// - `msg.value` must be greater than or equal to the minimum fee in wei for the pool's admin.
     /// - `feeOnRewards` must be less than or equal to {MAX_FEE_ON_REWARDS}.
     ///
@@ -143,20 +143,22 @@ interface ISablierStaking is
     function claimRewards(uint256 poolId, UD60x18 feeOnRewards) external payable returns (uint128 rewardsClaimed);
 
     /// @notice Configures the next staking round for the specified pool.
-    /// @dev Emits a {SnapshotRewards} and {ConfigureNextRound} events.
+    /// @dev Emits a {ConfigureNextRound} and {SnapshotRewards} events. {SnapshotRewards} event is ignored if pool admin
+    /// has no stakes.
     ///
     /// Notes:
-    ///  - Updates global rewards, and user rewards for `msg.sender`.
+    /// - Updates global rewards.
+    /// - If the admin has stakes, it updates the user rewards.
     ///
     /// Requirements:
-    ///  - Must not be delegate called.
-    ///  - `poolId` must not reference a non-existent pool.
-    ///  - `msg.sender` must be the pool admin.
-    ///  - `poolId` must reference a pool with an end time in the past.
-    ///  - `newStartTime` must be greater than or equal to the `block.timestamp`.
-    ///  - `newEndTime` must be greater than new `startTime`.
-    ///  - `rewardAmount` must be greater than 0.
-    ///  - `msg.sender` must have approved this contract to spend the `rewardAmount` of reward ERC20 token.
+    /// - Must not be delegate called.
+    /// - `poolId` must not reference a non-existent pool.
+    /// - `msg.sender` must be the pool admin.
+    /// - `poolId` must reference a pool with an end time in the past.
+    /// - `newStartTime` must be greater than or equal to the `block.timestamp`.
+    /// - `newEndTime` must be greater than new `startTime`.
+    /// - `rewardAmount` must be greater than 0.
+    /// - `msg.sender` must have approved this contract to spend the `rewardAmount` of reward ERC20 token.
     ///
     /// @param poolId The pool ID for which to configure the next staking round.
     /// @param newStartTime The start time for the next rewards period, denoted in UNIX timestamp.
@@ -175,13 +177,13 @@ interface ISablierStaking is
     /// @dev Emits a {Transfer} and {CreatePool} events.
     ///
     /// Requirements:
-    ///  - Must not be delegate called.
-    ///  - `admin` must not be the zero address.
-    ///  - `startTime` must be greater than or equal to the `block.timestamp`.
-    ///  - `startTime` must be less than `endTime`.
-    ///  - `stakingToken` must not be the zero address.
-    ///  - `rewardAmount` must be greater than 0.
-    ///  - `msg.sender` must have approved this contract to spend the `rewardAmount` of reward ERC20 token.
+    /// - Must not be delegate called.
+    /// - `admin` must not be the zero address.
+    /// - `startTime` must be greater than or equal to the `block.timestamp`.
+    /// - `startTime` must be less than `endTime`.
+    /// - `stakingToken` must not be the zero address.
+    /// - `rewardAmount` must be greater than 0.
+    /// - `msg.sender` must have approved this contract to spend the `rewardAmount` of reward ERC20 token.
     ///
     /// @param admin The admin of the pool.
     /// @param stakingToken The ERC20 token permitted for staking either directly or through Lockup streams.
@@ -206,11 +208,11 @@ interface ISablierStaking is
     /// @dev Emits a {SnapshotRewards} event.
     ///
     /// Notes:
-    ///  - Updates global rewards, and user rewards for staker of `streamId`.
+    /// - Updates global rewards, and user rewards for staker of `streamId`.
     ///
     /// Requirements:
-    ///  - Must not be delegate called.
-    ///  - `streamId` associated with `msg.sender` must be staked in a valid pool.
+    /// - Must not be delegate called.
+    /// - `streamId` associated with `msg.sender` must be staked in a valid pool.
     ///
     /// @param streamId The ID of the staked stream on which cancel is called.
     /// @param sender The stream's sender, who canceled the stream.
@@ -233,15 +235,15 @@ interface ISablierStaking is
     /// @dev Emits {SnapshotRewards}, {Transfer} and {StakeERC20Token} events.
     ///
     /// Notes:
-    ///  - Updates global rewards, and user rewards for `msg.sender`.
-    ///  - Users can start staking before the start time but the rewards can only be earned after the start time.
+    /// - Updates global rewards, and user rewards for `msg.sender`.
+    /// - Users can start staking before the start time but the rewards can only be earned after the start time.
     ///
     /// Requirements:
-    ///  - Must not be delegate called.
-    ///  - `poolId` must not reference a non-existent pool.
-    ///  - Pool end time must be in the future.
-    ///  - `amount` must be greater than 0.
-    ///  - `msg.sender` must have approved this contract to spend the ERC20 token.
+    /// - Must not be delegate called.
+    /// - `poolId` must not reference a non-existent pool.
+    /// - Pool end time must be in the future.
+    /// - `amount` must be greater than 0.
+    /// - `msg.sender` must have approved this contract to spend the ERC20 token.
     ///
     /// @param poolId The Pool ID to stake the ERC20 token in.
     function stakeERC20Token(uint256 poolId, uint128 amount) external;
@@ -250,17 +252,17 @@ interface ISablierStaking is
     /// @dev Emits {SnapshotRewards}, {Transfer} and {StakeLockupNFT} events.
     ///
     /// Notes:
-    ///  - Updates global rewards, and user rewards for `msg.sender`.
-    ///  - Users can start staking before the start time but the rewards can only be earned after the start time.
+    /// - Updates global rewards, and user rewards for `msg.sender`.
+    /// - Users can start staking before the start time but the rewards can only be earned after the start time.
     ///
     /// Requirements:
-    ///  - Must not be delegate called.
-    ///  - `poolId` must not reference a non-existent pool.
-    ///  - `lockup` must be a whitelisted Lockup contract.
-    ///  - Pool end time must be in the future.
-    ///  - Stream's underlying token must be same as the pool's staking token.
-    ///  - The amount in stream must not be zero, i.e. it must not be depleted.
-    ///  - `msg.sender` must have approved this contract to spend the stream ID.
+    /// - Must not be delegate called.
+    /// - `poolId` must not reference a non-existent pool.
+    /// - `lockup` must be a whitelisted Lockup contract.
+    /// - Pool end time must be in the future.
+    /// - Stream's underlying token must be same as the pool's staking token.
+    /// - The amount in stream must not be zero, i.e. it must not be depleted.
+    /// - `msg.sender` must have approved this contract to spend the stream ID.
     ///
     /// @param poolId The Pool ID to stake the Lockup stream in.
     /// @param lockup The Lockup contract associated with the stream ID.
@@ -271,13 +273,13 @@ interface ISablierStaking is
     /// @dev Emits {SnapshotRewards}, {Transfer} and {UnstakeERC20Token} events.
     ///
     /// Notes:
-    ///  - Updates global rewards, and user rewards for `msg.sender`.
-    ///  - Unstaking does not claim any rewards.
+    /// - Updates global rewards, and user rewards for `msg.sender`.
+    /// - Unstaking does not claim any rewards.
     ///
     /// Requirements:
-    ///  - Must not be delegate called.
-    ///  - `poolId` must not reference a non-existent pool.
-    ///  - `amount` must be greater than 0 and must not exceed the user's staked ERC20 amount in the pool.
+    /// - Must not be delegate called.
+    /// - `poolId` must not reference a non-existent pool.
+    /// - `amount` must be greater than 0 and must not exceed the user's staked ERC20 amount in the pool.
     ///
     /// @param poolId The Pool ID to unstake the ERC20 token from.
     /// @param amount The amount of ERC20 tokens to unstake.
@@ -287,13 +289,13 @@ interface ISablierStaking is
     /// @dev Emits {SnapshotRewards}, {Transfer} and {UnstakeLockupNFT} events.
     ///
     /// Notes:
-    ///  - Updates global rewards, and user rewards for `msg.sender`.
-    ///  - Unstaking does not claim any rewards.
+    /// - Updates global rewards, and user rewards for `msg.sender`.
+    /// - Unstaking does not claim any rewards.
     ///
     /// Requirements:
-    ///  - Must not be delegate called.
-    ///  - The stream ID associated with `lockup` must be staked in a pool.
-    ///  - `msg.sender` must be the original owner of the stream stored in {StreamLookup} struct.
+    /// - Must not be delegate called.
+    /// - The stream ID associated with `lockup` must be staked in a pool.
+    /// - `msg.sender` must be the original owner of the stream stored in {StreamLookup} struct.
     ///
     /// @param lockup The Lockup contract associated with the stream ID.
     /// @param streamId The ID of the stream to unstake.
@@ -303,8 +305,8 @@ interface ISablierStaking is
     /// @dev Emits {LockupWhitelisted} event for each Lockup contract.
     ///
     /// Notes:
-    ///  - It does nothing if the array is empty.
-    ///  - The entire execution reverts if any of the requirements are not met for any of the Lockup contracts.
+    /// - It does nothing if the array is empty.
+    /// - The entire execution reverts if any of the requirements are not met for any of the Lockup contracts.
     ///
     /// Requirements:
     ///  - Must not be delegate called.

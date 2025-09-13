@@ -36,6 +36,10 @@ abstract contract Modifiers is EvmUtilsBase {
         _;
     }
 
+    modifier whenNewRewardAmountNotZero() {
+        _;
+    }
+
     modifier givenNotWhitelisted() {
         _;
     }

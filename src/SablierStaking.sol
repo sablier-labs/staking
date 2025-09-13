@@ -97,18 +97,7 @@ contract SablierStaking is
         noDelegateCall
         returns (bytes4)
     {
-        // Cast `msg.sender` as the Lockup contract.
-        ISablierLockupNFT lockup = ISablierLockupNFT(msg.sender);
-
-        // Get the pool ID in which the stream ID is staked.
-        uint256 poolId = _streamsLookup[lockup][streamId].poolId;
-
-        // Check: the pool ID is not zero.
-        if (poolId == 0) {
-            revert Errors.SablierStaking_StreamNotStaked(lockup, streamId);
-        }
-
-        revert Errors.SablierStaking_WithdrawNotAllowed(poolId, lockup, streamId);
+        revert Errors.SablierStaking_WithdrawNotAllowed(streamId);
     }
 
     /// @inheritdoc ISablierStaking

@@ -16,9 +16,7 @@ contract OnSablierLockupWithdraw_Integration_Concrete_Test is Shared_Integration
 
     function test_RevertWhen_CallerNotLockup() external whenNoDelegateCall {
         vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.SablierStaking_StreamNotStaked.selector, users.recipient, streamIds.defaultStream
-            )
+            abi.encodeWithSelector(Errors.SablierStaking_WithdrawNotAllowed.selector, streamIds.defaultStream)
         );
         sablierStaking.onSablierLockupWithdraw(streamIds.defaultStream, users.recipient, users.recipient, 0);
     }
@@ -30,7 +28,7 @@ contract OnSablierLockupWithdraw_Integration_Concrete_Test is Shared_Integration
         setMsgSender(address(lockup));
 
         vm.expectRevert(
-            abi.encodeWithSelector(Errors.SablierStaking_StreamNotStaked.selector, lockup, streamIds.defaultStream)
+            abi.encodeWithSelector(Errors.SablierStaking_WithdrawNotAllowed.selector, streamIds.defaultStream)
         );
         sablierStaking.onSablierLockupWithdraw(streamIds.defaultStream, users.recipient, users.recipient, 0);
     }
@@ -40,7 +38,7 @@ contract OnSablierLockupWithdraw_Integration_Concrete_Test is Shared_Integration
         lockup.transferFrom(users.recipient, address(sablierStaking), streamIds.defaultStream);
 
         vm.expectRevert(
-            abi.encodeWithSelector(Errors.SablierStaking_StreamNotStaked.selector, lockup, streamIds.defaultStream)
+            abi.encodeWithSelector(Errors.SablierStaking_WithdrawNotAllowed.selector, streamIds.defaultStream)
         );
 
         // Withdraw from the stream to trigger the hook.
@@ -49,12 +47,7 @@ contract OnSablierLockupWithdraw_Integration_Concrete_Test is Shared_Integration
 
     function test_RevertGiven_StreamStaked() external whenNoDelegateCall whenCallerLockup givenLockupWhitelisted {
         vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.SablierStaking_WithdrawNotAllowed.selector,
-                poolIds.defaultPool,
-                lockup,
-                streamIds.defaultStakedStream
-            )
+            abi.encodeWithSelector(Errors.SablierStaking_WithdrawNotAllowed.selector, streamIds.defaultStakedStream)
         );
 
         // Withdraw from the stream to trigger the hook.

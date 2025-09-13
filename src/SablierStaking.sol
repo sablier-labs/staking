@@ -596,13 +596,20 @@ contract SablierStaking is
             (, data) = address(lockup).call(abi.encodeCall(ISablierLockupNFT.getAsset, (streamId)));
         }
 
+        // Since only whitelisted Lockup contracts are allowed to stake, it is safe to assume that the returned data is
+        // a valid ERC20 token.
         token = abi.decode(data, (IERC20));
     }
 
     /// @notice Check if the lockup contract implements the functions from {ISablierLockupNFT}.
     function _hasRequiredInterface(ISablierLockupNFT lockup) private {
+        uint256 totalSelectors = 5;
+
+        // It is assumed that at least one stream exists in the lockup contract.
+        uint256 testStreamId = 1;
+
         // Prepare an array of selectors to check.
-        bytes4[] memory selectors = new bytes4[](5);
+        bytes4[] memory selectors = new bytes4[](totalSelectors);
         selectors[0] = ISablierLockupNFT.getDepositedAmount.selector;
         selectors[1] = ISablierLockupNFT.getWithdrawnAmount.selector;
         selectors[2] = ISablierLockupNFT.getRefundedAmount.selector;
@@ -611,9 +618,9 @@ contract SablierStaking is
         selectors[3] = ISablierLockupNFT.getUnderlyingToken.selector;
         selectors[4] = ISablierLockupNFT.getAsset.selector;
 
-        for (uint256 i = 0; i < selectors.length; ++i) {
+        for (uint256 i = 0; i < totalSelectors; ++i) {
             // Use a low-level call to check if the function is implemented.
-            (bool success,) = address(lockup).call(abi.encodeWithSelector(selectors[i], 1));
+            (bool success,) = address(lockup).call(abi.encodeWithSelector(selectors[i], testStreamId));
 
             // If the call succeeds and the selector is `getUnderlyingToken`, then break the loop since there is no need
             // to check for `getAsset`.

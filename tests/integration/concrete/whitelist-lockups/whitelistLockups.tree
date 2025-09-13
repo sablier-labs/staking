@@ -5,12 +5,12 @@ WhitelistLockups_Integration_Concrete_Test
    ├── when caller not comptroller
    │  └── it should revert
    └── when caller comptroller
-      ├── when zero address
+      ├── given already whitelisted
       │  └── it should revert
-      └── when not zero address
-         ├── given already whitelisted
+      └── given not whitelisted
+         ├── when lockup not implement required interface
          │  └── it should revert
-         └── given not whitelisted
+         └── when lockup implements required interface
             ├── when isAllowedToHook returns false
             │  └── it should revert
             └── when isAllowedToHook returns true

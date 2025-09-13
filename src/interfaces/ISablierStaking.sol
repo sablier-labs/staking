@@ -308,9 +308,10 @@ interface ISablierStaking is
     ///
     /// Requirements:
     ///  - Must not be delegate called.
-    ///  - Each lockup contract must not be the zero address.
-    ///  - Each lockup contract must not already be whitelisted.
-    ///  - Each lockup contract must return `true` when `isAllowedToHook` is called with this contract's address.
+    ///  - Each Lockup contract must not already be whitelisted.
+    ///  - Each Lockup contract must implement the functions from {ISablierLockupNFT} interface and have at least one
+    /// stream created.
+    ///  - Each Lockup contract must return `true` when `isAllowedToHook` is called with this contract's address.
     ///  - `msg.sender` must be the comptroller contract.
     ///
     /// @param lockups The address of the Lockup contract to whitelist.

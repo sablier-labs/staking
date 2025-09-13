@@ -27,7 +27,10 @@ StakeLockupNFT_Integration_Concrete_Test
                      ├── when start time in present
                      │  └── it should stake stream
                      └── when start time in past
-                        ├── it should update user account
-                        ├── it should increase total amount staked
-                        ├── it should update global rewards snapshot
-                        └── it should emit {SnapshotRewards}, {Transfer} and {StakeLockupNFT} events
+                        ├── when lockup implements getAsset
+                        │  └── it should stake stream
+                        └── when lockup implements getUnderlying
+                           ├── it should update user account
+                           ├── it should increase total amount staked
+                           ├── it should update global rewards snapshot
+                           └── it should emit {SnapshotRewards}, {Transfer} and {StakeLockupNFT} events

@@ -16,11 +16,13 @@ struct PoolIds {
 /// @param defaultStakedStreamNonCancelable A non-cancelable stream that will be staked into the default pool.
 /// @param defaultStream A stream that will is not staked into the default pool.
 /// @param differentTokenStream A stream with a different token.
+/// @param lockupV12Stream A stream created using Lockup v1.2 contract.
 struct StreamIds {
     uint256 defaultStakedStream;
     uint256 defaultStakedStreamNonCancelable;
     uint256 defaultStream;
     uint256 differentTokenStream;
+    uint256 lockupV12Stream;
 }
 
 /// @notice A struct to manage the test users.

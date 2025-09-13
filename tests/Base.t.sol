@@ -9,6 +9,12 @@ import { BaseTest as EvmUtilsBase } from "@sablier/evm-utils/src/tests/BaseTest.
 import { LockupNFTDescriptor } from "@sablier/lockup/src/LockupNFTDescriptor.sol";
 import { SablierLockup } from "@sablier/lockup/src/SablierLockup.sol";
 import { Lockup, LockupLinear, Broker } from "@sablier/lockup/src/types/DataTypes.sol";
+import {
+    ISablierV2NFTDescriptor,
+    LockupLinear as LockupLinearV12,
+    SablierV2LockupLinear
+} from "@sablier/lockup-v12/src/SablierV2LockupLinear.sol";
+import { Broker as BrokerV12 } from "@sablier/lockup-v12/src/types/DataTypes.sol";
 import { SafeCastLib } from "solady/src/utils/SafeCastLib.sol";
 import { ISablierLockupNFT } from "src/interfaces/ISablierLockupNFT.sol";
 
@@ -35,6 +41,8 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
     //////////////////////////////////////////////////////////////////////////*/
 
     ISablierLockupNFT internal lockup;
+    ISablierLockupNFT internal lockupV12;
+    address internal nftDescriptor;
 
     /// @dev Since `_snapshotRewards` function contains core logic, a mock contract is used to allow testing it
     /// separately.
@@ -63,10 +71,13 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
         }
 
         // Deploy the Lockup contract for testing.
+        nftDescriptor = address(new LockupNFTDescriptor());
         lockup = deployLockup();
+        lockupV12 = deployLockupV12();
 
         // Label the contracts.
         vm.label({ account: address(lockup), newLabel: "Lockup" });
+        vm.label({ account: address(lockupV12), newLabel: "Lockup V1.2" });
         vm.label({ account: address(rewardToken), newLabel: "Reward Token" });
         vm.label({ account: address(sablierStaking), newLabel: "Staking Protocol" });
 
@@ -88,8 +99,9 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
 
         // Whitelist the Lockup contract for staking.
         setMsgSender(address(comptroller));
-        ISablierLockupNFT[] memory lockups = new ISablierLockupNFT[](1);
+        ISablierLockupNFT[] memory lockups = new ISablierLockupNFT[](2);
         lockups[0] = lockup;
+        lockups[1] = lockupV12;
         sablierStaking.whitelistLockups(lockups);
     }
 
@@ -135,10 +147,12 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
     /// - A stream with USDC that is cancelable.
     function createAndConfigureStreams() internal {
         SablierLockup lockupContract = SablierLockup(address(lockup));
+        SablierV2LockupLinear lockupV12Contract = SablierV2LockupLinear(address(lockupV12));
 
         // Allow the Lockup contract to hook with the staking pool.
         setMsgSender(address(comptroller));
         lockupContract.allowToHook(address(sablierStaking));
+        lockupV12Contract.allowToHook(address(sablierStaking));
 
         // Change caller to the sender.
         setMsgSender(users.sender);
@@ -155,9 +169,13 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
         // A USDC stream that is cancelable.
         streamIds.differentTokenStream = defaultCreateWithDurationsLL(usdc);
 
+        // A stream created using Lockup v1.2 contract.
+        streamIds.lockupV12Stream = defaultCreateWithLLV12(lockupV12);
+
         // Approve the staking pool to spend the Lockup NFTs.
         setMsgSender(users.recipient);
         lockupContract.setApprovalForAll({ operator: address(sablierStaking), approved: true });
+        lockupV12Contract.setApprovalForAll({ operator: address(sablierStaking), approved: true });
     }
 
     /// @dev Create a stream with `createWithDurationsLL` function using the default parameters.
@@ -168,6 +186,13 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
     /// @dev Create a stream with `createWithDurationsLL` function with cancelable parameter.
     function defaultCreateWithDurationsLL(bool cancelable) internal returns (uint256 streamId) {
         return defaultCreateWithDurationsLL(cancelable, users.recipient, stakingToken);
+    }
+
+    /// @dev Create a stream with `createWithDurationsLL` function with using lockup parameter.
+    function defaultCreateWithDurationsLL(ISablierLockupNFT lockupContract) internal returns (uint256 streamId) {
+        return defaultCreateWithDurationsLL(
+            STREAM_AMOUNT_18D, true, address(lockupContract), users.recipient, stakingToken
+        );
     }
 
     /// @dev Create a stream with `createWithDurationsLL` function with recipient parameter.
@@ -182,7 +207,7 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
 
     /// @dev Create a stream with `createWithDurationsLL` function with amount and recipient.
     function defaultCreateWithDurationsLL(uint128 amount, address recipient) internal returns (uint256 streamId) {
-        return defaultCreateWithDurationsLL(amount, true, recipient, stakingToken);
+        return defaultCreateWithDurationsLL(amount, true, address(lockup), recipient, stakingToken);
     }
 
     /// @dev Create a stream with `createWithDurationsLL` function with cancelable, recipient and token parameters.
@@ -196,7 +221,7 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
     {
         uint128 totalAmount = (STREAM_AMOUNT * 10 ** token.decimals()).toUint128();
 
-        return defaultCreateWithDurationsLL(totalAmount, cancelable, recipient, token);
+        return defaultCreateWithDurationsLL(totalAmount, cancelable, address(lockup), recipient, token);
     }
 
     /// @dev Create a stream with `createWithDurationsLL` function with amount, cancelable, recipient and token
@@ -204,6 +229,7 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
     function defaultCreateWithDurationsLL(
         uint128 amount,
         bool cancelable,
+        address lockupContract,
         address recipient,
         ERC20 token
     )
@@ -212,7 +238,7 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
     {
         deal({ token: address(stakingToken), to: users.sender, give: amount });
         setMsgSender(users.sender);
-        stakingToken.approve(address(lockup), amount);
+        stakingToken.approve(lockupContract, amount);
 
         Lockup.CreateWithDurations memory params = Lockup.CreateWithDurations({
             sender: users.sender,
@@ -227,12 +253,50 @@ abstract contract Base_Test is Assertions, Modifiers, Utils {
         LockupLinear.UnlockAmounts memory unlockAmounts = LockupLinear.UnlockAmounts({ start: 0, cliff: 0 });
         LockupLinear.Durations memory durations = LockupLinear.Durations({ cliff: 0, total: STREAM_DURATION });
 
-        return SablierLockup(address(lockup)).createWithDurationsLL(params, unlockAmounts, durations);
+        return SablierLockup(lockupContract).createWithDurationsLL(params, unlockAmounts, durations);
+    }
+
+    /// @dev Create a Lockup Linear stream using Lockup v1.2.
+    function defaultCreateWithLLV12(ISablierLockupNFT lockupV12Contract) internal returns (uint256 streamId) {
+        stakingToken.approve(address(lockupV12Contract), STREAM_AMOUNT_18D);
+        deal({ token: address(stakingToken), to: users.sender, give: STREAM_AMOUNT_18D });
+        return SablierV2LockupLinear(address(lockupV12Contract)).createWithDurations(
+            LockupLinearV12.CreateWithDurations({
+                sender: users.sender,
+                recipient: users.recipient,
+                totalAmount: STREAM_AMOUNT_18D,
+                asset: stakingToken,
+                cancelable: true,
+                transferable: true,
+                durations: LockupLinearV12.Durations({ cliff: 0, total: STREAM_DURATION }),
+                broker: BrokerV12({ account: address(0), fee: ZERO })
+            })
+        );
     }
 
     /// @dev Deploys a new Lockup contract for testing.
     function deployLockup() internal returns (ISablierLockupNFT) {
-        LockupNFTDescriptor nftDescriptor = new LockupNFTDescriptor();
-        return ISablierLockupNFT(address(new SablierLockup(address(comptroller), nftDescriptor, 1000)));
+        return ISablierLockupNFT(
+            address(new SablierLockup(address(comptroller), LockupNFTDescriptor(nftDescriptor), 1000))
+        );
+    }
+
+    /// @dev Deploys a new Lockup contract for testing and create a stream.
+    function deployLockupAndCreateStream() internal returns (ISablierLockupNFT lockupContract) {
+        lockupContract = ISablierLockupNFT(address(deployLockup()));
+        defaultCreateWithDurationsLL(lockupContract);
+    }
+
+    /// @dev Deploys a new Lockup v1.2 contract for testing.
+    function deployLockupV12() internal returns (ISablierLockupNFT) {
+        return ISablierLockupNFT(
+            address(new SablierV2LockupLinear(address(comptroller), ISablierV2NFTDescriptor(nftDescriptor)))
+        );
+    }
+
+    /// @dev Deploys a new Lockup contract for testing and create a stream.
+    function deployLockupV12AndCreateStream() internal returns (ISablierLockupNFT lockupContract) {
+        lockupContract = ISablierLockupNFT(address(deployLockupV12()));
+        defaultCreateWithLLV12(lockupContract);
     }
 }

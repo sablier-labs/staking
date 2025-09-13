@@ -26,9 +26,6 @@ library Errors {
                                   SABLIER-STAKING
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice Thrown when performing an unauthorized action on an active pool.
-    error SablierStaking_Active(uint256 poolId);
-
     /// @notice Thrown when creating a pool with admin as the zero address.
     error SablierStaking_AdminZeroAddress();
 
@@ -53,19 +50,16 @@ library Errors {
     error SablierStaking_InsufficientFeePayment(uint256 feePaid, uint256 minFee);
 
     /// @notice Thrown when whitelisting a lockup contract that is already whitelisted.
-    error SablierStaking_LockupAlreadyWhitelisted(uint256 index, ISablierLockupNFT lockup);
+    error SablierStaking_LockupAlreadyWhitelisted(ISablierLockupNFT lockup);
+
+    /// @notice Thrown when the lockup contract is missing a required function selector.
+    error SablierStaking_LockupMissesSelector(ISablierLockupNFT lockup, bytes4 selector);
 
     /// @notice Thrown when staking a Lockup stream when the associated lockup contract is not whitelisted.
     error SablierStaking_LockupNotWhitelisted(ISablierLockupNFT lockup);
 
-    /// @notice Thrown when whitelisting the zero address.
-    error SablierStaking_LockupZeroAddress(uint256 index);
-
     /// @notice Thrown if the min fee transfer fails.
     error SablierStaking_MinFeeTransferFailed(address comptroller, uint256 feePaid);
-
-    /// @notice Thrown when snapshotting rewards for a user when the user has no staked amount.
-    error SablierStaking_NoStakedAmount(uint256 poolId, address user);
 
     /// @notice Thrown when a user attempts to unstake more than allowed.
     error SablierStaking_Overflow(uint256 poolId, uint128 unstakeAmount, uint128 maxAllowed);
@@ -98,7 +92,7 @@ library Errors {
     error SablierStaking_UnstakingZeroAmount(uint256 poolId);
 
     /// @notice Thrown when whitelisting a Lockup contract that has not enabled hook call with this contract.
-    error SablierStaking_UnsupportedOnAllowedToHook(uint256 index, ISablierLockupNFT lockup);
+    error SablierStaking_UnsupportedOnAllowedToHook(ISablierLockupNFT lockup);
 
     /// @notice Thrown when the zero address is used as an input argument.
     error SablierStaking_UserZeroAddress();

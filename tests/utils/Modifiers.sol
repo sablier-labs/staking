@@ -122,6 +122,10 @@ abstract contract Modifiers is EvmUtilsBase {
         _;
     }
 
+    modifier whenLockupImplementsRequiredInterface() {
+        _;
+    }
+
     modifier whenMinFeePaid() {
         _;
     }

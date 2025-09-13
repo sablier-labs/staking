@@ -29,7 +29,7 @@ ConfigureNextRound_Integration_Concrete_Test
               │  ├── it should transfer new reward amount to this contract
               │  └── it should emit {SnapshotRewards}, {Transfer} and {ConfigureNextRound} events
               └── given admin not staked
-                 ├── it should update global rpt and admin rpt
+                 ├── it should update global rpt
                  ├── it should set the new start time
                  ├── it should set the new end time
                  ├── it should set the new reward amount

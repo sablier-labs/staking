@@ -143,11 +143,12 @@ interface ISablierStaking is
     function claimRewards(uint256 poolId, UD60x18 feeOnRewards) external payable returns (uint128 rewardsClaimed);
 
     /// @notice Configures the next staking round for the specified pool.
-    /// @dev Emits {ConfigureNextRound} event.
+    /// @dev Emits a {ConfigureNextRound} and {SnapshotRewards} events. {SnapshotRewards} event is ignored if pool admin
+    /// has no stakes.
     ///
     /// Notes:
-    /// - Updates global rewards, and user rewards for `msg.sender` only if the pool admin has staked any token.
-    /// - Emits {SnapshotRewards} event only if the pool admin has staked any token.
+    /// - Updates global rewards.
+    /// - If the admin has stakes, it updates the user rewards.
     ///
     /// Requirements:
     /// - Must not be delegate called.

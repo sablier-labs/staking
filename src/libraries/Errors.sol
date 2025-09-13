@@ -26,9 +26,6 @@ library Errors {
                                   SABLIER-STAKING
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice Thrown when performing an unauthorized action on an active pool.
-    error SablierStaking_Active(uint256 poolId);
-
     /// @notice Thrown when creating a pool with admin as the zero address.
     error SablierStaking_AdminZeroAddress();
 
@@ -63,9 +60,6 @@ library Errors {
 
     /// @notice Thrown if the min fee transfer fails.
     error SablierStaking_MinFeeTransferFailed(address comptroller, uint256 feePaid);
-
-    /// @notice Thrown when snapshotting rewards for a user when the user has no staked amount.
-    error SablierStaking_NoStakedAmount(uint256 poolId, address user);
 
     /// @notice Thrown when a user attempts to unstake more than allowed.
     error SablierStaking_Overflow(uint256 poolId, uint128 unstakeAmount, uint128 maxAllowed);

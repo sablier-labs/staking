@@ -84,12 +84,11 @@ interface ISablierStaking is
     /// @dev Reverts if `poolId` references a non-existent pool, or if `user` is the zero address.
     function claimableRewards(uint256 poolId, address user) external view returns (uint128);
 
-    /// @notice Reverts on the hook call from the Lockup contract when a withdraw is called on a staked stream
-    /// @dev This function reverts and does not permit withdrawing from a staked stream
+    /// @notice Reverts on the hook call from the Lockup contract when a withdraw is called on a staked stream.
+    /// @dev This function reverts and does not permit withdrawing from a staked stream.
     ///
     /// Requirements:
-    /// - Must not be delegate called.
-    /// - `streamId` must be staked in a pool.
+    ///  - Must not be delegate called.
     ///
     /// @param streamId The ID of the stream on which withdraw is called.
     /// @param caller The original `msg.sender` address that triggered the withdrawal.

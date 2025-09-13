@@ -98,7 +98,7 @@ library Errors {
     error SablierStaking_UserZeroAddress();
 
     /// @notice Thrown when withdraw is attempted on a Lockup stream that is staked in a pool.
-    error SablierStaking_WithdrawNotAllowed(uint256 poolId, ISablierLockupNFT lockup, uint256 streamId);
+    error SablierStaking_WithdrawNotAllowed(uint256 streamId);
 
     /// @notice Thrown when the user has no rewards to claim.
     error SablierStaking_ZeroClaimableRewards(uint256 poolId, address user);

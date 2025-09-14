@@ -23,3 +23,6 @@ vulnerability, it must adhere to the following assumptions:
 - The token contract does not allow callbacks (e.g., ERC-777 is not supported).
 - Protocol admin only whitelists valid Lockup contracts from
   [Lockup's deployment page](https://docs.sablier.com/guides/lockup/deployments).
+- The Lockup contract returns `true` when `isAllowedToHook` is called for staking contract.
+- Lockup versions earlier than v1.2 are not supported. You can find all available versions on the
+  [release page](https://github.com/sablier-labs/lockup/releases).

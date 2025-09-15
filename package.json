@@ -23,8 +23,6 @@
     "husky": "^9.1",
     "lint-staged": "^16.1",
     "prettier": "^3.5",
-    "solady": "0.0.208",
-    "solarray": "github:evmcheb/solarray#a547630",
     "solhint": "^6.0"
   },
   "files": [

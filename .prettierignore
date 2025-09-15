@@ -2,12 +2,12 @@
 .husky
 broadcast
 cache
+cache_hardhat-zk
 coverage
 docs
 node_modules
 out
 out-optimized
-out-svg
 
 # files
 *.sol

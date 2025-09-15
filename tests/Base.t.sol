@@ -2,6 +2,7 @@
 pragma solidity >=0.8.26;
 
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { ZERO } from "@prb/math/src/UD60x18.sol";
 import { ISablierComptroller } from "@sablier/evm-utils/src/interfaces/ISablierComptroller.sol";
 import { ERC20Mock } from "@sablier/evm-utils/src/mocks/erc20/ERC20Mock.sol";
@@ -15,7 +16,7 @@ import {
     SablierV2LockupLinear
 } from "@sablier/lockup-v12/src/SablierV2LockupLinear.sol";
 import { Broker as BrokerV12 } from "@sablier/lockup-v12/src/types/DataTypes.sol";
-import { SafeCastLib } from "solady/src/utils/SafeCastLib.sol";
+
 import { ISablierLockupNFT } from "src/interfaces/ISablierLockupNFT.sol";
 
 import { SablierStakingMock } from "./mocks/SablierStakingMock.sol";
@@ -25,7 +26,7 @@ import { StreamIds, Users } from "./utils/Types.sol";
 import { Utils } from "./utils/Utils.sol";
 
 abstract contract Base_Test is Assertions, Modifiers, Utils {
-    using SafeCastLib for uint256;
+    using SafeCast for uint256;
 
     /*//////////////////////////////////////////////////////////////////////////
                                      VARIABLES

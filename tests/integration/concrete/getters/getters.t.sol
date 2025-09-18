@@ -12,11 +12,11 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
                                      GET-ADMIN
     //////////////////////////////////////////////////////////////////////////*/
 
-    function test_GetAdminRevertWhen_Null() external {
+    function test_GetAdmin_RevertWhen_Null() external {
         expectRevert_Null({ callData: abi.encodeCall(sablierStaking.getAdmin, poolIds.nullPool) });
     }
 
-    function test_GetAdminWhenNotNull() external view {
+    function test_GetAdmin_WhenNotNull() external view {
         assertEq(sablierStaking.getAdmin(poolIds.defaultPool), users.poolCreator, "admin");
     }
 
@@ -24,11 +24,11 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
                                     GET-END-TIME
     //////////////////////////////////////////////////////////////////////////*/
 
-    function test_GetEndTimeRevertWhen_Null() external {
+    function test_GetEndTime_RevertWhen_Null() external {
         expectRevert_Null({ callData: abi.encodeCall(sablierStaking.getEndTime, poolIds.nullPool) });
     }
 
-    function test_GetEndTimeWhenNotNull() external view {
+    function test_GetEndTime_WhenNotNull() external view {
         assertEq(sablierStaking.getEndTime(poolIds.defaultPool), END_TIME, "getEndTime");
     }
 
@@ -36,11 +36,11 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
                                  GET-REWARD-AMOUNT
     //////////////////////////////////////////////////////////////////////////*/
 
-    function test_GetRewardAmountRevertWhen_Null() external {
+    function test_GetRewardAmount_RevertWhen_Null() external {
         expectRevert_Null({ callData: abi.encodeCall(sablierStaking.getRewardAmount, poolIds.nullPool) });
     }
 
-    function test_GetRewardAmountWhenNotNull() external view {
+    function test_GetRewardAmount_WhenNotNull() external view {
         assertEq(sablierStaking.getRewardAmount(poolIds.defaultPool), REWARD_AMOUNT, "getRewardAmount");
     }
 
@@ -48,11 +48,11 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
                                   GET-REWARD-TOKEN
     //////////////////////////////////////////////////////////////////////////*/
 
-    function test_GetRewardTokenRevertWhen_Null() external {
+    function test_GetRewardToken_RevertWhen_Null() external {
         expectRevert_Null({ callData: abi.encodeCall(sablierStaking.getRewardToken, poolIds.nullPool) });
     }
 
-    function test_GetRewardTokenWhenNotNull() external view {
+    function test_GetRewardToken_WhenNotNull() external view {
         assertEq(address(sablierStaking.getRewardToken(poolIds.defaultPool)), address(rewardToken), "getRewardToken");
     }
 
@@ -60,11 +60,11 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
                                  GET-STAKING-TOKEN
     //////////////////////////////////////////////////////////////////////////*/
 
-    function test_GetStakingTokenRevertWhen_Null() external {
+    function test_GetStakingToken_RevertWhen_Null() external {
         expectRevert_Null({ callData: abi.encodeCall(sablierStaking.getStakingToken, poolIds.nullPool) });
     }
 
-    function test_GetStakingTokenWhenNotNull() external view {
+    function test_GetStakingToken_WhenNotNull() external view {
         assertEq(address(sablierStaking.getStakingToken(poolIds.defaultPool)), address(stakingToken), "getStakingToken");
     }
 
@@ -72,11 +72,11 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
                                    GET-START-TIME
     //////////////////////////////////////////////////////////////////////////*/
 
-    function test_GetStartTimeRevertWhen_Null() external {
+    function test_GetStartTime_RevertWhen_Null() external {
         expectRevert_Null({ callData: abi.encodeCall(sablierStaking.getStartTime, poolIds.nullPool) });
     }
 
-    function test_GetStartTimeWhenNotNull() external view {
+    function test_GetStartTime_WhenNotNull() external view {
         assertEq(sablierStaking.getStartTime(poolIds.defaultPool), START_TIME, "getStartTime");
     }
 
@@ -84,11 +84,11 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
                               GET-TOTAL-STAKED-AMOUNT
     //////////////////////////////////////////////////////////////////////////*/
 
-    function test_GetTotalStakedAmountRevertWhen_Null() external {
+    function test_GetTotalStakedAmount_RevertWhen_Null() external {
         expectRevert_Null({ callData: abi.encodeCall(sablierStaking.getTotalStakedAmount, poolIds.nullPool) });
     }
 
-    function test_GetTotalStakedAmountWhenNotNull() external {
+    function test_GetTotalStakedAmount_WhenNotNull() external {
         warpStateTo(END_TIME);
         assertEq(
             sablierStaking.getTotalStakedAmount(poolIds.defaultPool), TOTAL_STAKED_END_TIME, "getTotalStakedAmount"
@@ -99,11 +99,11 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
                            GLOBAL-RPT-SCALED-AT-SNAPSHOT
     //////////////////////////////////////////////////////////////////////////*/
 
-    function test_GlobalRptScaledAtSnapshotRevertWhen_Null() external {
+    function test_GlobalRptScaledAtSnapshot_RevertWhen_Null() external {
         expectRevert_Null({ callData: abi.encodeCall(sablierStaking.globalRptScaledAtSnapshot, poolIds.nullPool) });
     }
 
-    function test_GlobalRptScaledAtSnapshotWhenStartTimeInFuture() external whenNotNull {
+    function test_GlobalRptScaledAtSnapshot_WhenStartTimeInFuture() external whenNotNull {
         warpStateTo(START_TIME - 1);
 
         (uint40 snapshotTime, uint256 rptScaled) = sablierStaking.globalRptScaledAtSnapshot(poolIds.defaultPool);
@@ -120,7 +120,7 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         );
     }
 
-    function test_GlobalRptScaledAtSnapshotWhenStartTimeInPresent() external whenNotNull {
+    function test_GlobalRptScaledAtSnapshot_WhenStartTimeInPresent() external whenNotNull {
         warpStateTo(START_TIME);
 
         (uint40 snapshotTime, uint256 rptScaled) = sablierStaking.globalRptScaledAtSnapshot(poolIds.defaultPool);
@@ -137,7 +137,7 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         );
     }
 
-    function test_GlobalRptScaledAtSnapshotWhenEndTimeInFuture() external view whenNotNull whenStartTimeInPast {
+    function test_GlobalRptScaledAtSnapshot_WhenEndTimeInFuture() external view whenNotNull whenStartTimeInPast {
         (uint40 snapshotTime, uint256 rptScaled) = sablierStaking.globalRptScaledAtSnapshot(poolIds.defaultPool);
 
         // It should return correct snapshot time.
@@ -151,7 +151,7 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         assertEq(sablierStaking.getTotalStakedAmount(poolIds.defaultPool), TOTAL_STAKED, "getTotalStakedAmount");
     }
 
-    function test_GlobalRptScaledAtSnapshotWhenEndTimeNotInFuture() external whenNotNull whenStartTimeInPast {
+    function test_GlobalRptScaledAtSnapshot_WhenEndTimeNotInFuture() external whenNotNull whenStartTimeInPast {
         warpStateTo(END_TIME);
 
         // Take global snapshot of the rewards.
@@ -176,18 +176,18 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
                                IS-LOCKUP-WHITELISTED
     //////////////////////////////////////////////////////////////////////////*/
 
-    function test_IsLockupWhitelistedRevertWhen_ZeroAddress() external {
+    function test_IsLockupWhitelisted_RevertWhen_ZeroAddress() external {
         vm.expectRevert(Errors.SablierStakingState_ZeroAddress.selector);
         sablierStaking.isLockupWhitelisted(ISablierLockupNFT(address(0)));
     }
 
-    function test_IsLockupWhitelistedGivenNotWhitelisted() external view whenNotZeroAddress {
+    function test_IsLockupWhitelisted_GivenNotWhitelisted() external view whenNotZeroAddress {
         // It should return false.
         bool actualIsLockupWhitelisted = sablierStaking.isLockupWhitelisted(ISablierLockupNFT(address(0x1234)));
         assertFalse(actualIsLockupWhitelisted, "whitelisted");
     }
 
-    function test_IsLockupWhitelistedGivenWhitelisted() external view whenNotZeroAddress {
+    function test_IsLockupWhitelisted_GivenWhitelisted() external view whenNotZeroAddress {
         // It should return true.
         bool actualIsLockupWhitelisted = sablierStaking.isLockupWhitelisted(lockup);
         assertTrue(actualIsLockupWhitelisted, "not whitelisted");
@@ -197,21 +197,21 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
                                        STATUS
     //////////////////////////////////////////////////////////////////////////*/
 
-    function test_StatusRevertWhen_Null() external {
+    function test_Status_RevertWhen_Null() external {
         expectRevert_Null({ callData: abi.encodeCall(sablierStaking.status, poolIds.nullPool) });
     }
 
-    function test_StatusWhenStartTimeInFuture() external whenNotNull {
+    function test_Status_WhenStartTimeInFuture() external whenNotNull {
         warpStateTo(START_TIME - 1);
         assertEq(sablierStaking.status(poolIds.defaultPool), Status.SCHEDULED, "status");
     }
 
-    function test_StatusWhenEndTimeInPast() external whenNotNull whenStartTimeNotInFuture {
+    function test_Status_WhenEndTimeInPast() external whenNotNull whenStartTimeNotInFuture {
         warpStateTo(END_TIME + 1);
         assertEq(sablierStaking.status(poolIds.defaultPool), Status.ENDED, "status");
     }
 
-    function test_StatusWhenEndTimeNotInPast() external view whenNotNull whenStartTimeNotInFuture {
+    function test_Status_WhenEndTimeNotInPast() external view whenNotNull whenStartTimeNotInFuture {
         assertEq(sablierStaking.status(poolIds.defaultPool), Status.ACTIVE, "status");
     }
 
@@ -219,12 +219,12 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
                                    STREAM-LOOKUP
     //////////////////////////////////////////////////////////////////////////*/
 
-    function test_StreamLookupRevertWhen_ZeroAddress() external {
+    function test_StreamLookup_RevertWhen_ZeroAddress() external {
         vm.expectRevert(Errors.SablierStakingState_ZeroAddress.selector);
         sablierStaking.streamLookup(ISablierLockupNFT(address(0)), 0);
     }
 
-    function test_StreamLookupRevertWhen_StreamNotStaked() external whenNotZeroAddress {
+    function test_StreamLookup_RevertWhen_StreamNotStaked() external whenNotZeroAddress {
         // It should revert.
         vm.expectRevert(
             abi.encodeWithSelector(Errors.SablierStakingState_StreamNotStaked.selector, lockup, streamIds.defaultStream)
@@ -232,7 +232,7 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         sablierStaking.streamLookup(lockup, streamIds.defaultStream);
     }
 
-    function test_StreamLookupWhenStreamStaked() external view whenNotZeroAddress {
+    function test_StreamLookup_WhenStreamStaked() external view whenNotZeroAddress {
         // It should return the Pool ID and owner.
         (uint256 actualPoolIds, address actualOwner) =
             sablierStaking.streamLookup(lockup, streamIds.defaultStakedStream);
@@ -244,18 +244,18 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
                             TOTAL-AMOUNT-STAKED-BY-USER
     //////////////////////////////////////////////////////////////////////////*/
 
-    function test_TotalAmountStakedByUserRevertWhen_Null() external {
+    function test_TotalAmountStakedByUser_RevertWhen_Null() external {
         expectRevert_Null({
             callData: abi.encodeCall(sablierStaking.totalAmountStakedByUser, (poolIds.nullPool, users.recipient))
         });
     }
 
-    function test_TotalAmountStakedByUserRevertWhen_ZeroAddress() external whenNotNull {
+    function test_TotalAmountStakedByUser_RevertWhen_ZeroAddress() external whenNotNull {
         vm.expectRevert(Errors.SablierStakingState_ZeroAddress.selector);
         sablierStaking.totalAmountStakedByUser(poolIds.defaultPool, address(0));
     }
 
-    function test_TotalAmountStakedByUserWhenNotZeroAddress() external view whenNotNull {
+    function test_TotalAmountStakedByUser_WhenNotZeroAddress() external view whenNotNull {
         assertEq(
             sablierStaking.totalAmountStakedByUser(poolIds.defaultPool, users.recipient),
             AMOUNT_STAKED_BY_RECIPIENT,
@@ -267,16 +267,16 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
                                     USER-ACCOUNT
     //////////////////////////////////////////////////////////////////////////*/
 
-    function test_UserAccountRevertWhen_Null() external {
+    function test_UserAccount_RevertWhen_Null() external {
         expectRevert_Null({ callData: abi.encodeCall(sablierStaking.userAccount, (poolIds.nullPool, users.staker)) });
     }
 
-    function test_UserAccountRevertWhen_ZeroAddress() external whenNotNull {
+    function test_UserAccount_RevertWhen_ZeroAddress() external whenNotNull {
         vm.expectRevert(Errors.SablierStakingState_ZeroAddress.selector);
         sablierStaking.userAccount(poolIds.defaultPool, address(0));
     }
 
-    function test_UserAccountWhenNotZeroAddress() external whenNotNull {
+    function test_UserAccount_WhenNotZeroAddress() external whenNotNull {
         warpStateTo(END_TIME);
 
         // Take snapshots of the rewards.

@@ -230,7 +230,7 @@ contract SablierStaking is
         noDelegateCall
         notNull(poolId)
     {
-        // Load the pool.
+        // Read the pool from storage using storage pointer.
         Pool storage pool = _pools[poolId];
 
         // Check: `msg.sender` is the pool admin.
@@ -658,44 +658,35 @@ contract SablierStaking is
     ///  - The start time is in the future.
     ///  - The snapshot time is greater than or equal to the end time.
     function _rewardsDistributedSinceLastSnapshot(uint256 poolId) private view returns (uint256 rewardsDistributed) {
+        // Read the pool from storage using storage pointer.
+        Pool storage pool = _pools[poolId];
+
         // If the total staked amount is 0, return 0.
-        if (_pools[poolId].totalStakedAmount == 0) {
+        if (pool.totalStakedAmount == 0) {
             return 0;
         }
 
-        uint40 blockTimestamp = uint40(block.timestamp);
-        uint40 poolEndTime = _pools[poolId].endTime;
-        uint40 poolStartTime = _pools[poolId].startTime;
+        uint256 blockTimestamp = block.timestamp;
+        uint256 poolEndTime = uint256(pool.endTime);
+        uint256 poolStartTime = uint256(pool.startTime);
 
         // If the start time is in the future, return 0.
         if (blockTimestamp < poolStartTime) {
             return 0;
         }
 
-        uint40 snapshotTime = _pools[poolId].snapshotTime;
+        uint256 snapshotTime = uint256(pool.snapshotTime);
 
         // If the snapshot time is greater than or equal to the end time, return 0.
         if (snapshotTime >= poolEndTime) {
             return 0;
         }
 
-        // Define variables to store time range for rewards calculation.
-        uint40 endingTimestamp;
-        uint40 startingTimestamp;
-
         // If the snapshot time is less than the start time, the starting timestamp is the start time.
-        if (snapshotTime <= poolStartTime) {
-            startingTimestamp = poolStartTime;
-        } else {
-            startingTimestamp = snapshotTime;
-        }
+        uint256 startingTimestamp = snapshotTime <= poolStartTime ? poolStartTime : snapshotTime;
 
         // If the end time has passed, the ending timestamp is the pool end time.
-        if (poolEndTime <= blockTimestamp) {
-            endingTimestamp = poolEndTime;
-        } else {
-            endingTimestamp = blockTimestamp;
-        }
+        uint256 endingTimestamp = poolEndTime <= blockTimestamp ? poolEndTime : blockTimestamp;
 
         // Safe to use `unchecked` because the calculations cannot overflow.
         unchecked {
@@ -704,7 +695,7 @@ contract SablierStaking is
             uint256 rewardsPeriod = poolEndTime - poolStartTime;
 
             // Calculate the total rewards distributed since the last snapshot.
-            rewardsDistributed = (_pools[poolId].rewardAmount * elapsedTime) / rewardsPeriod;
+            rewardsDistributed = (pool.rewardAmount * elapsedTime) / rewardsPeriod;
         }
 
         return rewardsDistributed;

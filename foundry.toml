@@ -7,7 +7,7 @@
     { access = "read", path = "package.json" },
   ]
   gas_limit = 9223372036854775807
-  gas_reports = ["SablierStaking"]
+  gas_reports = ["SablierStakingMock"]
   optimizer = true
   optimizer_runs = 10_000_000
   out = "out"

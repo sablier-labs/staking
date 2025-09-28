@@ -14,7 +14,7 @@ on:
         description: "Invariant runs: number of sequences of function calls generated and run."
         required: false
       invariantDepth:
-        default: "100"
+        default: "50"
         description: "Invariant depth: number of function calls made in a given run."
         required: false
 

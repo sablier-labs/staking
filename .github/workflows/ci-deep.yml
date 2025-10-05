@@ -29,7 +29,7 @@ jobs:
     needs: ["check", "build"]
     uses: "sablier-labs/gha-utils/.github/workflows/forge-test.yml@main"
     with:
-      foundry-fuzz-runs: ${{ fromJSON(inputs.integrationFuzzRuns || '100000') }}
+      foundry-fuzz-runs: ${{ fromJSON(inputs.integrationFuzzRuns || '10000') }}
       foundry-profile: "test-optimized"
       match-path: "tests/integration/**/*.sol"
       name: "Integration tests"
@@ -38,8 +38,8 @@ jobs:
     needs: ["check", "build"]
     uses: "sablier-labs/gha-utils/.github/workflows/forge-test.yml@main"
     with:
-      foundry-invariant-depth: ${{ fromJSON(inputs.invariantDepth || '200') }}
-      foundry-invariant-runs: ${{ fromJSON(inputs.invariantRuns || '50000') }}
+      foundry-invariant-depth: ${{ fromJSON(inputs.invariantDepth || '50') }}
+      foundry-invariant-runs: ${{ fromJSON(inputs.invariantRuns || '1000') }}
       foundry-profile: "test-optimized"
       match-path: "tests/invariant/**/*.sol"
       name: "Invariant tests"

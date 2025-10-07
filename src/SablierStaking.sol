@@ -119,7 +119,7 @@ contract SablierStaking is
         returns (uint128)
     {
         // Get the rewards distributed since the last snapshot.
-        uint256 rewardsDistributedSinceLastSnapshot = _rewardsDistributedSinceLastSnapshot(poolId);
+        uint256 rewardsDistributedSinceLastSnapshot = _rewardsDistributedScaledSinceLastSnapshot(poolId);
 
         // If the rewards distributed since the last snapshot is zero, return 0.
         if (rewardsDistributedSinceLastSnapshot == 0) {
@@ -132,8 +132,7 @@ contract SablierStaking is
 
     /// @inheritdoc ISablierStaking
     function rewardsSinceLastSnapshot(uint256 poolId) external view override notNull(poolId) returns (uint128) {
-        // Safe casting because rewards distributed is guaranteed to be less than 2^128.
-        return uint128(_rewardsDistributedSinceLastSnapshot(poolId));
+        return _rewardsDistributedScaledSinceLastSnapshot(poolId).scaleDown().toUint128();
     }
 
     /// @inheritdoc IERC165
@@ -386,7 +385,7 @@ contract SablierStaking is
 
         // Check: the Pool ID is not zero.
         if (poolId == 0) {
-            revert Errors.SablierStaking_StreamNotStaked(msgSenderAsLockup, streamId);
+            return ISablierLockupRecipient.onSablierLockupCancel.selector;
         }
 
         // Load the storage in memory.
@@ -653,12 +652,16 @@ contract SablierStaking is
         }
     }
 
-    /// @notice Calculates cumulative rewards distributed since the last snapshot.
+    /// @notice Calculates cumulative rewards distributed scaled since the last snapshot.
     /// @dev Returns 0 if:
     ///  - The total amount staked is 0.
     ///  - The start time is in the future.
     ///  - The snapshot time is greater than or equal to the end time.
-    function _rewardsDistributedSinceLastSnapshot(uint256 poolId) private view returns (uint256 rewardsDistributed) {
+    function _rewardsDistributedScaledSinceLastSnapshot(uint256 poolId)
+        private
+        view
+        returns (uint256 rewardsDistributedScaled)
+    {
         // Read the pool from storage using storage pointer.
         Pool storage pool = _pools[poolId];
 
@@ -696,23 +699,23 @@ contract SablierStaking is
             uint256 rewardsPeriod = poolEndTime - poolStartTime;
 
             // Calculate the total rewards distributed since the last snapshot.
-            rewardsDistributed = (pool.rewardAmount * elapsedTime) / rewardsPeriod;
+            rewardsDistributedScaled = (pool.rewardAmount * elapsedTime).scaleUp() / rewardsPeriod;
         }
 
-        return rewardsDistributed;
+        return rewardsDistributedScaled;
     }
 
     /// @dev Calculates the latest cumulative rewards distributed per ERC20 token.
     function _rptDistributedScaled(uint256 poolId) private view returns (uint256 rptDistributedScaled) {
         rptDistributedScaled = _pools[poolId].snapshotRptDistributedScaled;
 
-        // Get the rewards distributed since the last snapshot.
-        uint256 rewardsDistributedSinceLastSnapshot = _rewardsDistributedSinceLastSnapshot(poolId);
+        // Get the rewards distributed scaled since the last snapshot.
+        uint256 rewardsDistributedScaledSinceLastSnapshot = _rewardsDistributedScaledSinceLastSnapshot(poolId);
 
-        if (rewardsDistributedSinceLastSnapshot > 0) {
-            // Get the rewards distributed per ERC20 token since the last snapshot, by scaling up.
+        if (rewardsDistributedScaledSinceLastSnapshot > 0) {
+            // Get the rewards distributed per ERC20 token since the last snapshot.
             uint256 rptSinceLastSnapshotScaled =
-                rewardsDistributedSinceLastSnapshot.scaleUp() / _pools[poolId].totalStakedAmount;
+                rewardsDistributedScaledSinceLastSnapshot / _pools[poolId].totalStakedAmount;
 
             // Calculate the cumulative rewards distributed per ERC20 token.
             rptDistributedScaled += rptSinceLastSnapshotScaled;

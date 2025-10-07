@@ -614,36 +614,37 @@ contract SablierStaking is
     }
 
     /// @notice Check if the lockup contract implements the functions from {ISablierLockupNFT}.
-    function _hasRequiredInterface(ISablierLockupNFT lockup) private {
-        uint256 totalSelectors = 5;
-
+    function _hasRequiredInterface(ISablierLockupNFT lockup) private view {
         // It is assumed that at least one stream exists in the lockup contract.
         uint256 testStreamId = 1;
 
-        // Prepare an array of selectors to check.
-        bytes4[] memory selectors = new bytes4[](totalSelectors);
-        selectors[0] = ISablierLockupNFT.getDepositedAmount.selector;
-        selectors[1] = ISablierLockupNFT.getWithdrawnAmount.selector;
-        selectors[2] = ISablierLockupNFT.getRefundedAmount.selector;
+        uint256 amountsSelectorsCount = 3;
 
-        // The following order is critical for the `for` loop.
-        selectors[3] = ISablierLockupNFT.getUnderlyingToken.selector;
-        selectors[4] = ISablierLockupNFT.getAsset.selector;
+        bytes4[] memory getAmountSelectors = new bytes4[](amountsSelectorsCount);
+        getAmountSelectors[0] = ISablierLockupNFT.getDepositedAmount.selector;
+        getAmountSelectors[1] = ISablierLockupNFT.getWithdrawnAmount.selector;
+        getAmountSelectors[2] = ISablierLockupNFT.getRefundedAmount.selector;
 
-        for (uint256 i = 0; i < totalSelectors; ++i) {
+        for (uint256 i = 0; i < amountsSelectorsCount; ++i) {
             // Use a low-level call to check if the function is implemented.
-            (bool success,) = address(lockup).call(abi.encodeWithSelector(selectors[i], testStreamId));
-
-            // If the call succeeds and the selector is `getUnderlyingToken`, then break the loop since there is no need
-            // to check for `getAsset`.
-            if (success && selectors[i] == ISablierLockupNFT.getUnderlyingToken.selector) {
-                break;
+            (bool success,) = address(lockup).staticcall(abi.encodeWithSelector(getAmountSelectors[i], testStreamId));
+            if (!success) {
+                revert Errors.SablierStaking_LockupMissesSelector(lockup, getAmountSelectors[i]);
             }
+        }
 
-            // If the call fails, revert except for `getUnderlyingToken`, for that we check whether `getAsset` is
-            // implemented or not in the next loop.
-            if (!success && selectors[i] != ISablierLockupNFT.getUnderlyingToken.selector) {
-                revert Errors.SablierStaking_LockupMissesSelector(lockup, selectors[i]);
+        // Low-level call to check if the function is implemented.
+        (bool successGetUnderlyingToken,) = address(lockup).staticcall(
+            abi.encodeWithSelector(ISablierLockupNFT.getUnderlyingToken.selector, testStreamId)
+        );
+
+        if (!successGetUnderlyingToken) {
+            (bool succesGetAsset,) =
+                address(lockup).staticcall(abi.encodeWithSelector(ISablierLockupNFT.getAsset.selector, testStreamId));
+
+            // Check: neither of `getUnderlyingToken` or `getAsset` are implemented.
+            if (!successGetUnderlyingToken && !succesGetAsset) {
+                revert Errors.SablierStaking_LockupMissesSelector(lockup, ISablierLockupNFT.getAsset.selector);
             }
         }
     }

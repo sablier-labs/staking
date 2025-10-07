@@ -3,13 +3,13 @@ OnSablierLockupCancel_Integration_Concrete_Test
 │  └── it should revert
 └── when no delegate call
    ├── when caller not lockup
-   │  └── it should revert
+   │  └── it should do nothing
    └── when caller lockup
       ├── given lockup not whitelisted
-      │  └── it should revert
+      │  └── it should do nothing
       └── given lockup whitelisted
          ├── given stream not staked
-         │  └── it should revert
+         │  └── it should do nothing
          └── given stream staked
             ├── it should emit {SnapshotRewards} event
             ├── it should adjust global staked amount

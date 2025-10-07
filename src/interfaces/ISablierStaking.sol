@@ -209,11 +209,12 @@ interface ISablierStaking is
     /// @dev Emits a {SnapshotRewards} event.
     ///
     /// Notes:
+    /// - `streamId` associated with `msg.sender` is not staked in the pool, the function does nothing and returns the
+    /// selector.
     /// - Updates global rewards, and user rewards for staker of `streamId`.
     ///
     /// Requirements:
     /// - Must not be delegate called.
-    /// - `streamId` associated with `msg.sender` must be staked in a valid pool.
     ///
     /// @param streamId The ID of the staked stream on which cancel is called.
     /// @param sender The stream's sender, who canceled the stream.

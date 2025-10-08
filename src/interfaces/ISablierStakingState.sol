@@ -24,6 +24,10 @@ interface ISablierStakingState {
     /// @dev Reverts if `poolId` references a non-existent pool.
     function getAdmin(uint256 poolId) external view returns (address);
 
+    /// @notice Returns the cumulative reward amount of the given Pool ID, denoted in token's decimals.
+    /// @dev Reverts if `poolId` references a non-existent pool.
+    function getCumulativeRewardAmount(uint256 poolId) external view returns (uint128);
+
     /// @notice Returns the end time of the given Pool ID, denoted in UNIX timestamp.
     /// @dev Reverts if `poolId` references a non-existent pool.
     function getEndTime(uint256 poolId) external view returns (uint40);

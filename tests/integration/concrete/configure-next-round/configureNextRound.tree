@@ -11,31 +11,23 @@ ConfigureNextRound_Integration_Concrete_Test
       ├── when end time not in past
       │  └── it should revert
       └── when end time in past
-        ├── when new start time zero
-        │  └── it should set start time to current block timestamp
-        └── when new start time not zero
-           ├── when new start time in past
-           │  └── it should revert
-           └── when new start time not in past
-             ├── when new end time not greater than new start time
-             │  └── it should revert
-             └── when new end time greater than new start time
-               ├── when new reward amount zero
-               │  └── it should revert
-               └── when new reward amount not zero
-                 ├── given admin staked
-                 │  ├── it should update global rpt and admin rpt
-                 │  ├── it should set the new start time
-                 │  ├── it should set the new end time
-                 │  ├── it should set the new reward amount
-                 │  ├── it should set the status to scheduled
-                 │  ├── it should transfer new reward amount to this contract
-                 │  └── it should emit {SnapshotRewards}, {Transfer} and {ConfigureNextRound} events
-                 └── given admin not staked
-                    ├── it should update global rpt
-                    ├── it should set the new start time
-                    ├── it should set the new end time
-                    ├── it should set the new reward amount
-                    ├── it should set the status to scheduled
-                    ├── it should transfer new reward amount to this contract
-                    └── it should emit {Transfer} and {ConfigureNextRound} events
+        ├── when new start time in past
+        │  └── it should revert
+        └── when new start time not in past
+          ├── when new end time not greater than new start time
+          │  └── it should revert
+          └── when new end time greater than new start time
+            ├── when new reward amount zero
+            │  └── it should revert
+            └── when new reward amount not zero
+              ├── when cumulative reward amount exceeds max allowed 
+              │  └── it should revert
+              └── when cumulative reward amount not exceed max allowed 
+                  ├── it should update the cumulative reward amount
+                  ├── it should update global rpt
+                  ├── it should set the new start time
+                  ├── it should set the new end time
+                  ├── it should set the new reward amount
+                  ├── it should set the status to scheduled
+                  ├── it should transfer new reward amount to this contract
+                  └── it should emit {Transfer} and {ConfigureNextRound} events

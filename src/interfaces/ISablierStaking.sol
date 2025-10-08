@@ -142,12 +142,10 @@ interface ISablierStaking is
     function claimRewards(uint256 poolId, UD60x18 feeOnRewards) external payable returns (uint128 rewardsClaimed);
 
     /// @notice Configures the next staking round for the specified pool.
-    /// @dev Emits a {ConfigureNextRound} and {SnapshotRewards} events. {SnapshotRewards} event is ignored if pool admin
-    /// has no stakes.
+    /// @dev Emits a {ConfigureNextRound} event.
     ///
     /// Notes:
     /// - Updates global rewards.
-    /// - If the admin has stakes, it updates the user rewards.
     ///
     /// Requirements:
     /// - Must not be delegate called.
@@ -157,6 +155,7 @@ interface ISablierStaking is
     /// - `newStartTime` must be greater than or equal to the `block.timestamp` if it's not zero.
     /// - `newEndTime` must be greater than new `startTime`.
     /// - `rewardAmount` must be greater than 0.
+    /// - The cummulative reward amount must not exceed `type(uint128).max`.
     /// - `msg.sender` must have approved this contract to spend the `rewardAmount` of reward ERC20 token.
     ///
     /// @param poolId The pool ID for which to configure the next staking round.

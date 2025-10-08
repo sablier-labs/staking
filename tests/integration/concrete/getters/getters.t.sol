@@ -21,6 +21,18 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
     }
 
     /*//////////////////////////////////////////////////////////////////////////
+                            GET-CUMULATIVE-REWARD-AMOUNT
+    //////////////////////////////////////////////////////////////////////////*/
+
+    function test_GetCumulativeRewardAmount_RevertWhen_Null() external {
+        expectRevert_Null({ callData: abi.encodeCall(sablierStaking.getCumulativeRewardAmount, poolIds.nullPool) });
+    }
+
+    function test_GetCumulativeRewardAmount_WhenNotNull() external view {
+        assertEq(sablierStaking.getCumulativeRewardAmount(poolIds.defaultPool), REWARD_AMOUNT, "cumulativeRewardAmount");
+    }
+
+    /*//////////////////////////////////////////////////////////////////////////
                                     GET-END-TIME
     //////////////////////////////////////////////////////////////////////////*/
 

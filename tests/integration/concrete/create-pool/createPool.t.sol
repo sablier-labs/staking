@@ -227,6 +227,7 @@ contract CreatePool_Integration_Concrete_Test is Shared_Integration_Concrete_Tes
 
         // It should set the correct pool state.
         assertEq(sablierStaking.getAdmin(actualPoolIds), users.poolCreator, "admin");
+        assertEq(sablierStaking.getCumulativeRewardAmount(actualPoolIds), REWARD_AMOUNT, "cumulativeRewardAmount");
         assertEq(sablierStaking.getStakingToken(actualPoolIds), stakingToken, "stakingToken");
         assertEq(sablierStaking.getStartTime(actualPoolIds), START_TIME, "startTime");
         assertEq(sablierStaking.getEndTime(actualPoolIds), END_TIME, "endTime");

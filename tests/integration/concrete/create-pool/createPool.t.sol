@@ -39,7 +39,16 @@ contract CreatePool_Integration_Concrete_Test is Shared_Integration_Concrete_Tes
         });
     }
 
-    function test_RevertWhen_StartTimeInPast() external whenNoDelegateCall whenAdminNotZeroAddress {
+    function test_WhenStartTimeZero() external whenNoDelegateCall whenAdminNotZeroAddress {
+        _test_CreatePool({ startTime: 0 });
+    }
+
+    function test_RevertWhen_StartTimeInPast()
+        external
+        whenNoDelegateCall
+        whenAdminNotZeroAddress
+        whenStartTimeNotZero
+    {
         vm.expectRevert(abi.encodeWithSelector(Errors.SablierStaking_StartTimeInPast.selector, FEB_1_2025 - 1));
         sablierStaking.createPool({
             admin: users.poolCreator,
@@ -51,46 +60,15 @@ contract CreatePool_Integration_Concrete_Test is Shared_Integration_Concrete_Tes
         });
     }
 
-    function test_WhenStartTimeInPresent() external whenNoDelegateCall whenAdminNotZeroAddress {
-        uint40 currentTime = getBlockTimestamp();
-
-        uint256 expectedPoolIds = sablierStaking.nextPoolId();
-
-        // It should emit {Transfer} and {CreatePool} events.
-        vm.expectEmit({ emitter: address(rewardToken) });
-        emit IERC20.Transfer(users.poolCreator, address(sablierStaking), REWARD_AMOUNT);
-        vm.expectEmit({ emitter: address(sablierStaking) });
-        emit ISablierStaking.CreatePool({
-            poolId: expectedPoolIds,
-            admin: users.poolCreator,
-            endTime: END_TIME,
-            rewardToken: rewardToken,
-            stakingToken: stakingToken,
-            startTime: currentTime,
-            rewardAmount: REWARD_AMOUNT
-        });
-
-        // It should create the pool.
-        uint256 actualPoolIds = sablierStaking.createPool({
-            admin: users.poolCreator,
-            stakingToken: stakingToken,
-            startTime: currentTime,
-            endTime: END_TIME,
-            rewardToken: rewardToken,
-            rewardAmount: REWARD_AMOUNT
-        });
-
-        // It should create the pool.
-        assertEq(actualPoolIds, expectedPoolIds, "poolId");
-
-        // It should bump the next Pool ID.
-        assertEq(sablierStaking.nextPoolId(), expectedPoolIds + 1, "nextPoolId");
+    function test_WhenStartTimeInPresent() external whenNoDelegateCall whenAdminNotZeroAddress whenStartTimeNotZero {
+        _test_CreatePool({ startTime: getBlockTimestamp() });
     }
 
     function test_RevertWhen_EndTimeLessThanStartTime()
         external
         whenNoDelegateCall
         whenAdminNotZeroAddress
+        whenStartTimeNotZero
         whenStartTimeInFuture
     {
         vm.expectRevert(
@@ -112,6 +90,7 @@ contract CreatePool_Integration_Concrete_Test is Shared_Integration_Concrete_Tes
         external
         whenNoDelegateCall
         whenAdminNotZeroAddress
+        whenStartTimeNotZero
         whenStartTimeInFuture
     {
         vm.expectRevert(
@@ -131,6 +110,7 @@ contract CreatePool_Integration_Concrete_Test is Shared_Integration_Concrete_Tes
         external
         whenNoDelegateCall
         whenAdminNotZeroAddress
+        whenStartTimeNotZero
         whenStartTimeInFuture
         whenEndTimeGreaterThanStartTime
     {
@@ -149,6 +129,7 @@ contract CreatePool_Integration_Concrete_Test is Shared_Integration_Concrete_Tes
         external
         whenNoDelegateCall
         whenAdminNotZeroAddress
+        whenStartTimeNotZero
         whenStartTimeInFuture
         whenEndTimeGreaterThanStartTime
         whenStakingTokenNotZeroAddress
@@ -168,6 +149,7 @@ contract CreatePool_Integration_Concrete_Test is Shared_Integration_Concrete_Tes
         external
         whenNoDelegateCall
         whenAdminNotZeroAddress
+        whenStartTimeNotZero
         whenStartTimeInFuture
         whenEndTimeGreaterThanStartTime
         whenStakingTokenNotZeroAddress
@@ -188,12 +170,20 @@ contract CreatePool_Integration_Concrete_Test is Shared_Integration_Concrete_Tes
         external
         whenNoDelegateCall
         whenAdminNotZeroAddress
+        whenStartTimeNotZero
         whenStartTimeInFuture
         whenEndTimeGreaterThanStartTime
         whenStakingTokenNotZeroAddress
         whenRewardTokenNotZeroAddress
     {
+        _test_CreatePool({ startTime: START_TIME });
+    }
+
+    function _test_CreatePool(uint40 startTime) private {
         uint256 expectedPoolIds = sablierStaking.nextPoolId();
+
+        // Set expected start time.
+        uint40 expectedStartTime = startTime == 0 ? getBlockTimestamp() : startTime;
 
         // It should emit {Transfer} and {CreatePool} events.
         vm.expectEmit({ emitter: address(rewardToken) });
@@ -205,7 +195,7 @@ contract CreatePool_Integration_Concrete_Test is Shared_Integration_Concrete_Tes
             endTime: END_TIME,
             rewardToken: rewardToken,
             stakingToken: stakingToken,
-            startTime: START_TIME,
+            startTime: expectedStartTime,
             rewardAmount: REWARD_AMOUNT
         });
 
@@ -213,7 +203,7 @@ contract CreatePool_Integration_Concrete_Test is Shared_Integration_Concrete_Tes
         uint256 actualPoolIds = sablierStaking.createPool({
             admin: users.poolCreator,
             stakingToken: stakingToken,
-            startTime: START_TIME,
+            startTime: startTime,
             endTime: END_TIME,
             rewardToken: rewardToken,
             rewardAmount: REWARD_AMOUNT
@@ -229,7 +219,7 @@ contract CreatePool_Integration_Concrete_Test is Shared_Integration_Concrete_Tes
         assertEq(sablierStaking.getAdmin(actualPoolIds), users.poolCreator, "admin");
         assertEq(sablierStaking.getCumulativeRewardAmount(actualPoolIds), REWARD_AMOUNT, "cumulativeRewardAmount");
         assertEq(sablierStaking.getStakingToken(actualPoolIds), stakingToken, "stakingToken");
-        assertEq(sablierStaking.getStartTime(actualPoolIds), START_TIME, "startTime");
+        assertEq(sablierStaking.getStartTime(actualPoolIds), expectedStartTime, "startTime");
         assertEq(sablierStaking.getEndTime(actualPoolIds), END_TIME, "endTime");
         assertEq(sablierStaking.getRewardAmount(actualPoolIds), REWARD_AMOUNT, "rewardAmount");
     }

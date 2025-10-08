@@ -152,14 +152,15 @@ interface ISablierStaking is
     /// - `poolId` must not reference a non-existent pool.
     /// - `msg.sender` must be the pool admin.
     /// - `poolId` must reference a pool with an end time in the past.
-    /// - `newStartTime` must be greater than or equal to the `block.timestamp`.
+    /// - `newStartTime` must be greater than or equal to the `block.timestamp` if it's not zero.
     /// - `newEndTime` must be greater than new `startTime`.
     /// - `newRewardAmount` must be greater than 0.
     /// - `newRewardAmount` must not exceed `type(uint128).max` minus current cumulative reward amount.
     /// - `msg.sender` must have approved this contract to spend the `newRewardAmount` of reward ERC20 token.
     ///
     /// @param poolId The pool ID for which to configure the next staking round.
-    /// @param newStartTime The start time for the next rewards period, denoted in UNIX timestamp.
+    /// @param newStartTime The start time for the next rewards period, denoted in UNIX timestamp. A sentinel value of
+    /// zero means the new round begins at `block.timestamp`.
     /// @param newEndTime The end time for the next rewards period, denoted in UNIX timestamp.
     /// @param newRewardAmount The amount of reward tokens to distribute during the next rewards period, denoted in
     /// reward token's decimals.
@@ -177,7 +178,7 @@ interface ISablierStaking is
     /// Requirements:
     /// - Must not be delegate called.
     /// - `admin` must not be the zero address.
-    /// - `startTime` must be greater than or equal to the `block.timestamp`.
+    /// - `startTime` must be greater than or equal to the `block.timestamp` if it's not zero.
     /// - `startTime` must be less than `endTime`.
     /// - `stakingToken` must not be the zero address.
     /// - `rewardAmount` must be greater than 0.
@@ -185,7 +186,8 @@ interface ISablierStaking is
     ///
     /// @param admin The admin of the pool.
     /// @param stakingToken The ERC20 token permitted for staking either directly or through Lockup streams.
-    /// @param startTime The start time of the rewards period, denoted in UNIX timestamp.
+    /// @param startTime The start time of the rewards period, denoted in UNIX timestamp. A sentinel value of zero means
+    /// the rewards period begins at `block.timestamp`.
     /// @param endTime The end time of the rewards period, denoted in UNIX timestamp.
     /// @param rewardToken The ERC20 token that will be distributed as rewards.
     /// @param rewardAmount The amount of reward tokens to distribute, denoted in reward token's decimals.

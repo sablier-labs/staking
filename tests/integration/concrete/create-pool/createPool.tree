@@ -5,26 +5,29 @@ CreatePool_Integration_Concrete_Test
    ├── when admin zero address
    │  └── it should revert
    └── when admin not zero address
-      ├── when start time in past
-      │  └── it should revert
-      ├── when start time in present
-      │  └── it should create the pool
-      └── when start time in future
-         ├── when end time less than start time
+      ├── when start time zero
+      │  └── it should set start time to current block timestamp
+      └── when start time not zero
+         ├── when start time in past
          │  └── it should revert
-         ├── when end time equals start time
-         │  └── it should revert
-         └── when end time greater than start time
-            ├── when staking token zero address
+         ├── when start time in present
+         │  └── it should create the pool
+         └── when start time in future
+            ├── when end time less than start time
             │  └── it should revert
-            └── when staking token not zero address
-               ├── when reward token zero address
+            ├── when end time equals start time
+            │  └── it should revert
+            └── when end time greater than start time
+               ├── when staking token zero address
                │  └── it should revert
-               └── when reward token not zero address
-                  ├── when reward amount zero
+               └── when staking token not zero address
+                  ├── when reward token zero address
                   │  └── it should revert
-                  └── when reward amount not zero
-                     ├── it should create the pool
-                     ├── it should bump next pool id
-                     ├── it should transfer reward amount to this contract
-                     └── it should emit {Transfer} and {CreatePool} events
+                  └── when reward token not zero address
+                     ├── when reward amount zero
+                     │  └── it should revert
+                     └── when reward amount not zero
+                        ├── it should create the pool
+                        ├── it should bump next pool id
+                        ├── it should transfer reward amount to this contract
+                        └── it should emit {Transfer} and {CreatePool} events

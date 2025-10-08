@@ -18,7 +18,7 @@ contract ConfigureNextRound_Integration_Fuzz_Test is Shared_Integration_Fuzz_Tes
         external
         whenNotNull
         whenCallerPoolAdmin
-        whenNewStartTimeNotInPast
+        whenStartTimeNotInPast
         whenNewEndTimeGreaterThanNewStartTime
     {
         // Assert that the status is ACTIVE.
@@ -48,7 +48,7 @@ contract ConfigureNextRound_Integration_Fuzz_Test is Shared_Integration_Fuzz_Tes
         external
         whenNotNull
         whenCallerPoolAdmin
-        whenNewStartTimeNotInPast
+        whenStartTimeNotInPast
         whenNewEndTimeGreaterThanNewStartTime
     {
         warpStateTo(END_TIME + 1 seconds);
@@ -85,7 +85,7 @@ contract ConfigureNextRound_Integration_Fuzz_Test is Shared_Integration_Fuzz_Tes
         external
         whenNotNull
         whenCallerPoolAdmin
-        whenNewStartTimeNotInPast
+        whenStartTimeNotInPast
         whenNewEndTimeGreaterThanNewStartTime
     {
         warpStateTo(END_TIME + 1 seconds);

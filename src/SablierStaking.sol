@@ -245,8 +245,12 @@ contract SablierStaking is
             revert Errors.SablierStaking_EndTimeNotInPast(poolId, pool.endTime);
         }
 
-        // Check: the new start time is greater than or equal to the current block timestamp.
-        if (newStartTime < blockTimestamp) {
+        // Zero is a sentinel value for `block.timestamp`.
+        if (newStartTime == 0) {
+            newStartTime = blockTimestamp;
+        }
+        // Otherwise, check the new start time is not in the past.
+        else if (newStartTime < blockTimestamp) {
             revert Errors.SablierStaking_StartTimeInPast(newStartTime);
         }
 
@@ -311,8 +315,12 @@ contract SablierStaking is
             revert Errors.SablierStaking_AdminZeroAddress();
         }
 
-        // Check: the start time is greater than or equal to the current block timestamp.
-        if (startTime < uint40(block.timestamp)) {
+        // Zero is a sentinel value for `block.timestamp`.
+        if (startTime == 0) {
+            startTime = uint40(block.timestamp);
+        }
+        // Otherwise, check the start time is not in the past.
+        else if (startTime < uint40(block.timestamp)) {
             revert Errors.SablierStaking_StartTimeInPast(startTime);
         }
 

@@ -38,6 +38,7 @@ contract UnstakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concre
 
     function test_WhenCallerNFTOwner() external whenNoDelegateCall givenStakedNFT {
         vars.expectedTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool) - DEFAULT_AMOUNT;
+        vars.expectedUserRewardsScaled = getScaledValue(REWARDS_EARNED_BY_RECIPIENT);
 
         // It should emit {SnapshotRewards}, {Transfer} and {UnstakeERC20Token} events.
         vm.expectEmit({ emitter: address(sablierStaking) });
@@ -46,7 +47,7 @@ contract UnstakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concre
             WARP_40_PERCENT,
             REWARDS_DISTRIBUTED_PER_TOKEN_SCALED,
             users.recipient,
-            REWARDS_EARNED_BY_RECIPIENT
+            vars.expectedUserRewardsScaled
         );
         vm.expectEmit({ emitter: address(lockup) });
         emit IERC721.Transfer(address(sablierStaking), users.recipient, streamIds.defaultStakedStream);
@@ -61,7 +62,11 @@ contract UnstakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concre
         UserAccount memory actualUserAccount = sablierStaking.userAccount(poolIds.defaultPool, users.recipient);
         assertEq(actualUserAccount.streamAmountStaked, STREAM_AMOUNT_18D, "streamAmountStakedByUser");
         assertEq(actualUserAccount.snapshotRptEarnedScaled, REWARDS_DISTRIBUTED_PER_TOKEN_SCALED, "rptEarnedScaled");
-        assertEq(actualUserAccount.snapshotRewards, REWARDS_EARNED_BY_RECIPIENT, "rewards");
+        assertEq(
+            actualUserAccount.claimableRewardsStoredScaled,
+            vars.expectedUserRewardsScaled,
+            "claimableRewardsStoredScaled"
+        );
 
         // It should decrease total amount staked.
         vars.actualTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool);

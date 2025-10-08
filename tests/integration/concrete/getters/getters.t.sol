@@ -300,7 +300,11 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
         assertEq(
             stakerAccount.directAmountStaked, DIRECT_AMOUNT_STAKED_BY_STAKER_END_TIME, "staker: directAmountStaked"
         );
-        assertEq(stakerAccount.snapshotRewards, REWARDS_EARNED_BY_STAKER_END_TIME, "staker: rewards");
+        assertEq(
+            stakerAccount.claimableRewardsStoredScaled,
+            getScaledValue(REWARDS_EARNED_BY_STAKER_END_TIME),
+            "staker: claimableRewardsStoredScaled"
+        );
         assertEq(
             stakerAccount.snapshotRptEarnedScaled,
             getScaledValue(REWARDS_DISTRIBUTED_PER_TOKEN_END_TIME),
@@ -314,7 +318,11 @@ contract Getters_Integration_Concrete_Test is Shared_Integration_Concrete_Test {
             DIRECT_AMOUNT_STAKED_BY_RECIPIENT_END_TIME,
             "recipient: directAmountStaked"
         );
-        assertEq(recipientAccount.snapshotRewards, REWARDS_EARNED_BY_RECIPIENT_END_TIME, "recipient: rewards");
+        assertEq(
+            recipientAccount.claimableRewardsStoredScaled,
+            getScaledValue(REWARDS_EARNED_BY_RECIPIENT_END_TIME),
+            "recipient: claimableRewardsStoredScaled"
+        );
         assertEq(
             recipientAccount.snapshotRptEarnedScaled,
             getScaledValue(REWARDS_DISTRIBUTED_PER_TOKEN_END_TIME),

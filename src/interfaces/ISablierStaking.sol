@@ -48,7 +48,7 @@ interface ISablierStaking is
         uint40 snapshotTime,
         uint256 snapshotRptDistributedScaled,
         address indexed user,
-        uint128 userRewards
+        uint256 userRewardsScaled
     );
 
     /// @notice Emitted when a user stakes ERC20 tokens in a pool.

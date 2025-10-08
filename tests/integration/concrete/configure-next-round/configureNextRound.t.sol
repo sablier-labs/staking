@@ -152,7 +152,7 @@ contract ConfigureNextRound_Integration_Concrete_Test is Shared_Integration_Conc
     }
 
     function _test_ConfigureNextRound() private {
-        (uint256 rptEarned, uint128 expectedUserRewards) = calculateLatestRewards(users.poolCreator);
+        (uint256 rptEarned, uint256 expectedUserRewardsScaled) = calculateLatestRewardsScaled(users.poolCreator);
 
         // Set expected start time.
         uint40 expectedStartTime = newStartTime == 0 ? getBlockTimestamp() : newStartTime;

@@ -60,7 +60,11 @@ abstract contract Integration_Test is Base_Test {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Calculate latest rewards for a user.
-    function calculateLatestRewards(address user) internal view returns (uint256 rptEarnedScaled, uint128 rewards) {
+    function calculateLatestRewardsScaled(address user)
+        internal
+        view
+        returns (uint256 rptEarnedScaled, uint256 rewardsScaled)
+    {
         if (getBlockTimestamp() <= START_TIME) {
             return (0, 0);
         }
@@ -91,9 +95,9 @@ abstract contract Integration_Test is Base_Test {
 
         // Calculate latest rewards for user.
         uint128 totalAmountStakedByUser = sablierStaking.totalAmountStakedByUser(poolIds.defaultPool, user);
-        userAccount.snapshotRewards += getDescaledValue(rptEarnedScaledDelta * totalAmountStakedByUser);
+        userAccount.claimableRewardsStoredScaled += rptEarnedScaledDelta * totalAmountStakedByUser;
 
-        return (userAccount.snapshotRptEarnedScaled, userAccount.snapshotRewards);
+        return (userAccount.snapshotRptEarnedScaled, userAccount.claimableRewardsStoredScaled);
     }
 
     /// @notice Configures the next round.

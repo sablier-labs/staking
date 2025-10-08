@@ -48,5 +48,5 @@ struct Vars {
     // Expected values.
     uint256 expectedRptScaled;
     uint128 expectedTotalAmountStaked;
-    uint128 expectedUserRewards;
+    uint256 expectedUserRewardsScaled;
 }

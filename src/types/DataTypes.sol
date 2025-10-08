@@ -69,8 +69,8 @@ struct StreamLookup {
 /// decimals.
 /// @param streamAmountStaked The total amount of ERC20 tokens staked through Sablier streams, denoted in staking
 /// token's decimals.
-/// @param snapshotRewards The amount of reward tokens available to be claimed during user's snapshots, denoted in
-/// reward token's decimals.
+/// @param claimableRewardsStoredScaled The amount of reward tokens available to be claimed, denoted in reward token's
+/// decimals, scaled by {Helpers.SCALE_FACTOR} to minimize precision loss.
 /// @param snapshotRptEarnedScaled The amount of rewards earned per staking token (includes both direct staking and
 /// through Sablier streams), scaled by {Helpers.SCALE_FACTOR} to minimize precision loss.
 struct UserAccount {
@@ -78,7 +78,7 @@ struct UserAccount {
     uint128 directAmountStaked;
     uint128 streamAmountStaked;
     // Slot 1
-    uint128 snapshotRewards;
+    uint256 claimableRewardsStoredScaled;
     // Slot 2
     uint256 snapshotRptEarnedScaled;
 }

@@ -33,7 +33,11 @@ contract SnapshotRewards_Integration_Concrete_Test is Shared_Integration_Concret
             beforeUserAccount.snapshotRptEarnedScaled,
             "snapshotRptEarnedScaled"
         );
-        assertEq(afterUserAccount.snapshotRewards, beforeUserAccount.snapshotRewards, "snapshotRewards");
+        assertEq(
+            afterUserAccount.claimableRewardsStoredScaled,
+            beforeUserAccount.claimableRewardsStoredScaled,
+            "claimableRewardsStoredScaled"
+        );
     }
 
     function test_WhenEndTimeInFuture()
@@ -72,12 +76,12 @@ contract SnapshotRewards_Integration_Concrete_Test is Shared_Integration_Concret
 
     /// @dev Shared function for testing.
     function _test_SnapshotRewards() private {
-        (uint256 rptEarnedScaled, uint128 rewards) = calculateLatestRewards(users.recipient);
+        (uint256 rptEarnedScaled, uint256 rewardsScaled) = calculateLatestRewardsScaled(users.recipient);
 
         // It should emit {SnapshotRewards} event.
         vm.expectEmit({ emitter: address(sablierStaking) });
         emit ISablierStaking.SnapshotRewards(
-            poolIds.defaultPool, getBlockTimestamp(), rptEarnedScaled, users.recipient, rewards
+            poolIds.defaultPool, getBlockTimestamp(), rptEarnedScaled, users.recipient, rewardsScaled
         );
 
         // Snapshot rewards.
@@ -92,6 +96,6 @@ contract SnapshotRewards_Integration_Concrete_Test is Shared_Integration_Concret
         // It should update user rewards snapshot.
         UserAccount memory userAccount = sablierStaking.userAccount(poolIds.defaultPool, users.recipient);
         assertEq(userAccount.snapshotRptEarnedScaled, rptEarnedScaled, "snapshotRptEarnedScaled");
-        assertEq(userAccount.snapshotRewards, rewards, "snapshotRewards");
+        assertEq(userAccount.claimableRewardsStoredScaled, rewardsScaled, "claimableRewardsStoredScaled");
     }
 }

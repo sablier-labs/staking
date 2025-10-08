@@ -110,7 +110,7 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
             lockupContract: lockup,
             streamId: streamIds.defaultStream,
             expectedRptScaled: 0,
-            expectedUserRewards: 0
+            expectedUserRewardsScaled: 0
         });
     }
 
@@ -130,7 +130,7 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
             lockupContract: lockup,
             streamId: streamIds.defaultStream,
             expectedRptScaled: 0,
-            expectedUserRewards: 0
+            expectedUserRewardsScaled: 0
         });
     }
 
@@ -149,7 +149,7 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
             lockupContract: lockupV12,
             streamId: streamIds.lockupV12Stream,
             expectedRptScaled: REWARDS_DISTRIBUTED_PER_TOKEN_SCALED,
-            expectedUserRewards: REWARDS_EARNED_BY_RECIPIENT
+            expectedUserRewardsScaled: getScaledValue(REWARDS_EARNED_BY_RECIPIENT)
         });
     }
 
@@ -168,7 +168,7 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
             lockupContract: lockup,
             streamId: streamIds.defaultStream,
             expectedRptScaled: REWARDS_DISTRIBUTED_PER_TOKEN_SCALED,
-            expectedUserRewards: REWARDS_EARNED_BY_RECIPIENT
+            expectedUserRewardsScaled: getScaledValue(REWARDS_EARNED_BY_RECIPIENT)
         });
     }
 
@@ -177,7 +177,7 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
         ISablierLockupNFT lockupContract,
         uint256 streamId,
         uint256 expectedRptScaled,
-        uint128 expectedUserRewards
+        uint256 expectedUserRewardsScaled
     )
         private
     {
@@ -188,7 +188,7 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
         // It should emit {SnapshotRewards}, {Transfer} and {StakeLockupNFT} events.
         vm.expectEmit({ emitter: address(sablierStaking) });
         emit ISablierStaking.SnapshotRewards(
-            poolIds.defaultPool, getBlockTimestamp(), expectedRptScaled, users.recipient, expectedUserRewards
+            poolIds.defaultPool, getBlockTimestamp(), expectedRptScaled, users.recipient, expectedUserRewardsScaled
         );
         vm.expectEmit({ emitter: address(lockupContract) });
         emit IERC721.Transfer(users.recipient, address(sablierStaking), streamId);
@@ -208,7 +208,9 @@ contract StakeLockupNFT_Integration_Concrete_Test is Shared_Integration_Concrete
             "streamAmountStakedByUser"
         );
         assertEq(actualUserAccount.snapshotRptEarnedScaled, expectedRptScaled, "rptEarnedScaled");
-        assertEq(actualUserAccount.snapshotRewards, expectedUserRewards, "rewards");
+        assertEq(
+            actualUserAccount.claimableRewardsStoredScaled, expectedUserRewardsScaled, "claimableRewardsStoredScaled"
+        );
 
         // It should increase total amount staked.
         vars.actualTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool);

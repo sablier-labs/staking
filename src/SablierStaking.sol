@@ -64,7 +64,7 @@ contract SablierStaking is
         // Calculate the total amount staked by the user.
         uint128 userTotalAmountStaked = userAccount.directAmountStaked + userAccount.streamAmountStaked;
 
-        uint128 rewardsEarnedSinceLastSnapshot;
+        uint256 claimableRewardsScaled;
 
         // If the user has tokens staked, calculate rewards earned since last snapshot.
         if (userTotalAmountStaked > 0) {
@@ -77,11 +77,11 @@ contract SablierStaking is
             // Calculate the rewards earned by the user since the last snapshot.
             uint256 rewardsEarnedScaled = userRptSinceLastSnapshotScaled * userTotalAmountStaked;
 
-            // Scale down the amount.
-            rewardsEarnedSinceLastSnapshot = rewardsEarnedScaled.scaleDown().toUint128();
+            claimableRewardsScaled = userAccount.claimableRewardsStoredScaled + rewardsEarnedScaled;
         }
 
-        return userAccount.snapshotRewards + rewardsEarnedSinceLastSnapshot;
+        // Return the scaled down amount.
+        return claimableRewardsScaled.scaleDown().toUint128();
     }
 
     /// @inheritdoc ISablierStaking
@@ -176,16 +176,20 @@ contract SablierStaking is
         // Effect: snapshot rewards for `msg.sender`.
         _snapshotRewards(poolId, msg.sender);
 
-        // Load rewards from storage.
-        rewardsClaimed = _userAccounts[msg.sender][poolId].snapshotRewards;
+        // Load the claimable rewards from storage and scale it down.
+        uint256 claimableRewardsStoredScaled = _userAccounts[msg.sender][poolId].claimableRewardsStoredScaled;
+        rewardsClaimed = claimableRewardsStoredScaled.scaleDown().toUint128();
+
+        // Calculate the dust amount.
+        uint256 dustAmountScaled = claimableRewardsStoredScaled - uint256(rewardsClaimed).scaleUp();
 
         // Check: `msg.sender` has rewards to claim.
         if (rewardsClaimed == 0) {
             revert Errors.SablierStaking_ZeroClaimableRewards(poolId, msg.sender);
         }
 
-        // Effect: set the rewards to 0.
-        _userAccounts[msg.sender][poolId].snapshotRewards = 0;
+        // Effect: set the rewards in storage to the dust amount.
+        _userAccounts[msg.sender][poolId].claimableRewardsStoredScaled = dustAmountScaled;
 
         // Interaction: transfer the fee paid to comptroller if it's greater than 0.
         if (feePaid > 0) {
@@ -550,7 +554,7 @@ contract SablierStaking is
         uint256 rptDistributedScaled = _snapshotGlobalRewards(poolId);
 
         // Snapshot the user rewards.
-        uint128 userRewards = _snapshotUserRewards(poolId, user, rptDistributedScaled);
+        uint256 userRewardsScaled = _snapshotUserRewards(poolId, user, rptDistributedScaled);
 
         // Log the event.
         emit SnapshotRewards({
@@ -558,7 +562,7 @@ contract SablierStaking is
             snapshotTime: uint40(block.timestamp),
             snapshotRptDistributedScaled: rptDistributedScaled,
             user: user,
-            userRewards: userRewards
+            userRewardsScaled: userRewardsScaled
         });
     }
 
@@ -761,7 +765,7 @@ contract SablierStaking is
         uint256 rptDistributedScaled
     )
         private
-        returns (uint128 userRewards)
+        returns (uint256 userRewardsScaled)
     {
         // Load the struct.
         UserAccount storage userAccount = _userAccounts[user][poolId];
@@ -769,7 +773,7 @@ contract SablierStaking is
         // Calculate the total amount staked by the user.
         uint128 userTotalAmountStaked = userAccount.directAmountStaked + userAccount.streamAmountStaked;
 
-        userRewards = userAccount.snapshotRewards;
+        userRewardsScaled = userAccount.claimableRewardsStoredScaled;
 
         // If the user has tokens staked, update the user rewards earned.
         if (userTotalAmountStaked > 0) {
@@ -779,13 +783,10 @@ contract SablierStaking is
             // Compute the new rewards earned by the user since the last snapshot.
             uint256 userRewardsSinceLastSnapshotScaled = userRptSinceLastSnapshotScaled * userTotalAmountStaked;
 
-            // Scale down the rewards earned by the user since the last snapshot.
-            uint128 userRewardsSinceLastSnapshot = userRewardsSinceLastSnapshotScaled.scaleDown().toUint128();
-
-            userRewards += userRewardsSinceLastSnapshot;
+            userRewardsScaled += userRewardsSinceLastSnapshotScaled;
 
             // Effect: snapshot the rewards earned by the user.
-            userAccount.snapshotRewards = userRewards;
+            userAccount.claimableRewardsStoredScaled = userRewardsScaled;
         }
 
         // Effect: snapshot the rewards earned per ERC20 token by the user.

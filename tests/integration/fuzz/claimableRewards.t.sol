@@ -22,9 +22,10 @@ contract ClaimableRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test 
         // Warp the EVM state to the given timestamp.
         warpStateTo(timestamp);
 
-        (, uint128 expectedUserRewards) = calculateLatestRewards(caller);
+        (, uint256 expectedUserRewardsScaled) = calculateLatestRewardsScaled(caller);
 
         uint128 actualRewards = sablierStaking.claimableRewards(poolIds.defaultPool, caller);
-        assertEq(actualRewards, expectedUserRewards, "rewards");
+        uint128 expectedRewards = getDescaledValue(expectedUserRewardsScaled);
+        assertEq(actualRewards, expectedRewards, "rewards");
     }
 }

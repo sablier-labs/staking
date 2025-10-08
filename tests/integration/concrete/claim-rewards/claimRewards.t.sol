@@ -143,7 +143,7 @@ contract ClaimRewards_Integration_Concrete_Test is Shared_Integration_Concrete_T
             expectedSnapshotTime,
             expectedRptEarnedScaled,
             users.recipient,
-            expectedRewardsEarnedByRecipient
+            getScaledValue(expectedRewardsEarnedByRecipient)
         );
         vm.expectEmit({ emitter: address(rewardToken) });
         emit IERC20.Transfer(address(sablierStaking), address(comptroller), expectedRewardsTransferredToComptroller);

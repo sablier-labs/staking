@@ -70,6 +70,7 @@ contract CreatePool_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
 
         // It should set the correct pool state.
         assertEq(sablierStaking.getAdmin(actualPoolIds), poolCreator, "admin");
+        assertEq(sablierStaking.getCumulativeRewardAmount(actualPoolIds), rewardAmount, "cumulativeRewardAmount");
         assertEq(sablierStaking.getStakingToken(actualPoolIds), stakingToken, "stakingToken");
         assertEq(sablierStaking.getStartTime(actualPoolIds), startTime, "startTime");
         assertEq(sablierStaking.getEndTime(actualPoolIds), endTime, "endTime");

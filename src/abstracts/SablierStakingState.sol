@@ -58,6 +58,11 @@ abstract contract SablierStakingState is ISablierStakingState {
     }
 
     /// @inheritdoc ISablierStakingState
+    function getCumulativeRewardAmount(uint256 poolId) external view notNull(poolId) returns (uint128) {
+        return _pools[poolId].cumulativeRewardAmount;
+    }
+
+    /// @inheritdoc ISablierStakingState
     function getEndTime(uint256 poolId) external view notNull(poolId) returns (uint40) {
         return _pools[poolId].endTime;
     }

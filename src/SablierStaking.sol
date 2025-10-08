@@ -127,12 +127,13 @@ contract SablierStaking is
         }
 
         // Else, calculate it. Safe casting because rewards distributed is guaranteed to be less than 2^128.
-        return uint128(rewardsDistributedSinceLastSnapshot / _pools[poolId].totalStakedAmount);
+        return uint128((rewardsDistributedSinceLastSnapshot / _pools[poolId].totalStakedAmount).scaleDown());
     }
 
     /// @inheritdoc ISablierStaking
     function rewardsSinceLastSnapshot(uint256 poolId) external view override notNull(poolId) returns (uint128) {
-        return _rewardsDistributedScaledSinceLastSnapshot(poolId).scaleDown().toUint128();
+        // Safe casting because rewards distributed is guaranteed to be less than 2^128.
+        return uint128(_rewardsDistributedScaledSinceLastSnapshot(poolId).scaleDown());
     }
 
     /// @inheritdoc IERC165
@@ -259,23 +260,22 @@ contract SablierStaking is
             revert Errors.SablierStaking_RewardAmountZero();
         }
 
-        uint128 adminTotalAmountStaked;
+        // Check: cumulative reward amount does not exceed max allowed.
+        if (newRewardAmount > type(uint128).max - pool.cumulativeRewardAmount) {
+            revert Errors.SablierStaking_CumulativeRewardAmountExceedMaxAllowed({
+                newRewardAmount: newRewardAmount,
+                remainingBufferAmount: type(uint128).max - pool.cumulativeRewardAmount
+            });
+        }
 
-        // Safe to use `unchecked` because the user's total staked amount cannot overflow.
+        // Safe to use `unchecked` because we have already checked that it does not exceed max allowed.
         unchecked {
-            // Calculate the total amount staked by the admin.
-            adminTotalAmountStaked = _userAccounts[msg.sender][poolId].directAmountStaked
-                + _userAccounts[msg.sender][poolId].streamAmountStaked;
+            // Effect: update the cumulative reward amount.
+            pool.cumulativeRewardAmount += newRewardAmount;
         }
 
-        // Effect: snapshot both global, and user rewards if the amount staked is greater than 0.
-        if (adminTotalAmountStaked > 0) {
-            _snapshotRewards(poolId, msg.sender);
-        }
-        // Otherwise, only snapshot the global rewards.
-        else {
-            _snapshotGlobalRewards(poolId);
-        }
+        // Effect: snapshot the global rewards.
+        _snapshotGlobalRewards(poolId);
 
         // Effect: set the next staking round parameters.
         pool.endTime = newEndTime;
@@ -334,6 +334,7 @@ contract SablierStaking is
         // Effect: store the pool parameters in the storage.
         _pools[poolId] = Pool({
             admin: admin,
+            cumulativeRewardAmount: rewardAmount,
             endTime: endTime,
             rewardAmount: rewardAmount,
             rewardToken: rewardToken,

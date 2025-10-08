@@ -99,7 +99,7 @@ contract ConfigureNextRound_Integration_Concrete_Test is Shared_Integration_Conc
         sablierStaking.configureNextRound(poolIds.defaultPool, newStartTime, newEndTime, newRewardAmount);
     }
 
-    function test_GivenAdminStaked()
+    function test_RevertWhen_CumulativeRewardAmountExceedsMaxAllowed()
         external
         whenNoDelegateCall
         whenNotNull
@@ -109,17 +109,19 @@ contract ConfigureNextRound_Integration_Concrete_Test is Shared_Integration_Conc
         whenNewEndTimeGreaterThanNewStartTime
         whenNewRewardAmountNotZero
     {
-        // Warp to 1 seconds before the end time so that the admin can stake.
-        vm.warp(END_TIME - 1 seconds);
-        sablierStaking.stakeERC20Token(poolIds.defaultPool, DEFAULT_AMOUNT);
+        newRewardAmount = MAX_UINT128 - REWARD_AMOUNT + 1;
 
-        // Warp to past end time so that next round can be configured.
-        vm.warp(END_TIME + 1 seconds);
-
-        _test_ConfigureNextRound({ adminStaked: true });
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.SablierStaking_CumulativeRewardAmountExceedMaxAllowed.selector,
+                newRewardAmount,
+                MAX_UINT128 - REWARD_AMOUNT
+            )
+        );
+        sablierStaking.configureNextRound(poolIds.defaultPool, newStartTime, newEndTime, newRewardAmount);
     }
 
-    function test_GivenAdminNotStaked()
+    function test_WhenCumulativeRewardAmountNotExceedMaxAllowed()
         external
         whenNoDelegateCall
         whenNotNull
@@ -129,19 +131,6 @@ contract ConfigureNextRound_Integration_Concrete_Test is Shared_Integration_Conc
         whenNewEndTimeGreaterThanNewStartTime
         whenNewRewardAmountNotZero
     {
-        _test_ConfigureNextRound({ adminStaked: false });
-    }
-
-    function _test_ConfigureNextRound(bool adminStaked) private {
-        (uint256 rptEarned, uint128 expectedUserRewards) = calculateLatestRewards(users.poolCreator);
-
-        // It should emit a {SnapshotRewards} event if the admin has staked.
-        if (adminStaked) {
-            vm.expectEmit({ emitter: address(sablierStaking) });
-            emit ISablierStaking.SnapshotRewards(
-                poolIds.defaultPool, END_TIME + 1 seconds, rptEarned, users.poolCreator, expectedUserRewards
-            );
-        }
         // It should emit {Transfer} and {ConfigureNextRound} events.
         vm.expectEmit({ emitter: address(rewardToken) });
         emit IERC20.Transfer(users.poolCreator, address(sablierStaking), newRewardAmount);
@@ -149,19 +138,6 @@ contract ConfigureNextRound_Integration_Concrete_Test is Shared_Integration_Conc
         emit ISablierStaking.ConfigureNextRound(poolIds.defaultPool, newStartTime, newEndTime, newRewardAmount);
 
         sablierStaking.configureNextRound(poolIds.defaultPool, newStartTime, newEndTime, newRewardAmount);
-
-        UserAccount memory userAccount = sablierStaking.userAccount(poolIds.defaultPool, users.poolCreator);
-
-        // If the admin has staked, it should update the admin's rewards snapshot.
-        if (adminStaked) {
-            assertEq(userAccount.snapshotRptEarnedScaled, rptEarned, "snapshotRptEarnedScaled");
-            assertEq(userAccount.snapshotRewards, expectedUserRewards, "snapshotRewards");
-        }
-        // Otherwise, it should not update the admin's rewards snapshot.
-        else {
-            assertEq(userAccount.snapshotRptEarnedScaled, 0, "snapshotRptEarnedScaled");
-            assertEq(userAccount.snapshotRewards, 0, "snapshotRewards");
-        }
 
         // It should set the new start time.
         assertEq(sablierStaking.getStartTime(poolIds.defaultPool), newStartTime, "startTime");
@@ -171,6 +147,13 @@ contract ConfigureNextRound_Integration_Concrete_Test is Shared_Integration_Conc
 
         // It should set the new reward amount.
         assertEq(sablierStaking.getRewardAmount(poolIds.defaultPool), newRewardAmount, "rewardAmount");
+
+        // It should update the cumulative reward amount.
+        assertEq(
+            sablierStaking.getCumulativeRewardAmount(poolIds.defaultPool),
+            REWARD_AMOUNT + newRewardAmount,
+            "cumulativeRewardAmount"
+        );
 
         // It should set the status to scheduled.
         assertEq(sablierStaking.status(poolIds.defaultPool), Status.SCHEDULED, "status");

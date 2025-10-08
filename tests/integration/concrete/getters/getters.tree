@@ -4,6 +4,12 @@ Getters_Integration_Concrete_Test::getAdmin
 └── when not null
    └── it should return the admin
 
+Getters_Integration_Concrete_Test::getCumulativeRewardAmount
+├── when null
+│  └── it should revert
+└── when not null
+   └── it should return the cumulative reward amount
+
 Getters_Integration_Concrete_Test::getEndTime
 ├── when null
 │  └── it should revert

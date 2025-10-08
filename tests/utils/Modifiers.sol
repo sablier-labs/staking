@@ -138,10 +138,6 @@ abstract contract Modifiers is EvmUtilsBase {
         _;
     }
 
-    modifier whenNewStartTimeNotInPast() {
-        _;
-    }
-
     modifier whenNoDelegateCall() {
         _;
     }
@@ -175,6 +171,10 @@ abstract contract Modifiers is EvmUtilsBase {
     }
 
     modifier whenStartTimeNotInPast() {
+        _;
+    }
+
+    modifier whenStartTimeNotZero() {
         _;
     }
 

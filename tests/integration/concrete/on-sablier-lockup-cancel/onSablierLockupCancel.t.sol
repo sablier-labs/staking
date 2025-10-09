@@ -14,13 +14,13 @@ contract OnSablierLockupCancel_Integration_Concrete_Test is Shared_Integration_C
         expectRevert_DelegateCall(callData);
     }
 
-    function test_RevertWhen_CallerNotLockup() external whenNoDelegateCall {
+    function test_WhenCallerNotLockup() external whenNoDelegateCall {
         setMsgSender(users.sender);
 
         sablierStaking.onSablierLockupCancel(streamIds.defaultStream, users.sender, 0, 0);
     }
 
-    function test_RevertGiven_LockupNotWhitelisted() external whenNoDelegateCall whenCallerLockup {
+    function test_GivenLockupNotWhitelisted() external whenNoDelegateCall whenCallerLockup {
         // Deploy a new Lockup contract for this test.
         lockup = deployLockup();
 
@@ -29,7 +29,7 @@ contract OnSablierLockupCancel_Integration_Concrete_Test is Shared_Integration_C
         sablierStaking.onSablierLockupCancel(streamIds.defaultStream, users.sender, 0, 0);
     }
 
-    function test_RevertGiven_StreamNotStaked() external whenNoDelegateCall whenCallerLockup givenLockupWhitelisted {
+    function test_GivenStreamNotStaked() external whenNoDelegateCall whenCallerLockup givenLockupWhitelisted {
         // Transfer a stream directly to the Staking contract so that its not technically staked.
         setMsgSender(users.recipient);
         lockup.transferFrom(users.recipient, address(sablierStaking), streamIds.defaultStream);

@@ -37,7 +37,7 @@ library Errors {
         ISablierLockupNFT lockup, uint256 streamId, address caller, address streamOwner
     );
 
-    /// @notice Thrown when configuring next round with cumulative reward amount exceeding max allowed.
+    /// @notice Thrown when configuring next round resulting in cumulative reward amount exceeding max value.
     error SablierStaking_CumulativeRewardAmountExceedMaxAllowed(uint128 newRewardAmount, uint128 remainingBufferAmount);
 
     /// @notice Thrown when staking into a pool when end time is not in the future.

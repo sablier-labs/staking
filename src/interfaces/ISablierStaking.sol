@@ -154,9 +154,9 @@ interface ISablierStaking is
     /// - `poolId` must reference a pool with an end time in the past.
     /// - `newStartTime` must be greater than or equal to the `block.timestamp` if it's not zero.
     /// - `newEndTime` must be greater than new `startTime`.
-    /// - `rewardAmount` must be greater than 0.
+    /// - `newRewardAmount` must be greater than 0.
     /// - The cumulative reward amount must not exceed `type(uint128).max`.
-    /// - `msg.sender` must have approved this contract to spend the `rewardAmount` of reward ERC20 token.
+    /// - `msg.sender` must have approved this contract to spend the `newRewardAmount` of reward ERC20 token.
     ///
     /// @param poolId The pool ID for which to configure the next staking round.
     /// @param newStartTime The start time for the next rewards period, denoted in UNIX timestamp. A sentinel value of

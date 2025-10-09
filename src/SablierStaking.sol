@@ -180,8 +180,8 @@ contract SablierStaking is
         uint256 claimableRewardsStoredScaled = _userAccounts[msg.sender][poolId].claimableRewardsStoredScaled;
         rewardsClaimed = claimableRewardsStoredScaled.scaleDown().toUint128();
 
-        // Calculate the dust amount.
-        uint256 dustAmountScaled = claimableRewardsStoredScaled - uint256(rewardsClaimed).scaleUp();
+        // Calculate the dust amount that cannot be claimed because it would become 0 as a result of downscale.
+        uint256 dustAmountScaled = claimableRewardsStoredScaled % Helpers.SCALE_FACTOR;
 
         // Check: `msg.sender` has rewards to claim.
         if (rewardsClaimed == 0) {

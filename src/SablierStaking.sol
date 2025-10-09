@@ -590,14 +590,14 @@ contract SablierStaking is
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Retrieves the token being streamed in the specified stream ID.
-    function _getUnderlyingToken(ISablierLockupNFT lockup, uint256 streamId) private returns (IERC20 token) {
+    function _getUnderlyingToken(ISablierLockupNFT lockup, uint256 streamId) private view returns (IERC20 token) {
         // Since, Lockup v1.2 does not implement `getUnderlyingToken`, low-level call is used to call this function. If
         // the call fails, `getAsset` will be called as a fallback.
         (bool success, bytes memory data) =
-            address(lockup).call(abi.encodeCall(ISablierLockupNFT.getUnderlyingToken, (streamId)));
+            address(lockup).staticcall(abi.encodeCall(ISablierLockupNFT.getUnderlyingToken, (streamId)));
 
         if (!success) {
-            (, data) = address(lockup).call(abi.encodeCall(ISablierLockupNFT.getAsset, (streamId)));
+            (, data) = address(lockup).staticcall(abi.encodeCall(ISablierLockupNFT.getAsset, (streamId)));
         }
 
         // Since only whitelisted Lockup contracts are allowed to stake, it is safe to assume that the returned data is
@@ -625,7 +625,7 @@ contract SablierStaking is
             }
         }
 
-        // Low-level call to check if the function is implemented.
+        // Use a low-level call to check if the function is implemented.
         (bool successGetUnderlyingToken,) = address(lockup).staticcall(
             abi.encodeWithSelector(ISablierLockupNFT.getUnderlyingToken.selector, testStreamId)
         );

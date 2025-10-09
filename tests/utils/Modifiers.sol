@@ -80,6 +80,10 @@ abstract contract Modifiers is EvmUtilsBase {
         _;
     }
 
+    modifier whenBlockTimeGreaterThanStartTime() {
+        _;
+    }
+
     modifier whenCallerComptroller() {
         setMsgSender(address(comptroller));
         _;

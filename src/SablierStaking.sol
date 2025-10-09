@@ -678,8 +678,8 @@ contract SablierStaking is
         uint256 poolEndTime = uint256(pool.endTime);
         uint256 poolStartTime = uint256(pool.startTime);
 
-        // If the start time is in the future, return 0.
-        if (blockTimestamp < poolStartTime) {
+        // If the pool start time is not in the past, return 0.
+        if (blockTimestamp <= poolStartTime) {
             return 0;
         }
 

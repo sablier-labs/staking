@@ -5,7 +5,12 @@ RewardsSinceLastSnapshot_Integration_Concrete_Test
    ├── given total staked zero
    │  └── it should return zero
    └── given total staked not zero
-      ├── given snapshot time not less than end time
+      ├── when block time less than start time
       │  └── it should return zero
-      └── given snapshot time less than end time
-         └── it should return correct rewards per token since last snapshot
+      ├── when block time equals start time
+      │  └── it should return zero
+      └── when block time greater than start time
+         ├── given snapshot time not less than end time
+         │  └── it should return zero
+         └── given snapshot time less than end time
+            └── it should return correct rewards per token since last snapshot

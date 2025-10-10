@@ -108,6 +108,9 @@ contract StakingHandler is BaseHandler {
             max: amountInWeiForToken(20_000_000_000, rewardToken)
         });
 
+        // Discard if new cumulative reward amount would overflow.
+        vm.assume(newRewardAmount + sablierStaking.getCumulativeRewardAmount(selectedPoolId) <= MAX_UINT128);
+
         address poolAdmin = sablierStaking.getAdmin(selectedPoolId);
 
         // Deal tokens to the caller and approve the staking pool.

@@ -10,6 +10,7 @@
 4. For a pool:
    - Total rewards claimed + Total claimable rewards $`\le`$ Total rewards deposited.
    - Total staked amount = $`\sum`$ Total staked amount by each user.
+   - Cumulative reward amount = $`\sum`$ Reward amount of each round
 
 5. For a user in a pool:
    - Rewards earned per token should never decrease over time.

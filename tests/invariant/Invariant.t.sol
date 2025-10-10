@@ -145,6 +145,20 @@ contract Invariant_Test is Base_Test, StdInvariant {
         }
     }
 
+    function invariant_CumulativeRewardAmount() external view {
+        for (uint256 i = 0; i < handlerStore.totalPools(); ++i) {
+            uint256 poolId = handlerStore.poolIds(i);
+            uint256 cumulativeRewardAmount = sablierStaking.getCumulativeRewardAmount(poolId);
+            uint256 totalRewardsDeposited = handlerStore.totalRewardsDeposited(poolId);
+
+            assertEq(
+                cumulativeRewardAmount,
+                totalRewardsDeposited,
+                "Invariant violation: cumulative reward amount != total rewards deposited"
+            );
+        }
+    }
+
     function invariant_UserRewards() external view {
         for (uint256 i = 0; i < handlerStore.totalPools(); ++i) {
             uint256 poolId = handlerStore.poolIds(i);

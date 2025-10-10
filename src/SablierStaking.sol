@@ -119,21 +119,21 @@ contract SablierStaking is
         returns (uint128)
     {
         // Get the rewards distributed since the last snapshot.
-        uint256 rewardsDistributedSinceLastSnapshot = _rewardsDistributedScaledSinceLastSnapshot(poolId);
+        uint256 rewardsDistributedSinceLastSnapshotScaled = _rewardsDistributedSinceLastSnapshotScaled(poolId);
 
         // If the rewards distributed since the last snapshot is zero, return 0.
-        if (rewardsDistributedSinceLastSnapshot == 0) {
+        if (rewardsDistributedSinceLastSnapshotScaled == 0) {
             return 0;
         }
 
         // Else, calculate it. Safe casting because rewards distributed is guaranteed to be less than 2^128.
-        return uint128((rewardsDistributedSinceLastSnapshot / _pools[poolId].totalStakedAmount).scaleDown());
+        return uint128((rewardsDistributedSinceLastSnapshotScaled / _pools[poolId].totalStakedAmount).scaleDown());
     }
 
     /// @inheritdoc ISablierStaking
     function rewardsSinceLastSnapshot(uint256 poolId) external view override notNull(poolId) returns (uint128) {
         // Safe casting because rewards distributed is guaranteed to be less than 2^128.
-        return uint128(_rewardsDistributedScaledSinceLastSnapshot(poolId).scaleDown());
+        return uint128(_rewardsDistributedSinceLastSnapshotScaled(poolId).scaleDown());
     }
 
     /// @inheritdoc IERC165
@@ -264,15 +264,18 @@ contract SablierStaking is
             revert Errors.SablierStaking_RewardAmountZero();
         }
 
-        // Check: cumulative reward amount does not exceed max allowed.
-        if (newRewardAmount > type(uint128).max - pool.cumulativeRewardAmount) {
-            revert Errors.SablierStaking_CumulativeRewardAmountExceedMaxAllowed({
+        // Calculate the buffer amount.
+        uint128 bufferAmount = type(uint128).max - pool.cumulativeRewardAmount;
+
+        // Check: cumulative reward amount does not overflow.
+        if (newRewardAmount > bufferAmount) {
+            revert Errors.SablierStaking_CumulativeRewardAmountOverflow({
                 newRewardAmount: newRewardAmount,
-                remainingBufferAmount: type(uint128).max - pool.cumulativeRewardAmount
+                remainingBufferAmount: bufferAmount
             });
         }
 
-        // Safe to use `unchecked` because we have already checked that it does not exceed max allowed.
+        // Safe to use `unchecked` because we checked the overflow above.
         unchecked {
             // Effect: update the cumulative reward amount.
             pool.cumulativeRewardAmount += newRewardAmount;
@@ -392,7 +395,7 @@ contract SablierStaking is
         // Get the Pool ID in which the stream ID is staked.
         uint256 poolId = _streamsLookup[msgSenderAsLockup][streamId].poolId;
 
-        // Check: the Pool ID is not zero.
+        // Return the selector if the strean ID is not staked.
         if (poolId == 0) {
             return ISablierLockupRecipient.onSablierLockupCancel.selector;
         }
@@ -643,7 +646,7 @@ contract SablierStaking is
                 address(lockup).staticcall(abi.encodeWithSelector(ISablierLockupNFT.getAsset.selector, testStreamId));
 
             // Check: neither of `getUnderlyingToken` or `getAsset` are implemented.
-            if (!successGetUnderlyingToken && !succesGetAsset) {
+            if (!succesGetAsset) {
                 revert Errors.SablierStaking_LockupMissesSelector(lockup, ISablierLockupNFT.getAsset.selector);
             }
         }
@@ -666,7 +669,7 @@ contract SablierStaking is
     ///  - The total amount staked is 0.
     ///  - The start time is in the future.
     ///  - The snapshot time is greater than or equal to the end time.
-    function _rewardsDistributedScaledSinceLastSnapshot(uint256 poolId)
+    function _rewardsDistributedSinceLastSnapshotScaled(uint256 poolId)
         private
         view
         returns (uint256 rewardsDistributedScaled)
@@ -719,12 +722,12 @@ contract SablierStaking is
         rptDistributedScaled = _pools[poolId].snapshotRptDistributedScaled;
 
         // Get the rewards distributed scaled since the last snapshot.
-        uint256 rewardsDistributedScaledSinceLastSnapshot = _rewardsDistributedScaledSinceLastSnapshot(poolId);
+        uint256 rewardsDistributedSinceLastSnapshotScaled = _rewardsDistributedSinceLastSnapshotScaled(poolId);
 
-        if (rewardsDistributedScaledSinceLastSnapshot > 0) {
+        if (rewardsDistributedSinceLastSnapshotScaled > 0) {
             // Get the rewards distributed per ERC20 token since the last snapshot.
             uint256 rptSinceLastSnapshotScaled =
-                rewardsDistributedScaledSinceLastSnapshot / _pools[poolId].totalStakedAmount;
+                rewardsDistributedSinceLastSnapshotScaled / _pools[poolId].totalStakedAmount;
 
             // Calculate the cumulative rewards distributed per ERC20 token.
             rptDistributedScaled += rptSinceLastSnapshotScaled;

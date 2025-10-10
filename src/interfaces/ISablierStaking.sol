@@ -155,7 +155,7 @@ interface ISablierStaking is
     /// - `newStartTime` must be greater than or equal to the `block.timestamp` if it's not zero.
     /// - `newEndTime` must be greater than new `startTime`.
     /// - `newRewardAmount` must be greater than 0.
-    /// - The cumulative reward amount must not exceed `type(uint128).max`.
+    /// - `newRewardAmount` must not exceed `type(uint128).max` minus current cumulative reward amount.
     /// - `msg.sender` must have approved this contract to spend the `newRewardAmount` of reward ERC20 token.
     ///
     /// @param poolId The pool ID for which to configure the next staking round.

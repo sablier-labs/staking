@@ -45,7 +45,7 @@ contract OnSablierLockupCancel_Integration_Concrete_Test is Shared_Integration_C
         // Check that stream was canceled.
         assertEq(ISablierLockup(address(lockup)).wasCanceled(streamIds.defaultStream), true, "stream canceled");
 
-        // It should NOT adjust global staked amount.
+        // It should not adjust global staked amount.
         assertEq(
             sablierStaking.getTotalStakedAmount(poolIds.defaultPool), initialTotalStakedAmount, "global staked amount"
         );

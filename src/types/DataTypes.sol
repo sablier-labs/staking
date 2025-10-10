@@ -23,8 +23,8 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 /// @param snapshotRptDistributedScaled Cumulative amount of rewards distributed per staking token at snapshot time,
 /// includes both direct staking and through Sablier Lockup streams, scaled by {Helpers.SCALE_FACTOR} to minimize
 /// precision loss.
-/// @param cumulativeRewardAmount The total amount of rewards that a pool has distributed, denoted in reward token's
-/// decimals.
+/// @param cumulativeRewardAmount The total sum of rewards deposited into pool ID across all rounds, denoted in reward
+/// token's decimals.
 struct Pool {
     // Slot 0
     address admin;

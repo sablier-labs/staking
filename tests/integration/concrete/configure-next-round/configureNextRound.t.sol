@@ -99,7 +99,7 @@ contract ConfigureNextRound_Integration_Concrete_Test is Shared_Integration_Conc
         sablierStaking.configureNextRound(poolIds.defaultPool, newStartTime, newEndTime, newRewardAmount);
     }
 
-    function test_RevertWhen_CumulativeRewardAmountExceedsMaxAllowed()
+    function test_RevertWhen_CumulativeRewardAmountOverflows()
         external
         whenNoDelegateCall
         whenNotNull
@@ -113,7 +113,7 @@ contract ConfigureNextRound_Integration_Concrete_Test is Shared_Integration_Conc
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                Errors.SablierStaking_CumulativeRewardAmountExceedMaxAllowed.selector,
+                Errors.SablierStaking_CumulativeRewardAmountOverflow.selector,
                 newRewardAmount,
                 MAX_UINT128 - REWARD_AMOUNT
             )
@@ -121,7 +121,7 @@ contract ConfigureNextRound_Integration_Concrete_Test is Shared_Integration_Conc
         sablierStaking.configureNextRound(poolIds.defaultPool, newStartTime, newEndTime, newRewardAmount);
     }
 
-    function test_WhenCumulativeRewardAmountNotExceedMaxAllowed()
+    function test_WhenCumulativeRewardAmountNotOverflow()
         external
         whenNoDelegateCall
         whenNotNull

@@ -99,8 +99,10 @@ contract ConfigureNextRound_Integration_Fuzz_Test is Shared_Integration_Fuzz_Tes
         // Bound new end time such that it is greater than the new start time.
         newEndTime = boundUint40(newEndTime, newStartTime + 1 seconds, newStartTime + 365 days);
 
+        uint128 previousCumulativeRewardAmount = sablierStaking.getCumulativeRewardAmount(poolIds.defaultPool);
+
         // Bound new reward amount such that it is greater than 0.
-        newRewardAmount = boundUint128(newRewardAmount, 1, MAX_UINT128 - REWARD_AMOUNT);
+        newRewardAmount = boundUint128(newRewardAmount, 1, MAX_UINT128 - previousCumulativeRewardAmount);
 
         // Deal tokens to the pool creator.
         deal({ token: address(rewardToken), to: users.poolCreator, give: newRewardAmount });
@@ -127,7 +129,7 @@ contract ConfigureNextRound_Integration_Fuzz_Test is Shared_Integration_Fuzz_Tes
         // It should update the cumulative reward amount.
         assertEq(
             sablierStaking.getCumulativeRewardAmount(poolIds.defaultPool),
-            REWARD_AMOUNT + newRewardAmount,
+            previousCumulativeRewardAmount + newRewardAmount,
             "cumulativeRewardAmount"
         );
 

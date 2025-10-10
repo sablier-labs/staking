@@ -38,7 +38,7 @@ library Errors {
     );
 
     /// @notice Thrown when configuring next round resulting in cumulative reward amount exceeding max value.
-    error SablierStaking_CumulativeRewardAmountExceedMaxAllowed(uint128 newRewardAmount, uint128 remainingBufferAmount);
+    error SablierStaking_CumulativeRewardAmountOverflow(uint128 newRewardAmount, uint128 remainingBufferAmount);
 
     /// @notice Thrown when staking into a pool when end time is not in the future.
     error SablierStaking_EndTimeNotInFuture(uint256 poolId, uint40 endTime);

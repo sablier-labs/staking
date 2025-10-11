@@ -263,7 +263,7 @@ contract SablierStaking is
         // Calculate the buffer amount.
         uint128 bufferAmount = type(uint128).max - pool.cumulativeRewardAmount;
 
-        // Check: cumulative reward amount does not overflow.
+        // Check: new reward amount does not exceed the buffer amount.
         if (newRewardAmount > bufferAmount) {
             revert Errors.SablierStaking_CumulativeRewardAmountOverflow({
                 newRewardAmount: newRewardAmount,
@@ -271,7 +271,7 @@ contract SablierStaking is
             });
         }
 
-        // Safe to use `unchecked` because we checked the overflow above.
+        // Safe to use `unchecked` because cumulative reward amount can not overflow as we checked the overflow above.
         unchecked {
             // Effect: update the cumulative reward amount.
             pool.cumulativeRewardAmount += newRewardAmount;
@@ -633,11 +633,12 @@ contract SablierStaking is
             abi.encodeWithSelector(ISablierLockupNFT.getUnderlyingToken.selector, testStreamId)
         );
 
+        // If `getUnderlyingToken` is not implemented, check `getAsset` is implemented.
         if (!successGetUnderlyingToken) {
             (bool succesGetAsset,) =
                 address(lockup).staticcall(abi.encodeWithSelector(ISablierLockupNFT.getAsset.selector, testStreamId));
 
-            // Check: neither of `getUnderlyingToken` or `getAsset` are implemented.
+            // Revert if `getAsset` is not implemented.
             if (!succesGetAsset) {
                 revert Errors.SablierStaking_LockupMissesSelector(lockup, ISablierLockupNFT.getAsset.selector);
             }

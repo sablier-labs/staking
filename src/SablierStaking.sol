@@ -566,7 +566,8 @@ contract SablierStaking is
                             PRIVATE READ-ONLY FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @dev Common checks between `createPool` and `configureNextRound`.
+    /// @notice Common checks between `createPool` and `configureNextRound`.
+    /// @dev It returns the modified start time if sentinel value of zero is used for the start time parameter.
     function _checkTimestampsAndRewardAmount(
         uint40 startTime,
         uint40 endTime,
@@ -597,7 +598,6 @@ contract SablierStaking is
             revert Errors.SablierStaking_RewardAmountZero();
         }
 
-        // Return the start time in case the sentinel value was used.
         return startTime;
     }
 

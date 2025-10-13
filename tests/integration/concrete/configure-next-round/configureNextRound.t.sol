@@ -55,12 +55,25 @@ contract ConfigureNextRound_Integration_Concrete_Test is Shared_Integration_Conc
         sablierStaking.configureNextRound(poolIds.defaultPool, newStartTime, newEndTime, newRewardAmount);
     }
 
+    function test_WhenNewStartTimeZero()
+        external
+        whenNoDelegateCall
+        whenNotNull
+        whenCallerPoolAdmin
+        whenEndTimeInPast
+    {
+        newStartTime = 0;
+
+        _test_ConfigureNextRound();
+    }
+
     function test_RevertWhen_NewStartTimeInPast()
         external
         whenNoDelegateCall
         whenNotNull
         whenCallerPoolAdmin
         whenEndTimeInPast
+        whenStartTimeNotZero
     {
         newStartTime = END_TIME;
 
@@ -74,7 +87,8 @@ contract ConfigureNextRound_Integration_Concrete_Test is Shared_Integration_Conc
         whenNotNull
         whenCallerPoolAdmin
         whenEndTimeInPast
-        whenNewStartTimeNotInPast
+        whenStartTimeNotZero
+        whenStartTimeNotInPast
     {
         newEndTime = newStartTime - 1;
 
@@ -90,7 +104,8 @@ contract ConfigureNextRound_Integration_Concrete_Test is Shared_Integration_Conc
         whenNotNull
         whenCallerPoolAdmin
         whenEndTimeInPast
-        whenNewStartTimeNotInPast
+        whenStartTimeNotZero
+        whenStartTimeNotInPast
         whenNewEndTimeGreaterThanNewStartTime
     {
         newRewardAmount = 0;
@@ -105,7 +120,8 @@ contract ConfigureNextRound_Integration_Concrete_Test is Shared_Integration_Conc
         whenNotNull
         whenCallerPoolAdmin
         whenEndTimeInPast
-        whenNewStartTimeNotInPast
+        whenStartTimeNotZero
+        whenStartTimeNotInPast
         whenNewEndTimeGreaterThanNewStartTime
         whenNewRewardAmountNotZero
     {
@@ -127,20 +143,30 @@ contract ConfigureNextRound_Integration_Concrete_Test is Shared_Integration_Conc
         whenNotNull
         whenCallerPoolAdmin
         whenEndTimeInPast
-        whenNewStartTimeNotInPast
+        whenStartTimeNotZero
+        whenStartTimeNotInPast
         whenNewEndTimeGreaterThanNewStartTime
         whenNewRewardAmountNotZero
     {
+        _test_ConfigureNextRound();
+    }
+
+    function _test_ConfigureNextRound() private {
+        (uint256 rptEarned, uint128 expectedUserRewards) = calculateLatestRewards(users.poolCreator);
+
+        // Set expected start time.
+        uint40 expectedStartTime = newStartTime == 0 ? getBlockTimestamp() : newStartTime;
+
         // It should emit {Transfer} and {ConfigureNextRound} events.
         vm.expectEmit({ emitter: address(rewardToken) });
         emit IERC20.Transfer(users.poolCreator, address(sablierStaking), newRewardAmount);
         vm.expectEmit({ emitter: address(sablierStaking) });
-        emit ISablierStaking.ConfigureNextRound(poolIds.defaultPool, newStartTime, newEndTime, newRewardAmount);
+        emit ISablierStaking.ConfigureNextRound(poolIds.defaultPool, expectedStartTime, newEndTime, newRewardAmount);
 
         sablierStaking.configureNextRound(poolIds.defaultPool, newStartTime, newEndTime, newRewardAmount);
 
         // It should set the new start time.
-        assertEq(sablierStaking.getStartTime(poolIds.defaultPool), newStartTime, "startTime");
+        assertEq(sablierStaking.getStartTime(poolIds.defaultPool), expectedStartTime, "startTime");
 
         // It should set the new end time.
         assertEq(sablierStaking.getEndTime(poolIds.defaultPool), newEndTime, "endTime");
@@ -156,6 +182,7 @@ contract ConfigureNextRound_Integration_Concrete_Test is Shared_Integration_Conc
         );
 
         // It should set the status to scheduled.
-        assertEq(sablierStaking.status(poolIds.defaultPool), Status.SCHEDULED, "status");
+        Status expectedStatus = expectedStartTime == getBlockTimestamp() ? Status.ACTIVE : Status.SCHEDULED;
+        assertEq(sablierStaking.status(poolIds.defaultPool), expectedStatus, "status");
     }
 }

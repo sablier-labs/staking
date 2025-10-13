@@ -64,7 +64,7 @@ contract ConfigureNextRound_Integration_Concrete_Test is Shared_Integration_Conc
     {
         newStartTime = 0;
 
-        _test_ConfigureNextRound({ adminStaked: false });
+        _test_ConfigureNextRound();
     }
 
     function test_RevertWhen_NewStartTimeInPast()
@@ -148,22 +148,15 @@ contract ConfigureNextRound_Integration_Concrete_Test is Shared_Integration_Conc
         whenNewEndTimeGreaterThanNewStartTime
         whenNewRewardAmountNotZero
     {
-        _test_ConfigureNextRound({ adminStaked: false });
+        _test_ConfigureNextRound();
     }
 
-    function _test_ConfigureNextRound(bool adminStaked) private {
+    function _test_ConfigureNextRound() private {
         (uint256 rptEarned, uint128 expectedUserRewards) = calculateLatestRewards(users.poolCreator);
 
         // Set expected start time.
         uint40 expectedStartTime = newStartTime == 0 ? getBlockTimestamp() : newStartTime;
 
-        // It should emit a {SnapshotRewards} event if the admin has staked.
-        if (adminStaked) {
-            vm.expectEmit({ emitter: address(sablierStaking) });
-            emit ISablierStaking.SnapshotRewards(
-                poolIds.defaultPool, END_TIME + 1 seconds, rptEarned, users.poolCreator, expectedUserRewards
-            );
-        }
         // It should emit {Transfer} and {ConfigureNextRound} events.
         vm.expectEmit({ emitter: address(rewardToken) });
         emit IERC20.Transfer(users.poolCreator, address(sablierStaking), newRewardAmount);

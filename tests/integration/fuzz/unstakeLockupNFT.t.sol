@@ -86,14 +86,14 @@ contract UnstakeLockupNFT_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test 
     function _test_UnstakeLockupNFT(uint40 timestamp, uint128 amountUnstaked) private {
         UserAccount memory initialUserAccount = sablierStaking.userAccount(poolIds.defaultPool, users.recipient);
 
-        (vars.expectedRptScaled, vars.expectedUserRewards) = calculateLatestRewards(users.recipient);
+        (vars.expectedRptScaled, vars.expectedUserRewardsScaled) = calculateLatestRewardsScaled(users.recipient);
 
         vars.expectedTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool) - amountUnstaked;
 
         // It should emit {SnapshotRewards}, {Transfer} and {UnstakeERC20Token} events.
         vm.expectEmit({ emitter: address(sablierStaking) });
         emit ISablierStaking.SnapshotRewards(
-            poolIds.defaultPool, timestamp, vars.expectedRptScaled, users.recipient, vars.expectedUserRewards
+            poolIds.defaultPool, timestamp, vars.expectedRptScaled, users.recipient, vars.expectedUserRewardsScaled
         );
         vm.expectEmit({ emitter: address(lockup) });
         emit IERC721.Transfer(address(sablierStaking), users.recipient, streamIds.defaultStakedStream);
@@ -114,7 +114,11 @@ contract UnstakeLockupNFT_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test 
             "streamAmountStakedByUser"
         );
         assertEq(actualUserAccount.snapshotRptEarnedScaled, vars.expectedRptScaled, "rptEarnedScaled");
-        assertEq(actualUserAccount.snapshotRewards, vars.expectedUserRewards, "rewards");
+        assertEq(
+            actualUserAccount.claimableRewardsStoredScaled,
+            vars.expectedUserRewardsScaled,
+            "claimableRewardsStoredScaled"
+        );
 
         // It should decrease total amount staked.
         vars.actualTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool);

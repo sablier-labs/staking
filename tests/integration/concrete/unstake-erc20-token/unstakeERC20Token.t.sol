@@ -68,6 +68,7 @@ contract UnstakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concr
         whenAmountNotZero
     {
         vars.expectedTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool) - DEFAULT_AMOUNT;
+        vars.expectedUserRewardsScaled = getScaledValue(REWARDS_EARNED_BY_RECIPIENT);
 
         // It should emit {SnapshotRewards}, {Transfer} and {UnstakeERC20Token} events.
         vm.expectEmit({ emitter: address(sablierStaking) });
@@ -76,7 +77,7 @@ contract UnstakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concr
             WARP_40_PERCENT,
             REWARDS_DISTRIBUTED_PER_TOKEN_SCALED,
             users.recipient,
-            REWARDS_EARNED_BY_RECIPIENT
+            vars.expectedUserRewardsScaled
         );
         vm.expectEmit({ emitter: address(stakingToken) });
         emit IERC20.Transfer(address(sablierStaking), users.recipient, DEFAULT_AMOUNT);
@@ -90,7 +91,9 @@ contract UnstakeERC20Token_Integration_Concrete_Test is Shared_Integration_Concr
         UserAccount memory userAccount = sablierStaking.userAccount(poolIds.defaultPool, users.recipient);
         assertEq(userAccount.directAmountStaked, 0, "directAmountStakedByUser");
         assertEq(userAccount.snapshotRptEarnedScaled, REWARDS_DISTRIBUTED_PER_TOKEN_SCALED, "rptEarnedScaled");
-        assertEq(userAccount.snapshotRewards, REWARDS_EARNED_BY_RECIPIENT, "rewards");
+        assertEq(
+            userAccount.claimableRewardsStoredScaled, vars.expectedUserRewardsScaled, "claimableRewardsStoredScaled"
+        );
 
         // It should decrease total amount staked.
         vars.actualTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool);

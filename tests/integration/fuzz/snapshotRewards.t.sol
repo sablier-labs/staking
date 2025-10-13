@@ -37,7 +37,11 @@ contract SnapshotRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         UserAccount memory afterUserAccount = sablierStaking.userAccount(poolIds.defaultPool, user);
 
         assertEq(afterUserAccount.snapshotRptEarnedScaled, beforeUserAccount.snapshotRptEarnedScaled, "rptEarnedScaled");
-        assertEq(afterUserAccount.snapshotRewards, beforeUserAccount.snapshotRewards, "rewards");
+        assertEq(
+            afterUserAccount.claimableRewardsStoredScaled,
+            beforeUserAccount.claimableRewardsStoredScaled,
+            "claimableRewardsStoredScaled"
+        );
     }
 
     function testFuzz_SnapshotRewards(
@@ -63,11 +67,11 @@ contract SnapshotRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         // Warp EVM state to the given timestamp.
         warpStateTo(timestamp);
 
-        (uint256 rptEarnedScaled, uint128 rewards) = calculateLatestRewards(user);
+        (uint256 rptEarnedScaled, uint256 rewardsScaled) = calculateLatestRewardsScaled(user);
 
         // It should emit {SnapshotRewards} event.
         vm.expectEmit({ emitter: address(sablierStaking) });
-        emit ISablierStaking.SnapshotRewards(poolIds.defaultPool, timestamp, rptEarnedScaled, user, rewards);
+        emit ISablierStaking.SnapshotRewards(poolIds.defaultPool, timestamp, rptEarnedScaled, user, rewardsScaled);
 
         // Snapshot rewards.
         setMsgSender(caller);
@@ -82,6 +86,6 @@ contract SnapshotRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         // It should update user rewards snapshot.
         UserAccount memory userAccount = sablierStaking.userAccount(poolIds.defaultPool, user);
         assertEq(userAccount.snapshotRptEarnedScaled, rptEarnedScaled, "rptEarnedScaled");
-        assertEq(userAccount.snapshotRewards, rewards, "rewards");
+        assertEq(userAccount.claimableRewardsStoredScaled, rewardsScaled, "claimableRewardsStoredScaled");
     }
 }

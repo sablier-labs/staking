@@ -62,7 +62,7 @@ contract OnSablierLockupCancel_Integration_Concrete_Test is Shared_Integration_C
             WARP_40_PERCENT,
             REWARDS_DISTRIBUTED_PER_TOKEN_SCALED,
             users.recipient,
-            REWARDS_EARNED_BY_RECIPIENT
+            getScaledValue(REWARDS_EARNED_BY_RECIPIENT)
         );
 
         // Cancel the stream to trigger the hook.

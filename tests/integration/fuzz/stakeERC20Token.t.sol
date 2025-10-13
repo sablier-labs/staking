@@ -38,7 +38,8 @@ contract StakeERC20Token_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         deal({ token: address(stakingToken), to: caller, give: amount });
         stakingToken.approve(address(sablierStaking), amount);
 
-        (vars.expectedRptScaled, vars.expectedUserRewards) = calculateLatestRewards(caller);
+        (vars.expectedRptScaled, vars.expectedUserRewardsScaled) = calculateLatestRewardsScaled(caller);
+
         UserAccount memory initialUserAccount = sablierStaking.userAccount(poolIds.defaultPool, caller);
 
         vars.expectedTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool) + amount;
@@ -46,7 +47,7 @@ contract StakeERC20Token_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
         // It should emit {SnapshotRewards}, {Transfer} and {StakeERC20Token} events.
         vm.expectEmit({ emitter: address(sablierStaking) });
         emit ISablierStaking.SnapshotRewards(
-            poolIds.defaultPool, timestamp, vars.expectedRptScaled, caller, vars.expectedUserRewards
+            poolIds.defaultPool, timestamp, vars.expectedRptScaled, caller, vars.expectedUserRewardsScaled
         );
         vm.expectEmit({ emitter: address(stakingToken) });
         emit IERC20.Transfer(caller, address(sablierStaking), amount);
@@ -64,7 +65,11 @@ contract StakeERC20Token_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
             "directAmountStakedByUser"
         );
         assertEq(actualUserAccount.snapshotRptEarnedScaled, vars.expectedRptScaled, "rptEarnedScaled");
-        assertEq(actualUserAccount.snapshotRewards, vars.expectedUserRewards, "rewards");
+        assertEq(
+            actualUserAccount.claimableRewardsStoredScaled,
+            vars.expectedUserRewardsScaled,
+            "claimableRewardsStoredScaled"
+        );
 
         // It should increase total amount staked.
         vars.actualTotalAmountStaked = sablierStaking.getTotalStakedAmount(poolIds.defaultPool);

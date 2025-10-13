@@ -146,15 +146,18 @@ contract ClaimRewards_Integration_Fuzz_Test is Shared_Integration_Fuzz_Test {
     function _test_ClaimRewards(address caller, uint256 fee, UD60x18 feeOnRewards, uint40 timestamp) private {
         uint256 initialComptrollerEthBalance = address(comptroller).balance;
 
-        (uint256 expectedRptScaled, uint128 expectedUserRewards) = calculateLatestRewards(caller);
+        (uint256 expectedRptScaled, uint256 expectedUserRewardsScaled) = calculateLatestRewardsScaled(caller);
 
-        uint128 expectedRewardsTransferredToComptroller = ud(expectedUserRewards).mul(feeOnRewards).intoUint128();
-        uint128 expectedRewardsTransferredToRecipient = expectedUserRewards - expectedRewardsTransferredToComptroller;
+        // Calculate user rewards that will be transferred.
+        uint128 expectedTransferRewards = getDescaledValue(expectedUserRewardsScaled);
+        uint128 expectedRewardsTransferredToComptroller = ud(expectedTransferRewards).mul(feeOnRewards).intoUint128();
+        uint128 expectedRewardsTransferredToRecipient =
+            expectedTransferRewards - expectedRewardsTransferredToComptroller;
 
         // It should emit 1 {SnapshotRewards}, 2 {Transfer} and 1 {ClaimRewards} events.
         vm.expectEmit({ emitter: address(sablierStaking) });
         emit ISablierStaking.SnapshotRewards(
-            poolIds.defaultPool, timestamp, expectedRptScaled, caller, expectedUserRewards
+            poolIds.defaultPool, timestamp, expectedRptScaled, caller, expectedUserRewardsScaled
         );
         if (feeOnRewards > ZERO) {
             vm.expectEmit({ emitter: address(rewardToken) });

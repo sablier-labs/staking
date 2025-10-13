@@ -76,11 +76,11 @@ abstract contract Integration_Test is Base_Test {
             getBlockTimestamp() >= END_TIME ? END_TIME - startingPointInTime : getBlockTimestamp() - startingPointInTime;
 
         // Calculate global rewards distributed since last update.
-        uint128 rewardsDistributedSinceLastUpdate = REWARD_AMOUNT * timeElapsed / REWARD_PERIOD;
+        uint256 rewardsDistributedScaledSinceLastUpdate = getScaledValue(REWARD_AMOUNT * timeElapsed) / REWARD_PERIOD;
 
         // Update global rewards distributed per token scaled.
         snapshotRptDistributedScaled +=
-            getScaledValue(rewardsDistributedSinceLastUpdate) / sablierStaking.getTotalStakedAmount(poolIds.defaultPool);
+            rewardsDistributedScaledSinceLastUpdate / sablierStaking.getTotalStakedAmount(poolIds.defaultPool);
 
         // Get user rewards snapshot.
         UserAccount memory userAccount = sablierStaking.userAccount(poolIds.defaultPool, user);

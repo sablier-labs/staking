@@ -119,21 +119,21 @@ contract SablierStaking is
         returns (uint128)
     {
         // Get the rewards distributed since the last snapshot.
-        uint256 rewardsDistributedSinceLastSnapshot = _rewardsDistributedSinceLastSnapshot(poolId);
+        uint256 rewardsDistributedSinceLastSnapshotScaled = _rewardsDistributedSinceLastSnapshotScaled(poolId);
 
         // If the rewards distributed since the last snapshot is zero, return 0.
-        if (rewardsDistributedSinceLastSnapshot == 0) {
+        if (rewardsDistributedSinceLastSnapshotScaled == 0) {
             return 0;
         }
 
         // Else, calculate it. Safe casting because rewards distributed is guaranteed to be less than 2^128.
-        return uint128(rewardsDistributedSinceLastSnapshot / _pools[poolId].totalStakedAmount);
+        return uint128((rewardsDistributedSinceLastSnapshotScaled / _pools[poolId].totalStakedAmount).scaleDown());
     }
 
     /// @inheritdoc ISablierStaking
     function rewardsSinceLastSnapshot(uint256 poolId) external view override notNull(poolId) returns (uint128) {
         // Safe casting because rewards distributed is guaranteed to be less than 2^128.
-        return uint128(_rewardsDistributedSinceLastSnapshot(poolId));
+        return uint128(_rewardsDistributedSinceLastSnapshotScaled(poolId).scaleDown());
     }
 
     /// @inheritdoc IERC165
@@ -260,23 +260,25 @@ contract SablierStaking is
             revert Errors.SablierStaking_RewardAmountZero();
         }
 
-        uint128 adminTotalAmountStaked;
+        // Calculate the buffer amount.
+        uint128 bufferAmount = type(uint128).max - pool.cumulativeRewardAmount;
 
-        // Safe to use `unchecked` because the user's total staked amount cannot overflow.
+        // Check: new reward amount does not exceed the buffer amount.
+        if (newRewardAmount > bufferAmount) {
+            revert Errors.SablierStaking_CumulativeRewardAmountOverflow({
+                newRewardAmount: newRewardAmount,
+                remainingBufferAmount: bufferAmount
+            });
+        }
+
+        // Safe to use `unchecked` because cumulative reward amount can not overflow as we checked the overflow above.
         unchecked {
-            // Calculate the total amount staked by the admin.
-            adminTotalAmountStaked = _userAccounts[msg.sender][poolId].directAmountStaked
-                + _userAccounts[msg.sender][poolId].streamAmountStaked;
+            // Effect: update the cumulative reward amount.
+            pool.cumulativeRewardAmount += newRewardAmount;
         }
 
-        // Effect: snapshot both global, and user rewards if the amount staked is greater than 0.
-        if (adminTotalAmountStaked > 0) {
-            _snapshotRewards(poolId, msg.sender);
-        }
-        // Otherwise, only snapshot the global rewards.
-        else {
-            _snapshotGlobalRewards(poolId);
-        }
+        // Effect: snapshot the global rewards.
+        _snapshotGlobalRewards(poolId);
 
         // Effect: set the next staking round parameters.
         pool.endTime = newEndTime;
@@ -335,6 +337,7 @@ contract SablierStaking is
         // Effect: store the pool parameters in the storage.
         _pools[poolId] = Pool({
             admin: admin,
+            cumulativeRewardAmount: rewardAmount,
             endTime: endTime,
             rewardAmount: rewardAmount,
             rewardToken: rewardToken,
@@ -384,9 +387,9 @@ contract SablierStaking is
         // Get the Pool ID in which the stream ID is staked.
         uint256 poolId = _streamsLookup[msgSenderAsLockup][streamId].poolId;
 
-        // Check: the Pool ID is not zero.
+        // Return the selector if the stream ID is not staked.
         if (poolId == 0) {
-            revert Errors.SablierStaking_StreamNotStaked(msgSenderAsLockup, streamId);
+            return ISablierLockupRecipient.onSablierLockupCancel.selector;
         }
 
         // Load the storage in memory.
@@ -590,14 +593,14 @@ contract SablierStaking is
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Retrieves the token being streamed in the specified stream ID.
-    function _getUnderlyingToken(ISablierLockupNFT lockup, uint256 streamId) private returns (IERC20 token) {
+    function _getUnderlyingToken(ISablierLockupNFT lockup, uint256 streamId) private view returns (IERC20 token) {
         // Since, Lockup v1.2 does not implement `getUnderlyingToken`, low-level call is used to call this function. If
         // the call fails, `getAsset` will be called as a fallback.
         (bool success, bytes memory data) =
-            address(lockup).call(abi.encodeCall(ISablierLockupNFT.getUnderlyingToken, (streamId)));
+            address(lockup).staticcall(abi.encodeCall(ISablierLockupNFT.getUnderlyingToken, (streamId)));
 
         if (!success) {
-            (, data) = address(lockup).call(abi.encodeCall(ISablierLockupNFT.getAsset, (streamId)));
+            (, data) = address(lockup).staticcall(abi.encodeCall(ISablierLockupNFT.getAsset, (streamId)));
         }
 
         // Since only whitelisted Lockup contracts are allowed to stake, it is safe to assume that the returned data is
@@ -606,36 +609,38 @@ contract SablierStaking is
     }
 
     /// @notice Check if the lockup contract implements the functions from {ISablierLockupNFT}.
-    function _hasRequiredInterface(ISablierLockupNFT lockup) private {
-        uint256 totalSelectors = 5;
-
+    function _hasRequiredInterface(ISablierLockupNFT lockup) private view {
         // It is assumed that at least one stream exists in the lockup contract.
         uint256 testStreamId = 1;
 
-        // Prepare an array of selectors to check.
-        bytes4[] memory selectors = new bytes4[](totalSelectors);
-        selectors[0] = ISablierLockupNFT.getDepositedAmount.selector;
-        selectors[1] = ISablierLockupNFT.getWithdrawnAmount.selector;
-        selectors[2] = ISablierLockupNFT.getRefundedAmount.selector;
+        uint256 amountsSelectorsCount = 3;
 
-        // The following order is critical for the `for` loop.
-        selectors[3] = ISablierLockupNFT.getUnderlyingToken.selector;
-        selectors[4] = ISablierLockupNFT.getAsset.selector;
+        bytes4[] memory getAmountSelectors = new bytes4[](amountsSelectorsCount);
+        getAmountSelectors[0] = ISablierLockupNFT.getDepositedAmount.selector;
+        getAmountSelectors[1] = ISablierLockupNFT.getWithdrawnAmount.selector;
+        getAmountSelectors[2] = ISablierLockupNFT.getRefundedAmount.selector;
 
-        for (uint256 i = 0; i < totalSelectors; ++i) {
+        for (uint256 i = 0; i < amountsSelectorsCount; ++i) {
             // Use a low-level call to check if the function is implemented.
-            (bool success,) = address(lockup).call(abi.encodeWithSelector(selectors[i], testStreamId));
-
-            // If the call succeeds and the selector is `getUnderlyingToken`, then break the loop since there is no need
-            // to check for `getAsset`.
-            if (success && selectors[i] == ISablierLockupNFT.getUnderlyingToken.selector) {
-                break;
+            (bool success,) = address(lockup).staticcall(abi.encodeWithSelector(getAmountSelectors[i], testStreamId));
+            if (!success) {
+                revert Errors.SablierStaking_LockupMissesSelector(lockup, getAmountSelectors[i]);
             }
+        }
 
-            // If the call fails, revert except for `getUnderlyingToken`, for that we check whether `getAsset` is
-            // implemented or not in the next loop.
-            if (!success && selectors[i] != ISablierLockupNFT.getUnderlyingToken.selector) {
-                revert Errors.SablierStaking_LockupMissesSelector(lockup, selectors[i]);
+        // Use a low-level call to check if the function is implemented.
+        (bool successGetUnderlyingToken,) = address(lockup).staticcall(
+            abi.encodeWithSelector(ISablierLockupNFT.getUnderlyingToken.selector, testStreamId)
+        );
+
+        // If `getUnderlyingToken` is not implemented, check `getAsset` is implemented.
+        if (!successGetUnderlyingToken) {
+            (bool successGetAsset,) =
+                address(lockup).staticcall(abi.encodeWithSelector(ISablierLockupNFT.getAsset.selector, testStreamId));
+
+            // Revert if `getAsset` is not implemented.
+            if (!successGetAsset) {
+                revert Errors.SablierStaking_LockupMissesSelector(lockup, ISablierLockupNFT.getAsset.selector);
             }
         }
     }
@@ -652,12 +657,16 @@ contract SablierStaking is
         }
     }
 
-    /// @notice Calculates cumulative rewards distributed since the last snapshot.
+    /// @notice Calculates cumulative rewards distributed scaled since the last snapshot.
     /// @dev Returns 0 if:
     ///  - The total amount staked is 0.
     ///  - The start time is in the future.
     ///  - The snapshot time is greater than or equal to the end time.
-    function _rewardsDistributedSinceLastSnapshot(uint256 poolId) private view returns (uint256 rewardsDistributed) {
+    function _rewardsDistributedSinceLastSnapshotScaled(uint256 poolId)
+        private
+        view
+        returns (uint256 rewardsDistributedScaled)
+    {
         // Read the pool from storage using storage pointer.
         Pool storage pool = _pools[poolId];
 
@@ -695,23 +704,23 @@ contract SablierStaking is
             uint256 rewardsPeriod = poolEndTime - poolStartTime;
 
             // Calculate the total rewards distributed since the last snapshot.
-            rewardsDistributed = (pool.rewardAmount * elapsedTime) / rewardsPeriod;
+            rewardsDistributedScaled = (pool.rewardAmount * elapsedTime).scaleUp() / rewardsPeriod;
         }
 
-        return rewardsDistributed;
+        return rewardsDistributedScaled;
     }
 
     /// @dev Calculates the latest cumulative rewards distributed per ERC20 token.
     function _rptDistributedScaled(uint256 poolId) private view returns (uint256 rptDistributedScaled) {
         rptDistributedScaled = _pools[poolId].snapshotRptDistributedScaled;
 
-        // Get the rewards distributed since the last snapshot.
-        uint256 rewardsDistributedSinceLastSnapshot = _rewardsDistributedSinceLastSnapshot(poolId);
+        // Get the rewards distributed scaled since the last snapshot.
+        uint256 rewardsDistributedSinceLastSnapshotScaled = _rewardsDistributedSinceLastSnapshotScaled(poolId);
 
-        if (rewardsDistributedSinceLastSnapshot > 0) {
-            // Get the rewards distributed per ERC20 token since the last snapshot, by scaling up.
+        if (rewardsDistributedSinceLastSnapshotScaled > 0) {
+            // Get the rewards distributed per ERC20 token since the last snapshot.
             uint256 rptSinceLastSnapshotScaled =
-                rewardsDistributedSinceLastSnapshot.scaleUp() / _pools[poolId].totalStakedAmount;
+                rewardsDistributedSinceLastSnapshotScaled / _pools[poolId].totalStakedAmount;
 
             // Calculate the cumulative rewards distributed per ERC20 token.
             rptDistributedScaled += rptSinceLastSnapshotScaled;

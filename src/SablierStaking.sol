@@ -238,31 +238,13 @@ contract SablierStaking is
             revert Errors.SablierStaking_CallerNotPoolAdmin(poolId, msg.sender, pool.admin);
         }
 
-        uint40 blockTimestamp = uint40(block.timestamp);
-
         // Check: pool end time is in the past.
-        if (pool.endTime >= blockTimestamp) {
+        if (pool.endTime >= uint40(block.timestamp)) {
             revert Errors.SablierStaking_EndTimeNotInPast(poolId, pool.endTime);
         }
 
-        // Zero is a sentinel value for `block.timestamp`.
-        if (newStartTime == 0) {
-            newStartTime = blockTimestamp;
-        }
-        // Otherwise, check the new start time is not in the past.
-        else if (newStartTime < blockTimestamp) {
-            revert Errors.SablierStaking_StartTimeInPast(newStartTime);
-        }
-
-        // Check: the new start time is less than the new end time.
-        if (newEndTime <= newStartTime) {
-            revert Errors.SablierStaking_StartTimeNotLessThanEndTime(newStartTime, newEndTime);
-        }
-
-        // Check: the new reward amount is greater than 0.
-        if (newRewardAmount == 0) {
-            revert Errors.SablierStaking_RewardAmountZero();
-        }
+        // Checks: validate the timestamps and reward amount.
+        newStartTime = _checkTimestampsAndRewardAmount(newStartTime, newEndTime, newRewardAmount);
 
         // Calculate the buffer amount.
         uint128 bufferAmount = type(uint128).max - pool.cumulativeRewardAmount;
@@ -315,29 +297,13 @@ contract SablierStaking is
             revert Errors.SablierStaking_AdminZeroAddress();
         }
 
-        // Zero is a sentinel value for `block.timestamp`.
-        if (startTime == 0) {
-            startTime = uint40(block.timestamp);
-        }
-        // Otherwise, check the start time is not in the past.
-        else if (startTime < uint40(block.timestamp)) {
-            revert Errors.SablierStaking_StartTimeInPast(startTime);
-        }
-
-        // Check: start time is less than end time.
-        if (endTime <= startTime) {
-            revert Errors.SablierStaking_StartTimeNotLessThanEndTime(startTime, endTime);
-        }
-
         // Check: staking token is not the zero address.
         if (address(stakingToken) == address(0)) {
             revert Errors.SablierStaking_StakingTokenZeroAddress();
         }
 
-        // Check: reward amount is not zero.
-        if (rewardAmount == 0) {
-            revert Errors.SablierStaking_RewardAmountZero();
-        }
+        // Checks: validate the timestamps and reward amount.
+        startTime = _checkTimestampsAndRewardAmount(startTime, endTime, rewardAmount);
 
         // Load the next Pool ID from storage.
         poolId = nextPoolId;
@@ -599,6 +565,41 @@ contract SablierStaking is
     /*//////////////////////////////////////////////////////////////////////////
                             PRIVATE READ-ONLY FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
+
+    /// @dev Common checks between `createPool` and `configureNextRound`.
+    function _checkTimestampsAndRewardAmount(
+        uint40 startTime,
+        uint40 endTime,
+        uint128 rewardAmount
+    )
+        private
+        view
+        returns (uint40)
+    {
+        uint40 blockTimestamp = uint40(block.timestamp);
+
+        // Zero is a sentinel value for `block.timestamp`.
+        if (startTime == 0) {
+            startTime = blockTimestamp;
+        }
+        // Otherwise, check the start time is not in the past.
+        else if (startTime < blockTimestamp) {
+            revert Errors.SablierStaking_StartTimeInPast(startTime);
+        }
+
+        // Check: start time is less than end time.
+        if (endTime <= startTime) {
+            revert Errors.SablierStaking_StartTimeNotLessThanEndTime(startTime, endTime);
+        }
+
+        // Check: reward amount is not zero.
+        if (rewardAmount == 0) {
+            revert Errors.SablierStaking_RewardAmountZero();
+        }
+
+        // Return the start time in case the sentinel value was used.
+        return startTime;
+    }
 
     /// @notice Retrieves the token being streamed in the specified stream ID.
     function _getUnderlyingToken(ISablierLockupNFT lockup, uint256 streamId) private view returns (IERC20 token) {

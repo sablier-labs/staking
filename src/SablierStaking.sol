@@ -387,7 +387,7 @@ contract SablierStaking is
         // Get the Pool ID in which the stream ID is staked.
         uint256 poolId = _streamsLookup[msgSenderAsLockup][streamId].poolId;
 
-        // Return the selector if the strean ID is not staked.
+        // Return the selector if the stream ID is not staked.
         if (poolId == 0) {
             return ISablierLockupRecipient.onSablierLockupCancel.selector;
         }
@@ -635,11 +635,11 @@ contract SablierStaking is
 
         // If `getUnderlyingToken` is not implemented, check `getAsset` is implemented.
         if (!successGetUnderlyingToken) {
-            (bool succesGetAsset,) =
+            (bool successGetAsset,) =
                 address(lockup).staticcall(abi.encodeWithSelector(ISablierLockupNFT.getAsset.selector, testStreamId));
 
             // Revert if `getAsset` is not implemented.
-            if (!succesGetAsset) {
+            if (!successGetAsset) {
                 revert Errors.SablierStaking_LockupMissesSelector(lockup, ISablierLockupNFT.getAsset.selector);
             }
         }

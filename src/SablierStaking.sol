@@ -238,30 +238,9 @@ contract SablierStaking is
             revert Errors.SablierStaking_CallerNotPoolAdmin(poolId, msg.sender, pool.admin);
         }
 
-        uint40 blockTimestamp = uint40(block.timestamp);
-
         // Check: pool end time is in the past.
-        if (pool.endTime >= blockTimestamp) {
+        if (pool.endTime >= uint40(block.timestamp)) {
             revert Errors.SablierStaking_EndTimeNotInPast(poolId, pool.endTime);
-        }
-
-        // Zero is a sentinel value for `block.timestamp`.
-        if (newStartTime == 0) {
-            newStartTime = blockTimestamp;
-        }
-        // Otherwise, check the new start time is not in the past.
-        else if (newStartTime < blockTimestamp) {
-            revert Errors.SablierStaking_StartTimeInPast(newStartTime);
-        }
-
-        // Check: the new start time is less than the new end time.
-        if (newEndTime <= newStartTime) {
-            revert Errors.SablierStaking_StartTimeNotLessThanEndTime(newStartTime, newEndTime);
-        }
-
-        // Check: the new reward amount is greater than 0.
-        if (newRewardAmount == 0) {
-            revert Errors.SablierStaking_RewardAmountZero();
         }
 
         // Calculate the buffer amount.
@@ -275,6 +254,10 @@ contract SablierStaking is
             });
         }
 
+        // Checks and Effects: update the pool.
+        newStartTime =
+            _updatePool({ pool: pool, startTime: newStartTime, endTime: newEndTime, rewardAmount: newRewardAmount });
+
         // Safe to use `unchecked` because we checked the overflow above.
         unchecked {
             // Effect: update the cumulative reward amount.
@@ -284,16 +267,47 @@ contract SablierStaking is
         // Effect: snapshot the global rewards.
         _snapshotGlobalRewards(poolId);
 
-        // Effect: set the next staking round parameters.
-        pool.endTime = newEndTime;
-        pool.startTime = newStartTime;
-        pool.rewardAmount = newRewardAmount;
-
         // Interaction: transfer the reward amount from the `msg.sender` to this contract.
         pool.rewardToken.safeTransferFrom({ from: msg.sender, to: address(this), value: newRewardAmount });
 
         // Log the event.
         emit ConfigureNextRound(poolId, newStartTime, newEndTime, newRewardAmount);
+    }
+
+    function _updatePool(
+        Pool storage pool,
+        uint40 startTime,
+        uint40 endTime,
+        uint128 rewardAmount
+    )
+        internal
+        returns (uint40)
+    {
+        // Zero is a sentinel value for `block.timestamp`.
+        if (startTime == 0) {
+            startTime = uint40(block.timestamp);
+        }
+        // Otherwise, check the start time is not in the past.
+        else if (startTime < uint40(block.timestamp)) {
+            revert Errors.SablierStaking_StartTimeInPast(startTime);
+        }
+
+        // Check: start time is less than end time.
+        if (endTime <= startTime) {
+            revert Errors.SablierStaking_StartTimeNotLessThanEndTime(startTime, endTime);
+        }
+
+        // Check: reward amount is not zero.
+        if (rewardAmount == 0) {
+            revert Errors.SablierStaking_RewardAmountZero();
+        }
+
+        // Effect: update the pool parameters.
+        pool.endTime = endTime;
+        pool.rewardAmount = rewardAmount;
+        pool.startTime = startTime;
+
+        return startTime;
     }
 
     /// @inheritdoc ISablierStaking
@@ -315,46 +329,22 @@ contract SablierStaking is
             revert Errors.SablierStaking_AdminZeroAddress();
         }
 
-        // Zero is a sentinel value for `block.timestamp`.
-        if (startTime == 0) {
-            startTime = uint40(block.timestamp);
-        }
-        // Otherwise, check the start time is not in the past.
-        else if (startTime < uint40(block.timestamp)) {
-            revert Errors.SablierStaking_StartTimeInPast(startTime);
-        }
-
-        // Check: start time is less than end time.
-        if (endTime <= startTime) {
-            revert Errors.SablierStaking_StartTimeNotLessThanEndTime(startTime, endTime);
-        }
-
         // Check: staking token is not the zero address.
         if (address(stakingToken) == address(0)) {
             revert Errors.SablierStaking_StakingTokenZeroAddress();
         }
 
-        // Check: reward amount is not zero.
-        if (rewardAmount == 0) {
-            revert Errors.SablierStaking_RewardAmountZero();
-        }
-
         // Load the next Pool ID from storage.
         poolId = nextPoolId;
 
-        // Effect: store the pool parameters in the storage.
-        _pools[poolId] = Pool({
-            admin: admin,
-            cumulativeRewardAmount: rewardAmount,
-            endTime: endTime,
-            rewardAmount: rewardAmount,
-            rewardToken: rewardToken,
-            snapshotRptDistributedScaled: 0,
-            snapshotTime: 0,
-            stakingToken: stakingToken,
-            startTime: startTime,
-            totalStakedAmount: 0
-        });
+        // Checks and Effects: update the pool.
+        startTime =
+            _updatePool({ pool: _pools[poolId], startTime: startTime, endTime: endTime, rewardAmount: rewardAmount });
+
+        _pools[poolId].admin = admin;
+        _pools[poolId].cumulativeRewardAmount = rewardAmount;
+        _pools[poolId].rewardToken = rewardToken;
+        _pools[poolId].stakingToken = stakingToken;
 
         // Safe to use `unchecked` because it can't overflow.
         unchecked {

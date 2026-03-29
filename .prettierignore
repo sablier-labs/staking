@@ -10,6 +10,7 @@ out
 out-optimized
 
 # files
+*.md
 *.sol
 .pnp.*
 package-lock.json

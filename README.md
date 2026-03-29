@@ -1,14 +1,5 @@
 # Sablier Staking Protocol [![Github Actions][gha-badge]][gha] [![Coverage][codecov-badge]][codecov] [![Foundry][foundry-badge]][foundry] [![Discord][discord-badge]][discord]
 
-[gha]: https://github.com/sablier-labs/staking/actions
-[gha-badge]: https://github.com/sablier-labs/staking/actions/workflows/ci.yml/badge.svg
-[codecov]: https://codecov.io/gh/sablier-labs/staking
-[codecov-badge]: https://codecov.io/gh/sablier-labs/staking/branch/main/graph/badge.svg?token=unBESErDsQ
-[discord]: https://discord.gg/bSwRCwWRsT
-[discord-badge]: https://img.shields.io/discord/659709894315868191
-[foundry]: https://getfoundry.sh
-[foundry-badge]: https://img.shields.io/badge/Built%20with-Foundry-FFDB1C.svg
-
 In-depth documentation is available at [docs.sablier.com](https://docs.sablier.com).
 
 ## Overview
@@ -59,3 +50,12 @@ For guidance on how to create PRs, see the [CONTRIBUTING](./CONTRIBUTING.md) gui
 ## License
 
 See [LICENSE.md](./LICENSE.md).
+
+[codecov]: https://codecov.io/gh/sablier-labs/staking
+[codecov-badge]: https://codecov.io/gh/sablier-labs/staking/branch/main/graph/badge.svg?token=unBESErDsQ
+[discord]: https://discord.gg/bSwRCwWRsT
+[discord-badge]: https://img.shields.io/discord/659709894315868191
+[foundry]: https://getfoundry.sh
+[foundry-badge]: https://img.shields.io/badge/Built%20with-Foundry-FFDB1C.svg
+[gha]: https://github.com/sablier-labs/staking/actions
+[gha-badge]: https://github.com/sablier-labs/staking/actions/workflows/ci.yml/badge.svg

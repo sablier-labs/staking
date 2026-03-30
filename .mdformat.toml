@@ -1,0 +1,10 @@
+exclude = [
+  # Directories
+  ".ai/**",
+  ".serena/**",
+  "**/.claude/plans/**",
+  "**/out/**",
+  "**/out-optimized/**",
+  "**/node_modules/**"
+]
+number = true

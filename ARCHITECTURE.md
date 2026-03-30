@@ -6,7 +6,7 @@ The Sablier Staking protocol distributes rewards to users over time who stake ER
 protocol supports two types of staking:
 
 1. **Direct ERC20 Token Staking**: Users can directly stake ERC20 tokens.
-1. **Lockup NFT Staking**: Users can stake Sablier Lockup NFTs that are streaming the supported staking token.
+2. **Lockup NFT Staking**: Users can stake Sablier Lockup NFTs that are streaming the supported staking token.
 
 The protocol implements a snapshot-based reward calculation mechanism.
 

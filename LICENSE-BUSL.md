@@ -65,12 +65,12 @@ covenants to MariaDB, and to all other recipients of the licensed work to be pro
    included in a program with software provided under GPL Version 3.0 or a later version. Licensor may specify
    additional Change Licenses without limitation.
 
-1. To either: (a) specify an additional grant of rights to use that does not impose any additional restriction on the
+2. To either: (a) specify an additional grant of rights to use that does not impose any additional restriction on the
    right granted in this License, as the Additional Use Grant; or (b) insert the text "None".
 
-1. To specify a Change Date.
+3. To specify a Change Date.
 
-1. Not to modify this License in any other way.
+4. Not to modify this License in any other way.
 
 ______________________________________________________________________
 

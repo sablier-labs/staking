@@ -37,7 +37,7 @@ bun install
 Then, execute the one-time setup script:
 
 ```shell
-just setup
+bun run setup
 ```
 
 To build the contracts:
